@@ -1,0 +1,42 @@
+{
+	"xodr":
+	{
+		"source": {"type": "vector", "tiles": ["https://carmacloud.data-env.com/api/xodr/{z}/{x}/{y}"], "minzoom": 15},
+		"layers":
+		[
+			{"type": "fill", "source-layer": "xodrlanes", "paint":{"fill-color":"#bebebe", "fill-antialias":false}}, 
+			{
+				"type": "line", 
+				"source-layer": "roadmarks_broken", 
+				"layout": {"line-join": "round", "line-cap": "round"}, 
+				"paint": 
+				{
+					"line-color": ["match", ["get", "roadmark_color"], "none", ["rgba", 0, 0, 0, 0], "yellow", "#FC0", "white", "#FFF", "#F00"], 
+					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 10.0], 
+					"line-dasharray": [60, 180]
+				}
+			}, 
+			{
+				"type": "line", 
+				"source-layer": "roadmarks_solid", 
+				"layout": {"line-join": "round", "line-cap": "round"}, 
+				"paint": 
+				{
+					"line-color": ["match", ["get", "roadmark_color"], "none", ["rgba", 0, 0, 0, 0], "yellow", "#FC0", "white", "#FFF", "#F00"], 
+					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 10.0]
+				}
+			}, 
+			{
+				"type": "line", 
+				"source-layer": "roadmarks_solid_solid", 
+				"layout": {"line-join": "round", "line-cap": "round"}, 
+				"paint": 
+				{
+					"line-color": ["match", ["get", "roadmark_color"], "none", ["rgba", 0, 0, 0, 0], "yellow", "#FC0", "white", "#FFF", "#F00"], 
+					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 30.0], 
+					"line-gap-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 10.0]
+				}
+			}
+		]
+	}
+}
