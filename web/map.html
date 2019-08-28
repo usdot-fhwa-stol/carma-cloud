@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CARMAcloud Map</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link href="css/jquery/jquery.datetimepicker.css" rel="stylesheet">
+<link rel="stylesheet" href="css/w3.css"/>
+<link rel="stylesheet" href="css/fontawesome.min.css"/>
+<link rel="stylesheet" href="css/solid.min.css"/>
+<link rel="stylesheet" href="css/leaflet.css"/>
+<link rel="stylesheet" href="css/carmacloud.css"/>
+<script src="script/jquery/jquery.js"></script>
+<script src="script/jquery/jquery.datetimepicker.full.js"></script>
+<script src="script/leaflet.js"></script>
+<script src="script/moment.min.js"></script>
+<script src="script/leaflet.geometryutil.min.js"></script>
+<script src="script/leaflet.snap.js"></script>
+<script src="script/map.js" type="module"></script>
+<script src="script/check.js"></script>
+</head>
+<body>
+
+<div class="w3-bar w3-dark-gray">
+	<span class="w3-bar-item w3-button w3-light-gray"><i class="fas fa-globe-americas"></i>&nbsp;&nbsp;Map</span>
+	<a href="rop.html" class="w3-bar-item w3-button"><i class="fas fa-list-ol"></i>&nbsp;&nbsp;ROPs</a>
+	<a href="pop.html" class="w3-bar-item w3-button"><i class="fas fa-map-marked-alt"></i>&nbsp;&nbsp;POPs</a>
+	<a href="replay.html" class="w3-bar-item w3-button"><i class="fas fa-fast-backward"></i>&nbsp;&nbsp;Replay</a>
+	<a href="help.html" class="w3-bar-item w3-button"><i class="fas fa-life-ring"></i>&nbsp;&nbsp;Help</a>
+	<div class="w3-dropdown-hover w3-right">
+    <a href="./" class="w3-bar-item w3-button w3-right"><span id="uname"></span>&nbsp;&nbsp;<i class="fas fa-caret-down"></i></a>
+  </div>
+</div>
+
+<div id="map-container"  >
+	<div id="mapid" style="height: 100%;"></div>
+</div>
+
+</body>
+</html>

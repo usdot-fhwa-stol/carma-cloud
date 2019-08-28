@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>CARMAcloud Rules of Practice</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="css/w3.css">
+    <link rel="stylesheet" href="css/fontawesome.min.css">
+    <link rel="stylesheet" href="css/solid.min.css">
+    <link rel="stylesheet" href="css/carmacloud.css">
+    <style>
+      #table-rule-def td
+      {
+        vertical-align: middle;
+      }
+
+      #table-rule td
+      {
+        vertical-align: middle;
+      }
+    </style>
+    <script src="script/jquery/jquery.js"></script>
+    <script src="script/rop.js" type="module"></script>
+    <script src="script/check.js"></script>
+  </head>
+  <body>
+
+    <div class="w3-bar w3-dark-gray">
+      <a href="map.html" class="w3-bar-item w3-button"><i class="fas fa-globe-americas"></i>&nbsp;&nbsp;Map</a>
+      <span class="w3-bar-item w3-button w3-light-gray"><i class="fas fa-list-ol"></i>&nbsp;&nbsp;ROPs</span>
+      <a href="pop.html" class="w3-bar-item w3-button"><i class="fas fa-map-marked-alt"></i>&nbsp;&nbsp;POPs</a>
+      <a href="replay.html" class="w3-bar-item w3-button"><i class="fas fa-fast-backward"></i>&nbsp;&nbsp;Replay</a>
+      <a href="help.html" class="w3-bar-item w3-button"><i class="fas fa-life-ring"></i>&nbsp;&nbsp;Help</a>
+      <a href="./" class="w3-bar-item w3-button w3-right"><span id="uname"></span>&nbsp;&nbsp;<i class="fas fa-cogs"></i></a>
+    </div>
+
+    <div id="main-content" class="w3-row w3-light-gray">
+      <div class="w3-half w3-container">
+        <br>
+        <div class="w3-card-4 w3-white" style="height: 880px;overflow-y:auto; padding-bottom:30px;">
+          <br>
+          <div class="w3-container">
+            <h4>Rule of Practice Definition</h4>
+            <div class="w3-cell-row">
+              <div class="w3-cell">
+                <label class="w3-label w3-text-black"><i class="fas fa-asterisk" style="color: #F00;"></i>&nbsp;<b>Rule of Practice Description</b></label>
+                <input class="w3-input w3-border w3-light-gray" required pattern="[\w-]+[\w -]+" id="rop-name" name="rop-name" type="text">
+              </div>
+              <div class="w3-container w3-cell w3-cell-bottom" style="padding-right: 0px; width: 100px;">
+                <button class="w3-button w3-blue rule-save">Save<i class="fas fa-save"></i></button>
+              </div>
+              <div class="w3-container w3-cell w3-cell-bottom" style="padding-right: 0px; width: 100px;">
+                <button class="w3-button w3-yellow rule-form-clear">Clear<i class="fas fa-eraser"></i></button>
+              </div>
+            </div>
+            <br>
+            <table id="table-rule-def" class="w3-table w3-centered">
+              <thead>
+                <tr class="w3-dark-gray">
+                  <th>Method</th>
+                  <th>Op</th>
+                  <th>Val</th>
+                  <th>Tol</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr>
+                  <td>
+                    <select id="rop-type">
+                      <option value="any">Any</option>
+                      <option value="mean">Mean</option>
+                      <option value="mode">Mode</option>
+                    </select>
+                  </td>
+
+                  <td>
+                    <select required id="rule-operator">
+                      <option value="">&nbsp;</option>
+                      <option value="lt">&lt;</option>
+                      <option value="eq">=</option>
+                      <option value="gt">&gt;</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input class="w3-border w3-light-gray" id="rop-val" required pattern="\d*\.?\d*" name="rop-val" type="text" size="5">
+                  </td>
+                  <td>
+                    <input class="w3-border w3-light-gray" id="rop-tol" required pattern="\d*\.?\d*" name="rop-tol" type="text" size="5">
+                  </td>
+                  <td rowspan="2">
+                    <button type="button" id="add-rop-rule" class="w3-button w3-green">Add Rule<i class="fas fa-plus"></i></button></td>
+                </tr>
+                <tr>
+                  <td colspan="4" style="text-align: left;">
+                    Observation:<br/>
+                    <select required id="rop-obstypes">
+                    </select>
+                  </td>
+                </tr>
+              </tbody></table>
+            <br>
+            <table id="table-rule" class="w3-table-all w3-table w3-centered">
+              <thead>
+                <tr class="w3-amber">
+                  <th>Method</th>
+                  <th>Observation</th>
+                  <th>Op</th>
+                  <th>Val</th>
+                  <th>Tol</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <br />
+            <table id="table-control-def" class="w3-table w3-centered">
+              <thead>
+                <tr class="w3-dark-gray">
+                  <th>Control</th>
+                  <th>Inputs</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody><tr><td><select required id="rop-controls" ></select></td><td id="rop-control-inputs"></td><td><button type="button" id="add-control-rule" class="w3-button w3-green">Add Control<i class="fas fa-plus"></i></button></td></tr></tbody>
+            </table>
+            <br />
+            <table id="table-control" class="w3-table-all w3-table w3-centered">
+              <thead>
+                <tr class="w3-amber">
+                  <th>Control</th>
+                  <th>Inputs</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="w3-half w3-container">
+        <br>
+        <div class="w3-card-4 w3-white" style="height: 880px;">
+          <br>
+          <div class="w3-container existing-rop-container">
+            <h4>Rules of Practice Library</h4>
+            <div class="loading-spinner" style="text-align:center;padding:20px;"><i class="fas fa-spinner fa-5x fa-spin"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </body>
+</html>

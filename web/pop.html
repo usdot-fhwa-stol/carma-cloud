@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CARMAcloud Points of Presence</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="stylesheet" href="css/w3.css"/>
+<link rel="stylesheet" href="css/fontawesome.min.css"/>
+<link rel="stylesheet" href="css/solid.min.css"/>
+<link rel="stylesheet" href="css/datatables.min.css"/>
+<link rel="stylesheet" href="css/carmacloud.css"/>
+<script src="script/jquery/jquery.js"></script>
+<script src="script/datatables.min.js"></script>
+<script src="script/pop.js"></script>
+<script src="script/check.js"></script>
+</head>
+<body>
+
+<div class="w3-bar w3-dark-gray">
+	<a href="map.html" class="w3-bar-item w3-button"><i class="fas fa-globe-americas"></i>&nbsp;&nbsp;Map</a>
+	<a href="rop.html" class="w3-bar-item w3-button"><i class="fas fa-list-ol"></i>&nbsp;&nbsp;ROPs</a>
+	<span class="w3-bar-item w3-button w3-light-gray"><i class="fas fa-map-marked-alt"></i>&nbsp;&nbsp;POPs</span>
+	<a href="replay.html" class="w3-bar-item w3-button"><i class="fas fa-fast-backward"></i>&nbsp;&nbsp;Replay</a>
+	<a href="help.html" class="w3-bar-item w3-button"><i class="fas fa-life-ring"></i>&nbsp;&nbsp;Help</a>
+	<a href="./" class="w3-bar-item w3-button w3-right"><span id="uname"></span>&nbsp;&nbsp;<i class="fas fa-cogs"></i></a>
+</div>
+
+<div id="main-content" class="w3-row w3-light-gray">
+	<div class="w3-container">
+		<br/>
+		Currently registered DSRC Roadside Units.
+		<br/>
+		<br/>
+		<div class="w3-card-4 w3-white">
+		<div class="w3-container">
+		<br/>
+		<table id="rsupop" class="display">
+			<thead>
+				<tr>
+				<th>Name</th>
+				<th>Heartbeat (UTC)</th>
+				<th>Latitude</th>
+				<th>Longitude</th>
+				<th>Elevation (m)</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+				<td>OWjq69hMSo2MSMRPbKm3eg</td>
+				<td>2019-04-01 13:47</td>
+				<td>38.9549442</td>
+				<td>-77.1474728</td>
+				<td>44.3</td>
+				</tr>
+			</tbody>
+		</table>
+		<br/>
+		</div>
+		</div>
+	</div>
+</div>
+
+</body>
+</html>

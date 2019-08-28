@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>CARMAcloud Login</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<link rel="stylesheet" href="css/w3.css"/>
+<link rel="stylesheet" href="css/fontawesome.min.css"/>
+<link rel="stylesheet" href="css/solid.min.css"/>
+<link rel="stylesheet" href="css/carmacloud.css"/>
+<script src="script/jquery/jquery.js"></script>
+<script src="script/login.js"></script>
+</head>
+<body>
+
+<div class="w3-top">
+	<div class="w3-container w3-dark-gray" style="height: 39px;"></div>
+</div>
+
+<div id="main-content" class="w3-row w3-light-gray">
+	<div class="w3-third w3-container"></div>
+	<div class="w3-third w3-container">
+		<br/>
+		<br/>
+		<br/>
+		<br/>
+		<div class="w3-card-4 w3-white">
+			<br/>
+			<div class="w3-container">
+				<div id="logo" style="width: 100%;"><img src="images/CARMA_icon.png" alt="CARMAcloud logo" style="width: 100%;"/></div>
+				<br/>
+				<h4>Welcome to CARMAcloud. Please login to access the system.</h4>
+				<div id="usermsg" class="w3-container w3-deep-orange" style="display: none;">
+					<p>Username or password error. Verify credentials and try again.</p>
+				</div>
+				<div id="connmsg" class="w3-container w3-cyan" style="display: none;">
+					<p>Authentication service is unavailable. Please try again later.</p>
+				</div>
+				<p>
+					<input class="w3-input w3-border w3-sand" id="uname" name="uname" type="text"/>
+					<label class="w3-label w3-text-black"><b>Username</b></label>
+				</p>
+				<p>
+					<input class="w3-input w3-border w3-sand" id="pword" name="pword" type="password"/>
+					<label class="w3-label w3-text-black"><b>Password</b></label>
+				</p>
+				<p><button id="btnLogin" class="w3-btn w3-ripple w3-dark-gray">Login&nbsp;&nbsp;<i class="fas fa-sign-in-alt"></i></button></p>
+			</div>
+		</div>
+	</div>
+	<div class="w3-third w3-container"></div>
+</div>
+
+</body>
+</html>
