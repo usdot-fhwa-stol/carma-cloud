@@ -1,0 +1,138 @@
+@font-face{
+  font-family: 'firasansregular';
+  src: url('../webfonts/FiraSans-Regular.woff2') format('woff2');
+}
+
+/**
+table.w3-bordered tr, table.w3-bordered, table.w3-bordered td {
+    border-color: black;
+    border: solid 1px black;
+}
+**/
+table thead tr th{
+  white-space: nowrap;
+}
+
+html, body{
+  height: 100%;
+  font-family: 'firasansregular', trebuchet, sans-serif;
+}
+
+
+.w3-container p{
+  font-size: 12pt;
+}
+
+
+#main-content{
+  position: fixed;
+  top: 39px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  overflow: auto;
+}
+
+
+#map-container{
+  position: absolute;
+  top: 39px;
+  bottom: 0px;
+  width: 100%;
+}
+
+
+.ui-widget-header
+{
+  background-color: #fdf5e6;
+}
+
+
+.ui-widget-header-em
+{
+  color: #fff;
+  background-color: #ff5722;
+}
+
+
+
+.tooltip{
+  position:relative;
+}
+.tooltip:hover{
+  text-decoration:none;
+}
+.tooltip:after{
+  content: attr(tip);
+  position:absolute;
+  bottom:27px;
+  left:10px;
+  display:none;
+}
+
+.tooltip:hover{
+  z-index:1001;
+  position:relative;
+}
+.tooltip:hover:after{
+  display:block;
+}
+.tooltip:hover:before{
+  display:block;
+}
+
+
+.tooltip-content,.tooltip:after  {
+  font-size: 15px;
+  font-style:normal;
+  line-height:1.2em;
+  width:200px;
+  padding:5px 10px;
+  border-radius:6px;
+  color: #000!important;
+  background-color: #fdf5e6!important;
+  box-shadow: 3px 3px 4px rgba(0,0,0, .65);
+}
+
+.over-map{
+  z-index:2000;
+}
+
+.road-menu {
+  cursor: pointer;
+  white-space: nowrap;
+  width:auto;
+  padding:5px;
+  border-radius: 3px;
+  min-width:200px; 
+}
+
+.dialog-title {
+  border-radius: 3px;
+  padding:5px;
+}
+.dialog-content{
+  max-height: 420px; 
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+
+input {
+  display: table-cell;
+  vertical-align: middle
+}
+
+button i {
+  padding-left:10px;
+}
+
+.w3-table td {
+  vertical-align: middle;
+}
+
+table.rop tbody {
+  overflow-y: scroll;
+  display: block;
+  max-height: 100px;
+}
