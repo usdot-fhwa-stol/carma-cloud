@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+ xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+
+
+<display-name>CARMAcloud</display-name>
+
+
+<servlet>
+ <servlet-name>SessMgr</servlet-name>
+ <servlet-class>cc.ws.SessMgr</servlet-class>
+
+ <init-param>
+  <description>OPTIONAL: session timeout in milliseconds</description>
+  <param-name>timeout</param-name>
+  <param-value>18000000</param-value>
+ </init-param>
+
+ <load-on-startup>0</load-on-startup>
+</servlet>
+
+
+<servlet>
+ <servlet-name>UserMgr</servlet-name>
+ <servlet-class>cc.ws.UserMgr</servlet-class>
+
+ <init-param>
+  <description>REQUIRED: path to user credential file</description>
+  <param-name>pwdfile</param-name>
+  <param-value>/mnt/arch/opt/apache-tomcat-9.0.13/webapps/carmacloud/user.csv</param-value>
+ </init-param>
+
+ <load-on-startup>1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>UserMgr</servlet-name>
+ <url-pattern>/api/auth/*</url-pattern>
+</servlet-mapping>
+
+
+<servlet>
+ <servlet-name>GeoSvc</servlet-name>
+ <servlet-class>cc.ws.GeoSvc</servlet-class>
+
+ <init-param>
+  <description>REQUIRED: path to OSM road definition directory</description>
+  <param-name>osmfile</param-name>
+  <param-value>/mnt/arch/opt/apache-tomcat-9.0.13/webapps/carmacloud/osmbin</param-value>
+ </init-param>
+
+ <load-on-startup>2</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>GeoSvc</servlet-name>
+ <url-pattern>/api/geosvc/*</url-pattern>
+</servlet-mapping>
+
+
+<servlet>
+ <servlet-name>EventMgr</servlet-name>
+ <servlet-class>cc.ws.EventMgr</servlet-class>
+
+ <load-on-startup>3</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>EventMgr</servlet-name>
+ <url-pattern>/api/event/*</url-pattern>
+</servlet-mapping>
+
+
+<servlet>
+ <servlet-name>ReplayMgr</servlet-name>
+ <servlet-class>cc.ws.ReplayMgr</servlet-class>
+
+ <init-param>
+  <description>REQUIRED: path to storm library CSV file</description>
+  <param-name>stormfile</param-name>
+  <param-value>/mnt/arch/opt/apache-tomcat-9.0.13/webapps/carmacloud/storms.csv</param-value>
+ </init-param>
+
+ <load-on-startup>4</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>ReplayMgr</servlet-name>
+ <url-pattern>/api/replay/*</url-pattern>
+</servlet-mapping>
+
+
+</web-app>
