@@ -1,0 +1,7 @@
+version: 2.1
+jobs:
+	build:
+		docker: 
+			- image: circleci/openjdk:11-jdk-stretch # OpenJDK on Debian 9 Stretch Docker container
+		steps:
+			- checkout # check out the CARMAcloud code
