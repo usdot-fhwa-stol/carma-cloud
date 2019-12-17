@@ -44,10 +44,15 @@ public class Road extends ArrayList<LaneSection>
 	}
 	
 	
-	public void createPolygons()
+	public void createPolygons(Proj oProj, double[] dPoint)
 	{
 		ArrayList<Lane> oLanes = new ArrayList();
-		double[] dPoint = new double[2];
+		boolean bPrint = m_nId == 13 || m_nId == 20 || m_nId == 2;
+		if (bPrint)
+		{
+			int nLen = Arrays.size(m_dLaneZero);
+			System.out.print(String.format("Road %d\nLane0 Start: %2.7f, %2.7f\nLane0 End: %2.7f, %2.7f\n", m_nId, m_dLaneZero[5], m_dLaneZero[6], m_dLaneZero[nLen - 2], m_dLaneZero[nLen - 1]));
+		}
 		for (LaneSection oSection : this)
 		{
 			oSection.setInnerPaths();
@@ -55,6 +60,7 @@ public class Road extends ArrayList<LaneSection>
 			oSection.getLanes(oLanes);
 			for (Lane oLane : oLanes)
 			{
+				boolean bCenter = oLane.m_nId == 0;
 				double[] dPoly = oLane.m_dPolygon;
 				if (dPoly[1] < m_dBounds[0])
 					m_dBounds[0] = dPoly[1];
@@ -71,7 +77,21 @@ public class Road extends ArrayList<LaneSection>
 					RoadMark oCurrent = oLane.m_oRoadMarks.get(i);
 					RoadMark oNext = oLane.m_oRoadMarks.get(i + 1);
 					if (Arrays.size(oNext.m_dLine) > 5)
-						oCurrent.m_dLine = Geo.addPoint(oNext.m_dLine[5], oNext.m_dLine[6], oCurrent.m_dLine, Proj.NULLPROJ, dPoint);
+						oCurrent.m_dLine = Arrays.add(oCurrent.m_dLine, oNext.m_dLine[5], oNext.m_dLine[6]);
+					oCurrent.createLinesForTile(oProj, dPoint, m_nId);
+					if (bPrint && bCenter)
+					{
+						double[] dLine = oCurrent.m_dLine;
+						int nLen = Arrays.size(dLine);
+						System.out.println(String.format("Start: %2.7f, %2.7f\nEnd: %2.7f, %2.7f", dLine[5], dLine[6], dLine[nLen - 2], dLine[nLen -1]));
+					}
+				}
+				oLane.m_oRoadMarks.get(nSize - 1).createLinesForTile(oProj, dPoint, m_nId);
+				if (bPrint && bCenter)
+				{
+					double[] dLine = oLane.m_oRoadMarks.get(nSize - 1).m_dLine;
+					int nLen = Arrays.size(dLine);
+					System.out.println(String.format("Start: %2.7f, %2.7f\nEnd: %2.7f, %2.7f", dLine[5], dLine[6], dLine[nLen - 2], dLine[nLen -1]));
 				}
 			}
 		}
@@ -81,6 +101,8 @@ public class Road extends ArrayList<LaneSection>
 	public void createPoints(double dMaxStep, Proj oProj, double[] dPoint)
 	{
 		Collections.sort(m_oGeometries);
+		if (m_nId == 23)
+			System.out.println();
 		for (Geometry oGeo : m_oGeometries)
 			oGeo.addPoints(this, dMaxStep, oProj, dPoint);
 	}
