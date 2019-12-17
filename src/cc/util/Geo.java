@@ -1,6 +1,7 @@
 package cc.util;
 
 import cc.geosrv.Proj;
+import java.util.Iterator;
 
 
 public abstract class Geo
@@ -72,9 +73,10 @@ public abstract class Geo
 	public static double distance(double dXi, double dYi, double dXj, double dYj)
 	{
 		double dXd = dXj - dXi; // correct distance by latitude
-		dXd = (dXd * Math.cos(Math.toRadians(dYi / 100000.0)) + 
-			dXd * Math.cos(Math.toRadians(dYj / 100000.0))) / 2.0;
-		double dYd = (dYj - dYi) * EARTH_FLATTENING;
+//		dXd = (dXd * Math.cos(Math.toRadians(dYi / 100000.0)) + 
+//			dXd * Math.cos(Math.toRadians(dYj / 100000.0))) / 2.0;
+//		double dYd = (dYj - dYi) * EARTH_FLATTENING;
+		double dYd = dYj - dYi;
 		return Math.sqrt(dXd * dXd + dYd * dYd);
 	}
 	
@@ -141,5 +143,75 @@ public abstract class Geo
 	{
 		return (dX >= dL - dTol && dX <= dR + dTol
 		   && dY >= dB - dTol && dY <= dT + dTol);
+	}
+	
+	
+	public static boolean isInBoundingBox(double dX, double dY, double dX1, double dY1, double dX2, double dY2)
+	{
+		if (dX1 > dX2)
+		{
+			double dTemp = dX1;
+			dX1 = dX2;
+			dX2 = dTemp;
+		}
+		
+		if (dY1 > dY2)
+		{
+			double dTemp = dY1;
+			dY1 = dY2;
+			dY2 = dTemp;
+		}
+		
+		return dX >= dX1 && dX <= dX2 && dY >= dY1 && dY <= dY2;
+	}
+	
+	
+	public static double distAlongLine(double[] dPts, double[] dSeg, double dX, double dY)
+	{
+		double dDist = 0.0;
+		Iterator<double[]> oIt = Arrays.iterator(dPts, dSeg, 1, 2);
+		while (oIt.hasNext())
+		{
+			oIt.next();
+			if (isInBoundingBox(dX, dY, dSeg[1], dSeg[0], dSeg[3], dSeg[2]) && collinear(dX, dY, dSeg[1], dSeg[0], dSeg[3], dSeg[2]))
+			{
+				dDist += distance(dX, dY, dSeg[1], dSeg[0]);
+				return dDist;
+			}
+			dDist += distance(dSeg[1], dSeg[0], dSeg[3], dSeg[2]);
+		}
+		return Double.NaN;
+	}
+	
+	
+	public static boolean collinear(double dX1, double dY1, double dX2, double dY2, double dX3, double dY3)
+	{
+		return Math.abs(dX1 * (dY2 - dY3) + dX2 * (dY3 - dY1) + dX3 * (dY1 - dY2)) < 0.0000001;
+	}
+	
+	
+	public static double angle(double dX1, double dY1, double dX2, double dY2)
+	{
+		return angle(dX1 + 1, dY1, dX1, dY1, dX2, dY2);
+	}
+	
+	
+	public static double angle(double dX1, double dY1, double dX2, double dY2, double dX3, double dY3)
+	{
+		double dUi = dX1 - dX2;
+		double dUj = dY1 - dY2;
+		double dVi = dX3 - dX2;
+		double dVj = dY3 - dY2;
+		double dDot = dUi * dVi + dUj * dVj;
+		double dLenU = Math.sqrt(dUi * dUi + dUj * dUj);
+		double dLenV = Math.sqrt(dVi * dVi + dVj * dVj);
+		if (dLenU == 0 || dLenV == 0) // prevent division by zero
+			return Double.NaN;
+		double dValue = dDot / (dLenU * dLenV);
+		dValue = (dValue * 1000000000000L) / 1000000000000L; // round to help prevent value outside of the domain of arccos
+		if (dValue > 1 || dValue < -1) // prevent domain error for arcos
+			return Double.NaN;
+		
+		return Math.acos(dValue); // return value in radians
 	}
 }
