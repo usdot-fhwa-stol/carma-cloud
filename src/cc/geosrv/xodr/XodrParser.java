@@ -15,6 +15,7 @@ import cc.util.Text;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.util.Collections;
+import java.util.Iterator;
 
 
 /**
@@ -33,6 +34,7 @@ public class XodrParser extends DefaultHandler2
 	private LaneSection m_oLaneSection;
 	private Lane m_oLane;
 	private RoadMark m_oRoadMark;
+	private Junction m_oJunction;
 	private Proj m_oProj;
 	private final double[] m_dPoint = new double[2];
 	private final StringBuilder m_sBuf = new StringBuilder();
@@ -142,6 +144,11 @@ public class XodrParser extends DefaultHandler2
 				double dD = Double.parseDouble(iAtt.getValue("d"));
 				m_oLane.add(new LaneWidth(dS, dA, dB, dC, dD));
 			}
+			
+			if (sQname.compareTo("junction") == 0)
+			{
+				m_oJunction = new Junction(iAtt.getValue("name"), iAtt.getValue("id"), iAtt.getValue("type"));
+			}
 		}
 		catch (Exception oEx)
 		{
@@ -164,7 +171,7 @@ public class XodrParser extends DefaultHandler2
 			Collections.sort(m_oRoad.m_oGeometries);
 
 			m_oRoad.createPoints(0.1, m_oProj, m_dPoint);
-			m_oRoad.createPolygons();
+			m_oRoad.createPolygons(m_oProj, m_dPoint);
 			m_oRoads.add(m_oRoad);
 		}
 		
@@ -205,34 +212,55 @@ public class XodrParser extends DefaultHandler2
 	public static void main(String[] sArgs) throws Exception
 	{
 		XodrParser oParser = new XodrParser();
-		ArrayList<Road> dSegs = oParser.readXodr("/home/cherneya/AOI_1_Leidos_Type_Update.xodr");
-//		ArrayList<Road> dSegs = oParser.readXodr("/home/cherneya/motorway.xodr");
+		ArrayList<Road> dSegs = oParser.readXodr("/home/cherneya/testtrack.xodr");
+		int nId = Integer.MIN_VALUE;
+		if (sArgs.length > 0)
+			nId = Integer.parseInt(sArgs[0]);
 		
-		try (BufferedWriter oTrack = new BufferedWriter(new FileWriter(sArgs[0]));
-		     BufferedWriter oLaneZero = new BufferedWriter(new FileWriter(sArgs[1]));
-			 BufferedWriter oLLanes = new BufferedWriter(new FileWriter(sArgs[2]));
-		     BufferedWriter oRLanes = new BufferedWriter(new FileWriter(sArgs[3]));
-			 BufferedWriter oLLanesPolys = new BufferedWriter(new FileWriter(sArgs[4]));
-			 BufferedWriter oRLanesPolys = new BufferedWriter(new FileWriter(sArgs[5]));
-		     BufferedWriter oCenter = new BufferedWriter(new FileWriter(sArgs[6])))
+		ArrayList<Iterator<double[]>> oLines = new ArrayList();
+		for (Road oRoad : dSegs)
 		{
-			for (Road oRoad : dSegs)
+			if (nId != Integer.MIN_VALUE && oRoad.m_nId != nId)
+				continue;
+			oLines.clear();
+			for (LaneSection oSection : oRoad)
 			{
-				oRoad.writePolyline(oTrack, oRoad.m_dTrack, oParser.m_dPoint, 5, 2, false);
-				oRoad.writePolyline(oLaneZero, oRoad.m_dLaneZero, oParser.m_dPoint, 5, 2, false);
-				oRoad.writeLanes(oLLanes, oRLanes, oCenter, oParser.m_dPoint, true);
-				oRoad.writeLanes(oLLanesPolys, oRLanesPolys, oCenter, oParser.m_dPoint, false);
-				for (LaneSection oSection : oRoad)
+				ArrayList<Lane> oLaneList = new ArrayList();
+				oSection.getLanes(oLaneList);
+				for (Lane oLane : oLaneList)
 				{
-					for (Lane oLane : oSection.m_oLeft)
-						if (!oLane.isClockwise())
-							System.out.println("counter");
-					
-					for (Lane oLane : oSection.m_oRight)
-						if (!oLane.isClockwise())
-							System.out.println("coutner");
+					if (oLane.m_sType.compareTo("driving") == 0)
+						oLines.add(oLane.m_oControl.pointIterator());
 				}
 			}
+			try (BufferedWriter oOut = new BufferedWriter(new FileWriter(String.format("/home/cherneya/kml/control_%d.kml", oRoad.m_nId))))
+			{
+				writeKML(oOut, oLines);
+			}
 		}
+
+	}
+
+	public static void writeKML(BufferedWriter oOut, ArrayList<Iterator<double[]>> oLines) throws Exception
+	{
+		oOut.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<kml xmlns=\"http://www.opengis.net/kml/2.2\">\n<Document>\n");
+		oOut.write("<Style id=\"highlight\"><LabelStyle><color>ff000000></color><scale>1.5</scale></LabelStyle><LineStyle><gx:labelVisibility>1</gx:labelVisibility><color>ffffffff</color><width>3</width></LineStyle><PolyStyle><color>ffffffff</color><colorMode>random</colorMode><fill>1</fill><outline>1</outline></PolyStyle></Style>\n");
+		oOut.write("<Style id=\"normal\"><LabelStyle><color>ff000000></color><scale>0</scale></LabelStyle><LineStyle><gx:labelVisibility>0</gx:labelVisibility><color>ff0000ff</color><width>3</width></LineStyle><PolyStyle><color>ffffffff</color><colorMode>random</colorMode><fill>1</fill><outline>1</outline></PolyStyle></Style>\n");
+		oOut.write("<StyleMap id=\"stylemap\"><Pair><key>normal</key><styleUrl>#normal</styleUrl></Pair><Pair><key>highlight</key><styleUrl>#highlight</styleUrl></Pair></StyleMap>\n");
+		
+		for (int nIndex = 0; nIndex < oLines.size(); nIndex++)
+		{
+			Iterator<double[]> oIt = oLines.get(nIndex);
+			oOut.write("<Placemark><styleUrl>#stylemap</styleUrl>\n");
+			oOut.write(String.format("<name>Line%d</name>\n", nIndex));
+			oOut.write("<LineString><tessellate>1</tessellate><extrude>1</extrude>\n<altitudeMode>clampedToGround</altitudeMode>\n<coordinates>\n");
+			while (oIt.hasNext())
+			{
+				double[] dPoint = oIt.next();
+				oOut.write(String.format("%2.7f,%2.7f,%d\n", dPoint[0], dPoint[1], 0));
+			}
+			oOut.write("</coordinates>\n</LineString>\n</Placemark>\n");
+		}
+		oOut.write("</Document>\n</kml>");
 	}
 }
