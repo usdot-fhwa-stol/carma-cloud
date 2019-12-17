@@ -23,6 +23,7 @@ public class Lane extends ArrayList<LaneWidth>
 	public double[] m_dInner;
 	public double[] m_dPolygon;
 	public ArrayList<RoadMark> m_oRoadMarks = new ArrayList();
+	public Control m_oControl = new Control();
 	
 	public Lane()
 	{
@@ -70,7 +71,7 @@ public class Lane extends ArrayList<LaneWidth>
 		double dWinding = 0;
 		double[] dLine = new double[4];
 		Iterator<double[]> oIt = Arrays.iterator(m_dPolygon, dLine, 5, 4);
-		while (oIt.hasNext()) // first determine which parts of multi-path are polygons and holes
+		while (oIt.hasNext())
 		{
 			oIt.next();
 			dWinding += (dLine[2] - dLine[0]) * (dLine[3] + dLine[1]);
