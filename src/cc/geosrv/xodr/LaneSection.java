@@ -5,7 +5,6 @@
  */
 package cc.geosrv.xodr;
 
-import cc.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
