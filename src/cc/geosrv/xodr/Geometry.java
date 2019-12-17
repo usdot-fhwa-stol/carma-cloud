@@ -6,6 +6,7 @@
 package cc.geosrv.xodr;
 
 import cc.geosrv.Proj;
+import cc.util.Arrays;
 import cc.util.Geo;
 import cc.util.MathUtil;
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ public abstract class Geometry implements Comparable<Geometry>
 		oLaneSection.m_oCenter.m_dOuter = Geo.addPoint(dXLaneZero, dYLaneZero, oLaneSection.m_oCenter.m_dOuter, oProj, dPoint);
 		RoadMark oRoadMark = RoadMark.getRoadMark(dLengthAlongRoad - oLaneSection.m_dS, oLaneSection.m_oCenter.m_oRoadMarks);
 		if (oRoadMark != null)
-			oRoadMark.m_dLine = Geo.addPoint(dXLaneZero, dYLaneZero, oRoadMark.m_dLine, oProj, dPoint);
+			oRoadMark.m_dLine = Arrays.add(oRoadMark.m_dLine, dXLaneZero, dYLaneZero);
 		addLanePoints(oLaneSection, oLaneSection.m_oLeft, dTangent, dXLaneZero, dYLaneZero, dLengthAlongRoad, oProj, dPoint);
 		addLanePoints(oLaneSection, oLaneSection.m_oRight, dTangent - Math.PI, dXLaneZero, dYLaneZero, dLengthAlongRoad, oProj, dPoint);
 	}
@@ -56,12 +57,17 @@ public abstract class Geometry implements Comparable<Geometry>
 			double dLengthAlongSection = dLengthAlongRoad - oLaneSection.m_dS;
 			LaneWidth oLaneWidth = LaneWidth.getLaneWidth(dLengthAlongSection, oLane);
 			double dT = MathUtil.cubic(dLengthAlongSection - oLaneWidth.m_dS, oLaneWidth.m_dA, oLaneWidth.m_dB, oLaneWidth.m_dC, oLaneWidth.m_dD);
-			dXLanePrime = dXLanePrime - Math.sin(dTangent) * dT;
-			dYLanePrime = dYLanePrime + Math.cos(dTangent) * dT;
+			double dXNextLane = dXLanePrime - Math.sin(dTangent) * dT;
+			double dYNextLane = dYLanePrime + Math.cos(dTangent) * dT;
+			double dXPath = (dXLanePrime + dXNextLane) / 2;
+			double dYPath = (dYLanePrime + dYNextLane) / 2;
+			oLane.m_oControl.addToPath(dXPath, dYPath, Geo.distance(dXNextLane, dYNextLane, dXLanePrime, dYLanePrime), 0.0, oProj, dPoint);
+			dXLanePrime = dXNextLane;
+			dYLanePrime = dYNextLane;
 			oLane.m_dOuter = Geo.addPoint(dXLanePrime, dYLanePrime, oLane.m_dOuter, oProj, dPoint);
 			RoadMark oRoadMark = RoadMark.getRoadMark(dLengthAlongSection, oLane.m_oRoadMarks);
 			if (oRoadMark != null)
-				oRoadMark.m_dLine = Geo.addPoint(dXLanePrime, dYLanePrime, oRoadMark.m_dLine, oProj, dPoint);
+				oRoadMark.m_dLine = Arrays.add(oRoadMark.m_dLine, dXLanePrime, dYLanePrime);
 		}
 	}
 	
