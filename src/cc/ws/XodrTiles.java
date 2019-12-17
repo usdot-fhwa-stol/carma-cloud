@@ -26,8 +26,7 @@ import cc.util.TileUtil;
 import cc.vector_tile.VectorTile;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
-import java.util.HashMap;
-import java.util.Map.Entry;
+import java.io.File;
 
 /**
  *
@@ -35,7 +34,7 @@ import java.util.Map.Entry;
  */
 public class XodrTiles extends HttpServlet
 {
-	private ArrayList<Road> m_oXodrRoads;
+	private ArrayList<Road> m_oXodrRoads = new ArrayList();
 	private String[] m_sRoadMarkKeys = new String[]{"roadmark_color"};
 	private String[] m_sLaneKeys = new String[]{"lane_type"};
 	private String[] m_sRoadMarkValues = new String[]{"unknown", "white", "yellow", "none"};
@@ -47,8 +46,14 @@ public class XodrTiles extends HttpServlet
 	{
 		try
 		{
-			XodrParser oParser = new XodrParser();
-			m_oXodrRoads = oParser.readXodr(oSConfig.getInitParameter("xodr"));
+			RoadMark.setSolidSolid(Double.parseDouble(oSConfig.getInitParameter("solidsolid")));
+			RoadMark.setBrokenSpace(Double.parseDouble(oSConfig.getInitParameter("brokenspace")));
+			RoadMark.setBrokenLine(Double.parseDouble(oSConfig.getInitParameter("brokenline")));
+			for (File oXodrFile : new File(oSConfig.getInitParameter("xodrdir")).listFiles((oFile) -> {return oFile.getName().endsWith(".xodr");}))
+			{
+				XodrParser oParser = new XodrParser();
+				m_oXodrRoads.addAll(oParser.readXodr(oXodrFile.getAbsolutePath()));
+			}
 		}
 		catch (Exception oEx)
 		{
@@ -72,9 +77,13 @@ public class XodrTiles extends HttpServlet
 		oM.tileBounds(nX, nY, nZ, dBounds); // get the meter bounds of the requested tile
 		oM.lonLatBounds(nX, nY, nZ, dLonLatBounds); // get the lon lat bounds of the requested tile
 
+		double dDeltaLon = (dLonLatBounds[2] - dLonLatBounds[0]) * 0.1;
+		double dDeltaLat = (dLonLatBounds[3] - dLonLatBounds[1]) * 0.1;
+		double[] dLineClippingBounds = new double[]{dLonLatBounds[0] - dDeltaLon, dLonLatBounds[1] - dDeltaLat, dLonLatBounds[2] + dDeltaLon, dLonLatBounds[3] + dDeltaLat};
 		double[] dLineSeg = new double[4];
 		double[] dPoint = new double[2];
-		HashMap<String, ArrayList<double[]>> oLayersMap = new HashMap();
+		ArrayList<double[]> oPaths = new ArrayList();
+		ArrayList<double[]> oRoadMarks = new ArrayList();
 		ArrayList<LaneArea> oLanes = new ArrayList();
 		ArrayList<Lane> oLaneList = new ArrayList();
 		Path2D.Double oTilePath = new Path2D.Double(); // create clipping boundary
@@ -87,7 +96,7 @@ public class XodrTiles extends HttpServlet
 		for (int nRoadIndex = 0; nRoadIndex < m_oXodrRoads.size(); nRoadIndex++)
 		{
 			Road oRoad = m_oXodrRoads.get(nRoadIndex);
-			if (!Geo.boundingBoxesIntersect(dLonLatBounds[0], dLonLatBounds[1], dLonLatBounds[2], dLonLatBounds[3], oRoad.m_dBounds[0], oRoad.m_dBounds[1], oRoad.m_dBounds[2], oRoad.m_dBounds[3]))
+			if (!Geo.boundingBoxesIntersect(dLonLatBounds[0], dLonLatBounds[1], dLonLatBounds[2], dLonLatBounds[3], oRoad.m_dBounds[0], oRoad.m_dBounds[1], oRoad.m_dBounds[2], oRoad.m_dBounds[3])) // check if the road is within the tile
 				continue;
 
 			for (LaneSection oSection : oRoad)
@@ -98,100 +107,172 @@ public class XodrTiles extends HttpServlet
 					for (RoadMark oRoadMark : oLane.m_oRoadMarks)
 					{
 						boolean bNotDone;
-						double[] dLaneZero = oRoadMark.m_dLine;
-						Iterator<double[]> oIt = Arrays.iterator(dLaneZero, dLineSeg, 5, 2); // start at 5 because of insertion index and bounding box in first 5 positions
-						if (oIt.hasNext())
+						for (double[] dRoadMark : oRoadMark.m_oTileLines)
 						{
-							oIt.next();
-							boolean bPrevInside = Geo.isInside(dLineSeg[0], dLineSeg[1], dLonLatBounds[3], dLonLatBounds[2], dLonLatBounds[1], dLonLatBounds[0], 0);
-							double[] dLine = Arrays.newDoubleArray(65);
-							dLine = Arrays.add(dLine, (double)oRoad.m_nId);
-							boolean bAdded = false;
-							String sColor = oRoadMark.m_sType.compareTo("none") == 0 ? "none" : oRoadMark.m_sColor;
-							for (int i = 0; i < m_sRoadMarkValues.length; i++)
+							Iterator<double[]> oIt = Arrays.iterator(dRoadMark, dLineSeg, 5, 2); // start at 5 because of insertion index and bounding box in first 5 positions
+							if (oIt.hasNext())
 							{
-								if (sColor.compareTo(m_sRoadMarkValues[i]) == 0)
+								oIt.next();
+								boolean bPrevInside = Geo.isInside(dLineSeg[0], dLineSeg[1], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], 0);
+								double[] dLine = Arrays.newDoubleArray(65);
+								dLine = Arrays.add(dLine, (double)oRoad.m_nId);
+								boolean bAdded = false;
+								String sColor = oRoadMark.m_sType.compareTo("none") == 0 ? "none" : oRoadMark.m_sColor;
+								for (int i = 0; i < m_sRoadMarkValues.length; i++)
 								{
-									dLine = Arrays.add(dLine, (double)i);
-									bAdded = true;
-									break;
-								}
-							}
-							if (!bAdded)
-								dLine = Arrays.add(dLine, 0.0); // add unknown
-							
-							if (bPrevInside)
-								dLine = Arrays.add(dLine, dLineSeg[0], dLineSeg[1]);
-
-							do
-							{
-								bNotDone = false;
-								if (bPrevInside) // previous point was inside 
-								{
-									if (Geo.isInside(dLineSeg[2], dLineSeg[3], dLonLatBounds[3], dLonLatBounds[2], dLonLatBounds[1], dLonLatBounds[0], 0)) // current point is inside
-										dLine = Arrays.add(dLine, dLineSeg[2], dLineSeg[3]); // so add the current point
-									else // current point is ouside
-									{ // so need to calculate the intersection with the tile
-										dLine = addIntersection(dLine, dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds); // add intersection points
-										bPrevInside = false;
-										double[] dFinished = new double[(int)dLine[0] - 1]; // now that the line is outside finish the current line
-										System.arraycopy(dLine, 1, dFinished, 0, dFinished.length);
-										if (!oLayersMap.containsKey(oRoadMark.m_sType))
-											oLayersMap.put(oRoadMark.m_sType, new ArrayList());
-										oLayersMap.get(oRoadMark.m_sType).add(dFinished);
-										dLine[0] = 2; // reset point buffer
-									}
-								}
-								else // previous point was outside
-								{
-									if (Geo.isInside(dLineSeg[2], dLineSeg[3], dLonLatBounds[3], dLonLatBounds[2], dLonLatBounds[1], dLonLatBounds[0], 0)) // current point is inside
+									if (sColor.compareTo(m_sRoadMarkValues[i]) == 0)
 									{
-										dLine = addIntersection(dLine, dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds); // add the intersection
-										bPrevInside = true;
-										dLine = Arrays.add(dLine, dLineSeg[2], dLineSeg[3]); // and the next points
-									}
-									else // previous point and current point are outside, so check if the line segment intersects the tile
-									{
-										MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds[0], dLonLatBounds[1], dLonLatBounds[0], dLonLatBounds[3], dPoint); // check left edge
-										if (!Double.isNaN(dPoint[0]))
-											dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
-
-										MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds[0], dLonLatBounds[3], dLonLatBounds[2], dLonLatBounds[3], dPoint); // check top edge
-										if (!Double.isNaN(dPoint[0]))
-											dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
-
-										MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds[2], dLonLatBounds[3], dLonLatBounds[2], dLonLatBounds[1], dPoint); // check right edge
-										if (!Double.isNaN(dPoint[0]))
-											dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
-
-										MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds[2], dLonLatBounds[1], dLonLatBounds[0], dLonLatBounds[1], dPoint); // check bot edge
-										if (!Double.isNaN(dPoint[0]))
-											dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+										dLine = Arrays.add(dLine, (double)i);
+										bAdded = true;
+										break;
 									}
 								}
+								if (!bAdded)
+									dLine = Arrays.add(dLine, 0.0); // add unknown
 
-								if (oIt.hasNext())
+								if (bPrevInside)
+									dLine = Arrays.add(dLine, dLineSeg[0], dLineSeg[1]);
+
+								do
 								{
-									dLineSeg = oIt.next();
-									bNotDone = true;
-								}
-							} while (bNotDone);
+									bNotDone = false;
+									if (bPrevInside) // previous point was inside 
+									{
+										if (Geo.isInside(dLineSeg[2], dLineSeg[3], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], 0)) // current point is inside
+											dLine = Arrays.add(dLine, dLineSeg[2], dLineSeg[3]); // so add the current point
+										else // current point is ouside
+										{ // so need to calculate the intersection with the tile
+											dLine = addIntersection(dLine, dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds); // add intersection points
+											bPrevInside = false;
+											double[] dFinished = new double[(int)dLine[0] - 1]; // now that the line is outside finish the current line
+											System.arraycopy(dLine, 1, dFinished, 0, dFinished.length);
+											oRoadMarks.add(dFinished);
+											dLine[0] = 3; // reset point buffer
+										}
+									}
+									else // previous point was outside
+									{
+										if (Geo.isInside(dLineSeg[2], dLineSeg[3], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], 0)) // current point is inside
+										{
+											dLine = addIntersection(dLine, dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLonLatBounds); // add the intersection
+											bPrevInside = true;
+											dLine = Arrays.add(dLine, dLineSeg[2], dLineSeg[3]); // and the next points
+										}
+										else // previous point and current point are outside, so check if the line segment intersects the tile
+										{
+											MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLineClippingBounds[0], dLineClippingBounds[1], dLineClippingBounds[0], dLineClippingBounds[3], dPoint); // check left edge
+											if (!Double.isNaN(dPoint[0]))
+												dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
 
-							if (dLine[0] > 4)
-							{
-								double[] dFinished = new double[(int)dLine[0] - 1];
-								System.arraycopy(dLine, 1, dFinished, 0, dFinished.length);
-								if (!oLayersMap.containsKey(oRoadMark.m_sType))
-									oLayersMap.put(oRoadMark.m_sType, new ArrayList());
-								oLayersMap.get(oRoadMark.m_sType).add(dFinished);
+											MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLineClippingBounds[0], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[3], dPoint); // check top edge
+											if (!Double.isNaN(dPoint[0]))
+												dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+
+											MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLineClippingBounds[2], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dPoint); // check right edge
+											if (!Double.isNaN(dPoint[0]))
+												dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+
+											MathUtil.getIntersection(dLineSeg[0], dLineSeg[1], dLineSeg[2], dLineSeg[3], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], dLineClippingBounds[1], dPoint); // check bot edge
+											if (!Double.isNaN(dPoint[0]))
+												dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+										}
+									}
+
+									if (oIt.hasNext())
+									{
+										dLineSeg = oIt.next();
+										bNotDone = true;
+									}
+								} while (bNotDone);
+
+								if (dLine[0] > 4) // if the line has more that one point
+								{
+									double[] dFinished = new double[(int)dLine[0] - 1];
+									System.arraycopy(dLine, 1, dFinished, 0, dFinished.length);
+									oRoadMarks.add(dFinished);
+								}
 							}
 						}
 					}
 					
+					boolean bNotDone;
+					Iterator<double[]> oIt = oLane.m_oControl.segmentIterator();
+					if (oIt.hasNext())
+					{
+						double[] dLaneSeg = oIt.next();
+						boolean bPrevInside = Geo.isInside(dLaneSeg[0], dLaneSeg[1], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], 0);
+						double[] dLine = Arrays.newDoubleArray(65);
+						dLine = Arrays.add(dLine, (double)oRoad.m_nId);
+
+						if (bPrevInside)
+							dLine = Arrays.add(dLine, dLaneSeg[0], dLaneSeg[1]);
+
+						do
+						{
+							bNotDone = false;
+							if (bPrevInside) // previous point was inside 
+							{
+								if (Geo.isInside(dLaneSeg[4], dLaneSeg[5], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], 0)) // current point is inside
+									dLine = Arrays.add(dLine, dLaneSeg[4], dLaneSeg[5]); // so add the current point
+								else // current point is ouside
+								{ // so need to calculate the intersection with the tile
+									dLine = addIntersection(dLine, dLaneSeg[0], dLaneSeg[1], dLaneSeg[4], dLaneSeg[5], dLonLatBounds); // add intersection points
+									bPrevInside = false;
+									double[] dFinished = new double[(int)dLine[0] - 1]; // now that the line is outside finish the current line
+									System.arraycopy(dLine, 1, dFinished, 0, dFinished.length);
+									oPaths.add(dFinished);
+									dLine[0] = 1; // reset point buffer
+								}
+							}
+							else // previous point was outside
+							{
+								if (Geo.isInside(dLaneSeg[4], dLaneSeg[5], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], 0)) // current point is inside
+								{
+									dLine = addIntersection(dLine, dLaneSeg[0], dLaneSeg[1], dLaneSeg[4], dLaneSeg[5], dLonLatBounds); // add the intersection
+									bPrevInside = true;
+									dLine = Arrays.add(dLine, dLaneSeg[4], dLaneSeg[5]); // and the next points
+								}
+								else // previous point and current point are outside, so check if the line segment intersects the tile
+								{
+									MathUtil.getIntersection(dLaneSeg[0], dLaneSeg[1], dLaneSeg[4], dLaneSeg[5], dLineClippingBounds[0], dLineClippingBounds[1], dLineClippingBounds[0], dLineClippingBounds[3], dPoint); // check left edge
+									if (!Double.isNaN(dPoint[0]))
+										dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+
+									MathUtil.getIntersection(dLaneSeg[0], dLaneSeg[1], dLaneSeg[4], dLaneSeg[5], dLineClippingBounds[0], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[3], dPoint); // check top edge
+									if (!Double.isNaN(dPoint[0]))
+										dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+
+									MathUtil.getIntersection(dLaneSeg[0], dLaneSeg[1], dLaneSeg[4], dLaneSeg[5], dLineClippingBounds[2], dLineClippingBounds[3], dLineClippingBounds[2], dLineClippingBounds[1], dPoint); // check right edge
+									if (!Double.isNaN(dPoint[0]))
+										dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+
+									MathUtil.getIntersection(dLaneSeg[0], dLaneSeg[1], dLaneSeg[4], dLaneSeg[5], dLineClippingBounds[2], dLineClippingBounds[1], dLineClippingBounds[0], dLineClippingBounds[1], dPoint); // check bot edge
+									if (!Double.isNaN(dPoint[0]))
+										dLine = Arrays.add(dLine, dPoint[0], dPoint[1]);
+								}
+							}
+
+							if (oIt.hasNext())
+							{
+								dLaneSeg = oIt.next();
+								bNotDone = true;
+							}
+						} while (bNotDone);
+
+						if (dLine[0] > 4) // if the line has more that one point
+						{
+							double[] dFinished = new double[(int)dLine[0] - 1];
+							System.arraycopy(dLine, 1, dFinished, 0, dFinished.length);
+							oPaths.add(dFinished);
+						}
+					}
+					
+					
+					
 					double[] dLane = oLane.m_dPolygon;
 					Path2D.Double oPath = new Path2D.Double();
 					oPath.moveTo(Mercator.lonToMeters(dLane[5]), Mercator.latToMeters(dLane[6]));
-					Iterator<double[]> oIt = Arrays.iterator(dLane, dPoint, 7, 2);
+					oIt = Arrays.iterator(dLane, dPoint, 7, 2);
 					while (oIt.hasNext())
 					{
 						oIt.next();
@@ -236,28 +317,35 @@ public class XodrTiles extends HttpServlet
 		VectorTile.Tile.Feature.Builder oFeatureBuilder = VectorTile.Tile.Feature.newBuilder();
 		int[] nCur = new int[2]; // reusable arrays for feature methods
 		int[] nPoints = new int[65];
-		for (Entry<String, ArrayList<double[]>> oLayerEntry : oLayersMap.entrySet())
+		oLayer.setName("roadmarks");
+		for (double[] dRoadMark : oRoadMarks)
 		{
-			oLayer.clearFeatures();
-			oLayer.setName(String.format("roadmarks_%s", oLayerEntry.getKey().replaceAll(" ", "_")));
-			ArrayList<double[]> dRoadMarks = oLayerEntry.getValue();
-			int nIndex = dRoadMarks.size();
-			for (int i = 0; i < nIndex; i++) // layer write order doesn't matter
-			{
-				double[] dLine = dRoadMarks.get(i);
-				TileUtil.addLinestring(oFeatureBuilder, nCur, dBounds, nExtent, 2, dLine, nPoints);
-				oFeatureBuilder.setId((long)dLine[0]);
-				oFeatureBuilder.addTags(0);
-				oFeatureBuilder.addTags((int)dLine[1]);
-				oLayer.addFeatures(oFeatureBuilder.build());
-				oFeatureBuilder.clear();
-				nCur[0] = nCur[1] = 0;
-			}
-
-			if (oLayer.getFeaturesCount() > 0)
-				oTileBuilder.addLayers(oLayer.build());
+			TileUtil.addLinestring(oFeatureBuilder, nCur, dBounds, nExtent, 2, dRoadMark, nPoints);
+			oFeatureBuilder.setId((long)dRoadMark[0]);
+			oFeatureBuilder.addTags(0);
+			oFeatureBuilder.addTags((int)dRoadMark[1]);
+			oLayer.addFeatures(oFeatureBuilder.build());
+			oFeatureBuilder.clear();
+			nCur[0] = nCur[1] = 0;	
 		}
+		if (oLayer.getFeaturesCount() > 0)
+			oTileBuilder.addLayers(oLayer.build());
 		
+		oLayer.clear();
+		oLayer.setVersion(2);
+		oLayer.setName("lanepaths");
+		oLayer.setExtent(nExtent);
+		for (double[] dPath : oPaths)
+		{
+			TileUtil.addLinestring(oFeatureBuilder, nCur, dBounds, nExtent, 1, dPath, nPoints);
+			oLayer.addFeatures(oFeatureBuilder.build());
+			oFeatureBuilder.clear();
+			nCur[0] = nCur[1] = 0;
+		}
+		if (oLayer.getFeaturesCount() > 0)
+			oTileBuilder.addLayers(oLayer.build());
+		
+		oLayer.clear();
 		for (int i = 0; i < m_sLaneKeys.length; i++)
 			oLayer.addKeys(m_sLaneKeys[i]);
 		
@@ -268,7 +356,7 @@ public class XodrTiles extends HttpServlet
 			oValue.clear();
 		}
 		
-		oLayer.clear();
+		
 		oLayer.setVersion(2);
 		oLayer.setName("xodrlanes");
 		oLayer.setExtent(nExtent);
