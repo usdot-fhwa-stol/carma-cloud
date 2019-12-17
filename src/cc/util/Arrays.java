@@ -1,5 +1,6 @@
 package cc.util;
 
+import java.io.PrintStream;
 import java.util.Iterator;
 
 
@@ -149,8 +150,46 @@ public abstract class Arrays
 		nVals[0] = nIndex + nMore.length; // track insertion position
 		return nVals;
 	}
+	
+	
+	public static void printArray(double[] dArray, int nStart, PrintStream oPrint) throws Exception
+	{
+		Iterator<double[]> oIt = iterator(dArray, new double[1], nStart, 1);
+		boolean bWrite = oIt.hasNext();
+		if (bWrite)
+		{
+			double[] dVal = oIt.next();
+			oPrint.append(Double.toString(dVal[0]));
+		}
+		while (oIt.hasNext())
+		{
+			double[] dVal = oIt.next();
+			oPrint.append(",").append(Double.toString(dVal[0]));
+		}
+		if (bWrite)
+			oPrint.append("\n");
+	}
 
 
+	public static void printArray(int[] nArray, int nStart, PrintStream oPrint) throws Exception
+	{
+		Iterator<int[]> oIt = iterator(nArray, new int[1], nStart, 1);
+		boolean bWrite = oIt.hasNext();
+		if (bWrite)
+		{
+			int[] nVal = oIt.next();
+			oPrint.append(Integer.toString(nVal[0]));
+		}
+		while (oIt.hasNext())
+		{
+			int[] nVal = oIt.next();
+			oPrint.append(",").append(Integer.toString(nVal[0]));
+		}
+		if (bWrite)
+			oPrint.append("\n");
+	}
+	
+	
 	private static abstract class GroupIterator
 	{
 		protected int m_nPos;
