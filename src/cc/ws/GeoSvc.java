@@ -19,6 +19,7 @@ import cc.util.BufferedInStream;
 import cc.util.Geo;
 import cc.util.StringPool;
 import cc.util.Text;
+import javax.servlet.ServletConfig;
 
 
 public class GeoSvc extends HttpServlet implements Runnable
@@ -31,6 +32,9 @@ public class GeoSvc extends HttpServlet implements Runnable
 	private final Timer m_oTimer = new Timer();
 	protected String m_sOsmFile; // directory of pre-processed way files
 	ArrayList<HashWays> m_oHashWays;
+	ArrayList<Way> m_oInitWays;
+	double[] m_dInitBounds = new double[]{-77.209426, 38.931905, -77.127627, 38.967285};
+	int m_nInitSims = 100;
 
 
 	static
@@ -53,7 +57,18 @@ public class GeoSvc extends HttpServlet implements Runnable
 	@Override
 	public void init()
 	{
-		String sOsmFile = getServletConfig().getInitParameter("osmfile");
+		ServletConfig oConfig = getServletConfig();
+		String sInitBounds = oConfig.getInitParameter("initbounds");
+		if (sInitBounds != null && sInitBounds.length() > 0)
+		{
+			String[] sBounds = sInitBounds.split(",");
+			for (int i = 0; i < m_dInitBounds.length; i++)
+				m_dInitBounds[i] = Double.parseDouble(sBounds[i]);
+		}
+		String sInitSims = oConfig.getInitParameter("initsims");
+		if (sInitSims != null && sInitSims.length() > 0)
+			m_nInitSims = Integer.parseInt(sInitSims);
+		String sOsmFile = oConfig.getInitParameter("osmfile");
 		if (sOsmFile != null && sOsmFile.length() > 0)
 		{
 			m_sOsmFile = sOsmFile;
@@ -73,6 +88,7 @@ public class GeoSvc extends HttpServlet implements Runnable
 
 			int[] nHash = new int[1]; // hash mutable integer wrapper
 			ArrayList<HashWays> oHashWays = new ArrayList();
+			ArrayList<Way> oInitWays = new ArrayList();
 			ArrayList<String> oPool = new ArrayList(); // reused local string pool
 
 			File[] oFiles = oDir.listFiles();
@@ -103,6 +119,10 @@ public class GeoSvc extends HttpServlet implements Runnable
 					int nXmax = Geo.scale(oWay.m_nLonMax);
 					int nYmin = Geo.scale(oWay.m_nLatMin);
 					int nYmax = Geo.scale(oWay.m_nLatMax);
+					
+					if (Geo.boundingBoxesIntersect(m_dInitBounds[0], m_dInitBounds[1], m_dInitBounds[2], m_dInitBounds[3], 
+												Geo.fromIntDeg(oWay.m_nLonMin), Geo.fromIntDeg(oWay.m_nLatMin), Geo.fromIntDeg(oWay.m_nLonMax), Geo.fromIntDeg(oWay.m_nLatMax)))
+						oInitWays.add(oWay);
 					for (int nX = nXmin; nX <= nXmax; nX++) // include max endpoint
 					{
 						for (int nY = nYmin; nY <= nYmax; nY++) // include max endpoint
@@ -122,7 +142,7 @@ public class GeoSvc extends HttpServlet implements Runnable
 				System.out.println(System.currentTimeMillis() - lNow);
 			}
 			m_oHashWays = oHashWays; // set servlet reference
-
+			m_oInitWays = oInitWays;
 			int nSims = 1000;
 			while (nSims-- > 0) // create simulated vehicles
 				m_oSimWays.add(new SimWay());
@@ -390,8 +410,7 @@ public class GeoSvc extends HttpServlet implements Runnable
 		{
 			do // may take a while to start
 			{
-				HashWays oHashWays = m_oHashWays.get(RNG.nextInt(m_oHashWays.size()));
-				m_oWay = oHashWays.get(RNG.nextInt(oHashWays.size()));
+				m_oWay = m_oInitWays.get(RNG.nextInt(m_oInitWays.size()));
 			}
 			while (m_oWay.m_sType.compareTo("motorway") != 0 && 
 				m_oWay.m_sType.compareTo("primary") != 0);
@@ -581,12 +600,4 @@ public class GeoSvc extends HttpServlet implements Runnable
 			}
 		}
 	}
-
-//	public static void main (String[] sArgs)
-//	{
-//		GeoSvc oGeoSvc = new GeoSvc();
-//		oGeoSvc.m_sOsmFile = "C:/Users/bryan.krueger";
-//		oGeoSvc.run();
-//		System.out.println(oGeoSvc.m_oHashWays.size());
-//	}
 }
