@@ -7,7 +7,7 @@ CARMAcloud provides some of the infrastructure components for CARMA. It enables 
 CARMAcloud can be deployed on a Linux server running the Debian Operating System by executing the following commands:
 ```
 cd /tmp
-git clone https://github.com/usdot-fhwa-stol/CARMACloud.git
+git clone https://github.com/usdot-fhwa-stol/carma-cloud.git
 sudo -u root apt-get update && sudo -u root apt-get install pkg-config sqlite3 libsqlite3-dev
 wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj
 cd /tmp/proj && ./configure && make && sudo -u root make install
