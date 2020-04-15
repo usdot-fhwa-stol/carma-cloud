@@ -27,7 +27,7 @@
  <init-param>
   <description>REQUIRED: path to user credential file</description>
   <param-name>pwdfile</param-name>
-  <param-value>/mnt/arch/opt/apache-tomcat-9.0.13/webapps/carmacloud/user.csv</param-value>
+  <param-value>/opt/tomcat/webapps/carmacloud/user.csv</param-value>
  </init-param>
 
  <load-on-startup>1</load-on-startup>
@@ -46,7 +46,7 @@
  <init-param>
   <description>REQUIRED: path to OSM road definition directory</description>
   <param-name>osmfile</param-name>
-  <param-value>/mnt/arch/opt/apache-tomcat-9.0.13/webapps/carmacloud/osmbin</param-value>
+  <param-value>/opt/tomcat/webapps/carmacloud/osmbin</param-value>
  </init-param>
 
  <load-on-startup>2</load-on-startup>
@@ -62,6 +62,12 @@
  <servlet-name>EventMgr</servlet-name>
  <servlet-class>cc.ws.EventMgr</servlet-class>
 
+ <init-param>
+  <description>REQUIRED: path to event storage file</description>
+  <param-name>eventfile</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/event.csv</param-value>
+ </init-param>
+
  <load-on-startup>3</load-on-startup>
 </servlet>
 
@@ -72,16 +78,35 @@
 
 
 <servlet>
+ <servlet-name>RopMgr</servlet-name>
+ <servlet-class>cc.ws.RopMgr</servlet-class>
+
+ <init-param>
+  <description>REQUIRED: path to RoP storage file</description>
+  <param-name>ropfile</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/rop.csv</param-value>
+ </init-param>
+
+ <load-on-startup>4</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>RopMgr</servlet-name>
+ <url-pattern>/api/rop/*</url-pattern>
+</servlet-mapping>
+
+
+<servlet>
  <servlet-name>ReplayMgr</servlet-name>
  <servlet-class>cc.ws.ReplayMgr</servlet-class>
 
  <init-param>
   <description>REQUIRED: path to storm library CSV file</description>
   <param-name>stormfile</param-name>
-  <param-value>/mnt/arch/opt/apache-tomcat-9.0.13/webapps/carmacloud/storms.csv</param-value>
+  <param-value>/opt/tomcat/webapps/carmacloud/storms.csv</param-value>
  </init-param>
 
- <load-on-startup>4</load-on-startup>
+ <load-on-startup>5</load-on-startup>
 </servlet>
 
 <servlet-mapping>
