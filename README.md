@@ -13,8 +13,8 @@ wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.ta
 cd /tmp/proj && ./configure && make && sudo -u root make install
 cd /tmp/CARMACloud/src/cc/geosrv && gcc -c -std=c11 -fPIC -Wall -I /usr/local/openjdk-11/include/ -I /usr/local/openjdk-11/include/linux/ -I /tmp/proj/src/ cs2cswrapper.c && gcc -shared -lproj cs2cswrapper.o -o libcs2cswrapper.so && sudo -u root mv *.so /usr/lib
 cd /tmp && wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.26/bin/apache-tomcat-9.0.26.tar.gz && tar -xzf apache-tomcat-9.0.26.tar.gz && mv apache-tomcat-9.0.26 tomcat
-find ./cc/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-javac -cp tomcat/lib/servlet-api.jar:cc/lib/commons-compress-1.18.jar:cc/lib/javax.json.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
+find ./CARMACloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
+javac -cp tomcat/lib/servlet-api.jar:CARMACloud/lib/commons-compress-1.18.jar:CARMACloud/lib/javax.json.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
 echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
 java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
