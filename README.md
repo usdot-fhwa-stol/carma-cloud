@@ -7,7 +7,7 @@ CARMAcloud provides some of the infrastructure components for CARMA. It enables 
 CARMAcloud can be deployed on a Linux server. Ensure you have a properly configured git client and Java Development Kit before executing the following commands:
 ```
 cd /tmp
-git clone https://github.com/usdot-fhwa-stol/CARMACloud.git
+git clone https://github.com/usdot-fhwa-stol/carma-cloud.git
 wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -rf apache-tomcat-9.0.34.tar.gz
 mkdir -p tomcat/webapps/carmacloud/ROOT && mv CARMACloud/web/* tomcat/webapps/carmacloud/ROOT/
 find ./CARMACloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
