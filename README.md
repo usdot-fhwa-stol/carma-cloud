@@ -30,7 +30,7 @@ The Tomcat webserver must be configured to run on the deployment server. Click [
 ```
 java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr <username> <password> >> /opt/tomcat/webapps/carmacloud/user.csv
 ```
-Additionally, you will need to generate an [access token](https://account.mapbox.com/access-tokens/) from Mapbox, and replace the text <your access token goes here> with your access token in the /opt/tomcat/webapps/carmacloud/ROOT/script/map.js file. Once everything is configured for the deployment, run the following command to start the application:
+Additionally, you will need to generate an [access token](https://account.mapbox.com/access-tokens/) from Mapbox, and replace the text \<your access token goes here\> with your access token in the /opt/tomcat/webapps/carmacloud/ROOT/script/map.js file. Once everything is configured for the deployment, run the following command to start the application:
 ```
 sudo -u tomcat /opt/tomcat/bin/catalina.sh start
 ```
