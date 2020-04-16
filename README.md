@@ -4,24 +4,27 @@
 CARMAcloud provides some of the infrastructure components for CARMA. It enables users to define geofences, rules of practice, replay storms to test weather-related rules of practice, as well as monitor CARMA-enabled vehicles and the messages and controls exchanged with them.
 
 ## Deployment
-CARMAcloud can be deployed on a Linux server running the Debian Operating System by executing the following commands:
+CARMAcloud can be deployed on a Linux server. Ensure you have a properly configured git client and Java Development Kit before executing the following commands:
 ```
 cd /tmp
 git clone https://github.com/usdot-fhwa-stol/CARMACloud.git
-cd /tmp && wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat
+wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat
 find ./CARMACloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
 javac -cp tomcat/lib/servlet-api.jar:CARMACloud/lib/commons-compress-1.18.jar:CARMACloud/lib/javax.json.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
 echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
 mv CARMACloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
+gunzip CARMACloud/osmbin/*.gz
 mv CARMACloud/osmbin tomcat/webapps/carmacloud/
 touch tomcat/webapps/carmacloud/event.csv
 touch tomcat/webapps/carmacloud/rop.csv
 echo "start,end,avg,max,min" > tomcat/webapps/carmacloud/storms.csv
 java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
 sudo -u root mv tomcat /opt/
+rm -rf apache-tomcat-9.0.34.tar.gz
+rm -rf CARMACloud
 ```
-These commands will download the CARMAcloud source code from github, necessary dependencies, and the tomcat webserver. Changes to the tomcat version might be necessary if version 9.0.34 is no longer available on the apache mirror. Next the java code will be compiled and the .class files will be placed in the correct directory. Tomcat's server.xml file will have the carmacloud host entry inserted in the correct location. Carmacloud will be added to the /etc/hosts file. The java command that runs cc.ws.UserMgr will create the ccadmin user for the system. It is suggested to change to password to something more secure by replacing "admin_testpw" with the desired password in the command.
+These commands will download the CARMAcloud source code from github, necessary dependencies, and the tomcat webserver. Changes to the tomcat version might be necessary if version 9.0.34 is no longer available on the Apache mirror. Next the java code will be compiled and the .class files will be placed in the correct directory. Tomcat's server.xml file will have the carmacloud host entry inserted in the correct location. Carmacloud will be added to the /etc/hosts file. The java command that runs cc.ws.UserMgr will create the ccadmin user for the system. It is suggested to change to password to something more secure by replacing "admin_testpw" with the desired password in the command.
 ## Configuration
 The Tomcat webserver must be configured to run on the deployment server. Click [here](https://tomcat.apache.org/tomcat-9.0-doc/index.html) to find the documentation for Tomcat. There are many configuration items to considered but two that must be addressed for any deployment are adding the domain name and SSL Certificate to the server.xml file. Proper security measures dealing with file permissions should be taken as well. According to Tomcat's [documentation](https://tomcat.apache.org/tomcat-9.0-doc/security-howto.html#System_Properties) a tomcat user and group should be created in the operating system. The standard configuration for file permissions is to have all Tomcat files owned by root with group tomcat. Owner should have read/write permissions, group should have read permission, and world has no permissions. The exceptions are the logs, temp and work directory that are owned by the tomcat user rather than root. Additional users can be added to CARMAcloud by run the following command and replacing <username> and <password> with the desired user name and password respectively:
 ```
