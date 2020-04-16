@@ -5,7 +5,7 @@ jobs:
       - image: circleci/openjdk:11-jdk-stretch # OpenJDK on Debian 9 Stretch Docker container
     working_directory: /tmp
     steps:
-      - run: git clone https://github.com/usdot-fhwa-stol/carma-cloud.git
+      - run: git clone https://github.com/usdot-fhwa-stol/CARMACloud.git
       - run: sudo -u root apt-get update && sudo -u root apt-get install pkg-config sqlite3 libsqlite3-dev
       - run: wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj
       - run: cd /tmp/proj && ./configure && make && sudo -u root make install
