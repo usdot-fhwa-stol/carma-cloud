@@ -103,7 +103,7 @@
  <init-param>
   <description>REQUIRED: path to storm library CSV file</description>
   <param-name>stormfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/storms.csv</param-value>
+  <param-value>/opt/tomcat/webapps/carmacloud/storm.csv</param-value>
  </init-param>
 
  <load-on-startup>5</load-on-startup>

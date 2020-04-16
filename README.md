@@ -14,12 +14,12 @@ javac -cp tomcat/lib/servlet-api.jar:CARMACloud/lib/commons-compress-1.18.jar:CA
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
 echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
 mv CARMACloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
+touch tomcat/webapps/carmacloud/event.csv
+mv CARMACloud/osmbin/rop.csv tomcat/webapps/carmacloud/
+mv CARMACloud/osmbin/storm.csv tomcat/webapps/carmacloud/
+java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
 gunzip CARMACloud/osmbin/*.gz
 mv CARMACloud/osmbin tomcat/webapps/carmacloud/
-touch tomcat/webapps/carmacloud/event.csv
-touch tomcat/webapps/carmacloud/rop.csv
-echo "start,end,avg,max,min" > tomcat/webapps/carmacloud/storms.csv
-java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
 sudo -u root mv tomcat /opt/
 rm -f sources.txt
 rm -rf CARMACloud
