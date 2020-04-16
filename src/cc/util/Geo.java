@@ -1,6 +1,5 @@
 package cc.util;
 
-import cc.geosrv.Proj;
 import java.util.Iterator;
 
 
@@ -9,24 +8,6 @@ public abstract class Geo
 	public final static double EARTH_MINOR_RADIUS = 6356752.0; // in meters
 	public final static double EARTH_MAJOR_RADIUS = 6378137.0; // in meters
 	public final static double EARTH_FLATTENING = EARTH_MINOR_RADIUS / EARTH_MAJOR_RADIUS;
-
-
-	public static double[] addPoint(double dX, double dY, double[] dPts, Proj oProj, double[] dPoint)
-	{
-		oProj.cs2cs(dX, dY, dPoint);
-		dX = dPoint[0]; // transform coordinates
-		dY = dPoint[1]; // and set local reference
-		dPts = Arrays.add(dPts, dX, dY); // append new point and update bounds
-		if (dX < dPts[1])
-			dPts[1] = dX;
-		if (dY < dPts[2])
-			dPts[2] = dY;
-		if (dX > dPts[3])
-			dPts[3] = dX;
-		if (dY > dPts[4])
-			dPts[4] = dY;
-		return dPts;
-	}
 
 
 	private Geo()
@@ -73,22 +54,22 @@ public abstract class Geo
 	public static double distance(double dXi, double dYi, double dXj, double dYj)
 	{
 		double dXd = dXj - dXi; // correct distance by latitude
-//		dXd = (dXd * Math.cos(Math.toRadians(dYi / 100000.0)) + 
+//		dXd = (dXd * Math.cos(Math.toRadians(dYi / 100000.0)) +
 //			dXd * Math.cos(Math.toRadians(dYj / 100000.0))) / 2.0;
 //		double dYd = (dYj - dYi) * EARTH_FLATTENING;
 		double dYd = dYj - dYi;
 		return Math.sqrt(dXd * dXd + dYd * dYd);
 	}
-	
-	
-	
-	
+
+
+
+
 	public static boolean boundingBoxesIntersect(double dXmin1, double dYmin1, double dXmax1, double dYmax1, double dXmin2, double dYmin2, double dXmax2, double dYmax2)
 	{
 		return dYmax1 >= dYmin2 && dYmin1 <= dYmax2 && dXmax1 >= dXmin2 && dXmin1 <= dXmax2;
 	}
-		
-	
+
+
 	/**
 	 * Determines if the specified point is within the specified boundary. A
 	 * specified tolerance adjusts the compared region as needed.
@@ -144,8 +125,8 @@ public abstract class Geo
 		return (dX >= dL - dTol && dX <= dR + dTol
 		   && dY >= dB - dTol && dY <= dT + dTol);
 	}
-	
-	
+
+
 	public static boolean isInBoundingBox(double dX, double dY, double dX1, double dY1, double dX2, double dY2)
 	{
 		if (dX1 > dX2)
@@ -154,18 +135,18 @@ public abstract class Geo
 			dX1 = dX2;
 			dX2 = dTemp;
 		}
-		
+
 		if (dY1 > dY2)
 		{
 			double dTemp = dY1;
 			dY1 = dY2;
 			dY2 = dTemp;
 		}
-		
+
 		return dX >= dX1 && dX <= dX2 && dY >= dY1 && dY <= dY2;
 	}
-	
-	
+
+
 	public static double distAlongLine(double[] dPts, double[] dSeg, double dX, double dY)
 	{
 		double dDist = 0.0;
@@ -182,20 +163,20 @@ public abstract class Geo
 		}
 		return Double.NaN;
 	}
-	
-	
+
+
 	public static boolean collinear(double dX1, double dY1, double dX2, double dY2, double dX3, double dY3)
 	{
 		return Math.abs(dX1 * (dY2 - dY3) + dX2 * (dY3 - dY1) + dX3 * (dY1 - dY2)) < 0.0000001;
 	}
-	
-	
+
+
 	public static double angle(double dX1, double dY1, double dX2, double dY2)
 	{
 		return angle(dX1 + 1, dY1, dX1, dY1, dX2, dY2);
 	}
-	
-	
+
+
 	public static double angle(double dX1, double dY1, double dX2, double dY2, double dX3, double dY3)
 	{
 		double dUi = dX1 - dX2;
@@ -211,7 +192,7 @@ public abstract class Geo
 		dValue = (dValue * 1000000000000L) / 1000000000000L; // round to help prevent value outside of the domain of arccos
 		if (dValue > 1 || dValue < -1) // prevent domain error for arcos
 			return Double.NaN;
-		
+
 		return Math.acos(dValue); // return value in radians
 	}
 }
