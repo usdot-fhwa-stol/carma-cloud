@@ -7,21 +7,21 @@ CARMAcloud provides some of the infrastructure components for CARMA. It enables 
 CARMAcloud can be deployed on a Linux server. Ensure you have a properly configured git client and Java Development Kit before executing the following commands:
 ```
 cd /tmp
-git clone https://github.com/usdot-fhwa-stol/CARMACloud.git
+git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
 wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -rf apache-tomcat-9.0.34.tar.gz
-mkdir -p tomcat/webapps/carmacloud/ROOT && mv CARMACloud/web/* tomcat/webapps/carmacloud/ROOT/
-find ./CARMACloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-javac -cp tomcat/lib/servlet-api.jar:CARMACloud/lib/commons-compress-1.18.jar:CARMACloud/lib/javax.json.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
+mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
+find ./carma-cloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
+javac -cp tomcat/lib/servlet-api.jar:carma-cloud/lib/commons-compress-1.18.jar:carma-cloud/lib/javax.json.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml
 echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
-mv CARMACloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
+mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
 touch tomcat/webapps/carmacloud/event.csv
-mv CARMACloud/osmbin/rop.csv tomcat/webapps/carmacloud/
-mv CARMACloud/osmbin/storm.csv tomcat/webapps/carmacloud/
+mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
+mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
 java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
-gunzip CARMACloud/osmbin/*.gz
-mv CARMACloud/osmbin tomcat/webapps/carmacloud/
-rm -f sources.txt && rm -rf CARMACloud
+gunzip carma-cloud/osmbin/*.gz
+mv carma-cloud/osmbin tomcat/webapps/carmacloud/
+rm -f sources.txt && rm -rf carma-cloud
 sudo -u root mv tomcat /opt/
 ```
 These commands will download the CARMAcloud source code from github, necessary dependencies, and the tomcat webserver. Changes to the tomcat version might be necessary if version 9.0.34 is no longer available on the Apache mirror. Next the java code will be compiled and the .class files will be placed in the correct directory. Tomcat's server.xml file will have the carmacloud host entry inserted in the correct location. Carmacloud will be added to the /etc/hosts file. The java command that runs cc.ws.UserMgr will create the ccadmin user for the system. It is suggested to change to password to something more secure by replacing "admin_testpw" with the desired password in the command.
