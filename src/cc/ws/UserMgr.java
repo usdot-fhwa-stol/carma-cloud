@@ -27,9 +27,8 @@ public class UserMgr extends HttpServlet
 		}
 		catch (Exception oEx)
 		{
-		}	
+		}
 	}
-	
 	public UserMgr()
 	{
 	}
@@ -139,6 +138,7 @@ public class UserMgr extends HttpServlet
 		}
 		catch (Exception oEx)
 		{
+			oEx.printStackTrace();
 		}
 	}
 }

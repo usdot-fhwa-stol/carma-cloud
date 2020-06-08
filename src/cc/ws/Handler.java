@@ -83,4 +83,36 @@ public class Handler extends HttpServlet
 	{
 		oOut.write(String.format("\"%s\":%s", sId, sData));
 	}
+	
+	
+	public static String getJsonString(String sData, String sTag)
+	{
+		StringBuilder sBuffer = new StringBuilder(sTag);
+		sBuffer.insert(0, "\"");
+		sBuffer.append("\":\"");
+		sTag = sBuffer.toString();
+		int nStart = sData.indexOf(sTag);
+		if (nStart < 0)
+			return null; // tag doesn't exist
+		nStart += sTag.length();
+		int nEnd = sData.indexOf("\"", nStart);
+		if (nEnd < 0)
+			return null;
+		return sData.substring(nStart, nEnd);
+	}
+	
+	
+	public static String getJsonArray(String sData, String sTag)
+	{
+		StringBuilder sBuffer = new StringBuilder(sTag);
+		sBuffer.insert(0, "\"");
+		sBuffer.append("\":[");
+		sTag = sBuffer.toString();
+		int nStart = sData.indexOf(sTag);
+		if (nStart < 0)
+			return null;
+		nStart += sTag.length();
+		int nEnd = sData.indexOf("]", nStart);
+		return sData.substring(nStart, nEnd).replaceAll("\"", "");
+	}
 }
