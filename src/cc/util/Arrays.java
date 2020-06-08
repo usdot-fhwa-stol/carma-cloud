@@ -73,6 +73,21 @@ public abstract class Arrays
 		dVals[0] = (double)nIndex; // track insertion position
 		return dVals;
 	}
+	
+	
+	public static double[] addAndUpdate(double[] dVals, double d1, double d2)
+	{
+		dVals = add(dVals, d1, d2);
+		if (d1 < dVals[1]) // update bounding box stored in indeces 1-4
+			dVals[1] = d1;
+		if (d2 < dVals[2])
+			dVals[2] = d2;
+		if (d1 > dVals[3])
+			dVals[3] = d1;
+		if (d2 > dVals[4])
+			dVals[4] = d2;
+		return dVals;
+	}
 
 
 	public static double[] add(double[] dVals, double[] dMore)
@@ -149,6 +164,22 @@ public abstract class Arrays
 		System.arraycopy(nMore, 0, nVals, nIndex, nMore.length);
 		nVals[0] = nIndex + nMore.length; // track insertion position
 		return nVals;
+	}
+	
+	
+	public static int[] insert(int[] nVals, int n1, int nIndex)
+	{
+		nVals = ensureCapacity(nVals, 1);
+        System.arraycopy(nVals, nIndex, nVals, nIndex + 1, nVals[0] - nIndex);
+		nVals[nIndex] = n1;
+        ++nVals[0];
+		return nVals;
+	}
+	
+	
+	public static int binarySearch(int[] nVals, int n1)
+	{
+		return java.util.Arrays.binarySearch(nVals, 1, nVals[0], n1);
 	}
 	
 	

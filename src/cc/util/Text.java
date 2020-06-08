@@ -2,6 +2,7 @@ package cc.util;
 
 import java.nio.ByteBuffer;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.UUID;
 
 
@@ -82,6 +83,8 @@ public abstract class Text
 	public static final Base64.Encoder B64ENC = Base64.getUrlEncoder().withoutPadding();
 	
 	private static final ByteBuffer UUID_BUFFER = ByteBuffer.allocate(16);
+	
+	public static final Comparator<CharSequence> CHAR_SEQ_COMP = (CharSequence o1, CharSequence o2) -> compare(o1, o2);
 
 
     /**
