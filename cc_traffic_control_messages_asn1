@@ -36,7 +36,6 @@ TrafficControlMessageV01 ::= SEQUENCE
 	msgnum INTEGER (0..65535), -- message index for each response out of total responses
 	id Id128b, -- unique traffic control id
 	updated EpochMins, 
-	external INTEGER (0..255) OPTIONAL, -- small integer for application-specific values
 	package [0] TrafficControlPackage OPTIONAL, -- related traffic control ids
 	params [1] TrafficControlParams OPTIONAL, 
 	geometry [2] TrafficControlGeometry OPTIONAL
@@ -145,7 +144,7 @@ PathNode ::= SEQUENCE
 
 TrafficControlDetail ::= CHOICE
 {
-	signal NULL,
+	signal OCTET STRING SIZE(0..63),
 	stop NULL,
 	yield NULL,
 	notowing NULL,
