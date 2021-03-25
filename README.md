@@ -11,7 +11,7 @@ git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
 wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -rf apache-tomcat-9.0.34.tar.gz
 mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
 find ./carma-cloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-javac -cp tomcat/lib/servlet-api.jar:carma-cloud/lib/commons-compress-1.18.jar:carma-cloud/lib/javax.json.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
+javac -cp tomcat/lib/servlet-api.jar:carma-cloud/lib/* -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes --release 8 @sources.txt
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml
 echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
 mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
