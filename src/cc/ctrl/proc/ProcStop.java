@@ -15,7 +15,6 @@ import cc.geosrv.xodr.Signal;
 import cc.geosrv.xodr.XodrSignalParser;
 import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
-import cc.util.BufferedInStream;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.TileUtil;
@@ -44,7 +43,7 @@ public class ProcStop extends ProcCtrl
 	private int[] m_nInterPaths = Arrays.newIntArray();
 	private String m_sXodrDir;
 	private static double MINLEN = 53.0;
-	private static String[] SIGNAL_TYPES = new String[]{"R1_1"};
+	private static String[] SIGNAL_TYPES = new String[]{"R1_1", "Sign_Stop"};
 	private static final double[][] STOPSIGN = new double[][]{
 										   new double[]{-0.19, 0.45, 0.19, 0.45, 0.45, 0.19, 0.45, -0.19, 0.19, -0.45, -0.19, -0.45, -0.45, -0.19, -0.45, 0.19},
 										   new double[]{-0.17, 0.41, 0.17, 0.41, 0.41, 0.17, 0.41, -0.17, 0.17, -0.41, -0.17, -0.41, -0.41, -0.17, -0.41, 0.17}
@@ -62,6 +61,10 @@ public class ProcStop extends ProcCtrl
 	public void parseMetadata(Path oSource)
 	   throws Exception
 	{
+		m_oJunctions.clear();
+		m_oSignals.clear();
+		m_nInterPaths[0] = 1;
+		m_nSignalRoads[0] = 1;
 		new XodrSignalParser(SIGNAL_TYPES).parseSignalData(oSource, m_oJunctions, m_oSignals);
 		for (Signal oSignal : m_oSignals)
 		{
@@ -184,7 +187,6 @@ public class ProcStop extends ProcCtrl
 		
 		int nOuterLimit = oInRoadsToSignals.size();
 		int nInnerLimit = oLanesByRoads.size();
-		int[] nIds = Arrays.newIntArray(nOuterLimit);
 		double dSqTol = dTol * dTol;
 		
 		for (int nOuter = 0; nOuter < nOuterLimit; nOuter++)
@@ -199,15 +201,9 @@ public class ProcStop extends ProcCtrl
 				continue;
 			}
 			
-			nIds[0] = 1;
-			
 			for (int nInner = 0; nInner < nInnerLimit; nInner++)
 			{
 				CtrlLineArcs oCmp = oLanesByRoads.get(nInner);
-
-				int nInsert = java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCmp.m_nLaneId); 
-				if (nInsert >= 0) // skip ids that have already been combined
-					continue;
 				
 				int nConnect = oCur.connects(oCmp, dSqTol);
 				if (nConnect == CtrlLineArcs.CON_TSTART_OEND) // the other linearc connects at the start of this linearc
@@ -216,7 +212,8 @@ public class ProcStop extends ProcCtrl
 					if (dLen + dOtherLen < MINLEN)
 					{
 						oCur.combine(oCmp, nConnect); // combine the points of oCmp into oCur's point array
-						nIds = Arrays.insert(nIds, oCmp.m_nLaneId, ~nInsert); // add oCmp's id to the list of combined ids
+						oLanesByRoads.remove(nInner);
+						--nInnerLimit;
 						nInner = -1; // start inner loop over
 					}
 					else

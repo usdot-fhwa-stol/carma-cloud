@@ -6,7 +6,10 @@
 package cc.ws;
 
 import cc.ctrl.CreateCtrls;
+import cc.ctrl.CtrlGeo;
+import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
+import cc.ctrl.TrafCtrlEnums;
 import cc.ctrl.proc.ProcClosed;
 import cc.ctrl.proc.ProcClosing;
 import cc.ctrl.proc.ProcCtrl;
@@ -23,6 +26,7 @@ import cc.ctrl.proc.ProcYield;
 import cc.ctrl.proc.TdFeature;
 import cc.ctrl.proc.TdLayer;
 import cc.geosrv.Mercator;
+import cc.geosrv.xodr.XodrUtil;
 import cc.geosrv.xodr.geo.XodrGeoParser;
 import cc.geosrv.xodr.rdmk.XodrRoadMarkParser;
 import cc.util.Arrays;
@@ -34,6 +38,8 @@ import java.awt.geom.Area;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -68,8 +74,6 @@ public class CtrlTiles extends HttpServlet
 		18, //{"direction", "forward", "reverse"}, 
 		19, //{"lataffinity", "left", "right"}, 
 		17, //{"latperm", "none", "permitted", "passing-only", "emergency-only"}, 
-		17, //{"opening", "left", "right"}, 
-		17, //{"closing", "left", "right"}, 
 		18, //{"parking", "no", "parallel", "angled"}, 
 		18, //{"minspeed"}, 
 		18, //{"maxspeed"}, 
@@ -93,6 +97,7 @@ public class CtrlTiles extends HttpServlet
 		{
 			String sXodrDir = oConfig.getInitParameter("xodrdir");
 			String sLineArcBaseDir = oConfig.getInitParameter("linearcdir");
+			String sTrackFile = oConfig.getInitParameter("trackfile");
 			g_sCtrlDir = oConfig.getInitParameter("ctrldir");
 			double dExplodeStep = Double.parseDouble(oConfig.getInitParameter("explodestep"));
 			double dCombineTol = Double.parseDouble(oConfig.getInitParameter("combinetol"));
@@ -108,8 +113,6 @@ public class CtrlTiles extends HttpServlet
 			oProcesses.add(new ProcYield("/direction", sXodrDir));
 			oProcesses.add(new ProcLatPerm("/rdmks"));
 			oProcesses.add(new ProcClosed("/direction"));
-			oProcesses.add(new ProcClosing("/direction"));
-			oProcesses.add(new ProcOpening("/direction"));
 			oProcesses.add(new ProcMaxSpeed("/direction", sXodrDir));
 			oProcesses.add(new ProcDebugOutlines("/direction"));
 			
@@ -118,7 +121,7 @@ public class CtrlTiles extends HttpServlet
 			List<Path> oPaths = Files.walk(oDir).filter((oPath) -> {return Files.isRegularFile(oPath) && oPath.toString().endsWith(".xodr");}).collect(Collectors.toList());
 			for (Path oXodrFile : oPaths)
 			{
-				if (new XodrGeoParser().parseXodrToCLA(oXodrFile, sLineArcBaseDir))
+				if (new XodrGeoParser(sTrackFile).parseXodrToCLA(oXodrFile, sLineArcBaseDir))
 				{
 					new XodrRoadMarkParser().parseXodrToCLA(oXodrFile, sLineArcBaseDir);
 					String sFilename = "/" + oXodrFile.getFileName().toString().replace(".xodr", ".bin");
@@ -354,5 +357,231 @@ public class CtrlTiles extends HttpServlet
 		oResponse.setContentType("application/x-protobuf");
 		if (oTile.getLayersCount() > 0)
 			oTile.build().writeTo(oResponse.getOutputStream());
+	}
+	
+	@Override
+	public void doPost(HttpServletRequest oReq, HttpServletResponse oRes)
+		throws IOException, ServletException
+	{
+		Session oSession = SessMgr.getSession(oReq);
+		if (oSession == null)
+		{
+			oRes.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+			return;
+		}
+		String[] sUriParts = oReq.getRequestURI().split("/");
+		String sMethod = sUriParts[sUriParts.length - 1];
+		if (sMethod.compareTo("saveEdit") == 0)
+		{
+			saveEdit(oReq, oRes);
+			return;
+		}
+		else if (sMethod.compareTo("delete") == 0)
+		{
+			deleteControl(oReq, oRes);
+			return;
+		}
+		else if (sMethod.compareTo("add") == 0)
+		{
+			addControl(oReq, oRes);
+			return;
+		}
+		synchronized (oSession)
+		{
+			oSession.oLoadedIds.clear();
+		}
+		StringBuilder sBuf = new StringBuilder();
+		sBuf.append("{\"zoom\":").append(g_nZoom);
+		sBuf.append(",\"enums\":[");
+		for (String[] sArr : TrafCtrlEnums.CTRLS)
+		{
+			sBuf.append("[\"");
+			sBuf.append(sArr[0]).append("\"");
+			for (int nIndex = 1; nIndex < sArr.length; nIndex++)
+				sBuf.append(",\"").append(sArr[nIndex]).append("\"");
+			sBuf.append("],");
+		}
+		sBuf.setLength(sBuf.length() - 1);
+		sBuf.append("],\"units\":{");
+		for (int nIndex = 0; nIndex < TrafCtrlEnums.UNITS.length; nIndex++)
+		{
+			String sVal = TrafCtrlEnums.UNITS[nIndex];
+			if (sVal != null)
+			{
+				sBuf.append("\"").append(nIndex).append("\":\"").append(sVal).append("\",");
+			}
+		}
+		sBuf.setLength(sBuf.length() - 1);
+		sBuf.append("}}");
+		oRes.setContentType("application/json");
+		try (PrintWriter oOut = oRes.getWriter())
+		{
+			oOut.append(sBuf);
+		}
+	}
+	
+	
+	private void addControl(HttpServletRequest oReq, HttpServletResponse oRes)
+		throws IOException, ServletException
+	{
+		try
+		{
+			long lNow = System.currentTimeMillis() - 10;
+			int nType = Integer.parseInt(oReq.getParameter("type"));
+			String sType = TrafCtrlEnums.CTRLS[nType][0];
+			int nControlValue;
+			String sVal = oReq.getParameter("value");
+			if (sVal != null)
+				nControlValue = Integer.parseInt(sVal);
+			else
+			{
+				sVal = oReq.getParameter("value1");
+				if (sVal == null)
+					nControlValue = Integer.MIN_VALUE;
+				else
+				{
+					if (nType == TrafCtrlEnums.getCtrl("latperm"))
+					{
+						String sVal2 = oReq.getParameter("value2");
+						nControlValue = Integer.parseInt(sVal2);
+						nControlValue <<= 16;
+						nControlValue |= (Integer.parseInt(sVal) & 0xff);
+					}
+					else
+						nControlValue = Integer.parseInt(sVal);
+				}
+			}
+			String sId = oReq.getParameter("id");
+			int nStartIndex = Integer.parseInt(oReq.getParameter("s")) * 4 + 1; // add one since we use the growable arrays with the insertion index at position 0
+			int nEndIndex = Integer.parseInt(oReq.getParameter("e")) * 4 + 1;
+			String sFile = g_sCtrlDir + sId + ".bin";
+			TrafCtrl oOriginalCtrl = new TrafCtrl(sFile);
+			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			{
+				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
+			}
+			double[] dCenter = Arrays.newDoubleArray();
+			dCenter = Arrays.add(dCenter, new double[]{Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE});			
+			double[] dC = oOriginalCtrl.m_oFullGeo.m_dC;
+			double[] dNT = oOriginalCtrl.m_oFullGeo.m_dNT;
+			for (int nIndex = nStartIndex; nIndex <= nEndIndex;)
+			{
+				double dXc = dC[nIndex];
+				double dYc = dC[nIndex + 1];
+				dCenter = Arrays.addAndUpdate(dCenter, dXc, dYc);
+				double dW = Geo.distance(dXc, dYc, dNT[nIndex++], dNT[nIndex++]) * 2;
+				dCenter = Arrays.add(dCenter, dW);
+			}
+			CtrlLineArcs oCla = new CtrlLineArcs(-1, -1, -1, -1, XodrUtil.getLaneType("driving"), dCenter, 0.1);
+			TrafCtrl oCtrl = new TrafCtrl(TrafCtrlEnums.CTRLS[nType][0], nControlValue, lNow, lNow, oCla.m_dLineArcs);
+			oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+			ArrayList<TrafCtrl> oCtrls = new ArrayList();
+			oCtrls.add(oCtrl);
+			ProcCtrl.renderCtrls(sType, oCtrls, oCtrl.m_oFullGeo.m_oTiles);
+		}
+		catch (Exception oEx)
+		{
+			throw new ServletException(oEx);
+		}
+	}
+	
+	
+	private void deleteControl(HttpServletRequest oReq, HttpServletResponse oRes)
+		throws IOException, ServletException
+	{
+		try
+		{
+			long lNow = System.currentTimeMillis() - 10;
+			String sId = oReq.getParameter("id");
+			String sFile = g_sCtrlDir + sId + ".bin";
+			TrafCtrl oOriginalCtrl = new TrafCtrl(sFile);
+			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			{
+				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
+			}
+			synchronized (this)
+			{
+				for (int[] nTile : oOriginalCtrl.m_oFullGeo.m_oTiles)
+				{
+					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
+					ProcCtrl.updateIndex(sIndex, oOriginalCtrl.m_yId, lNow);
+				}
+			}
+		}
+		catch (Exception oEx)
+		{
+			throw new ServletException(oEx);
+		}
+	}
+	
+	
+	private void saveEdit(HttpServletRequest oReq, HttpServletResponse oRes)
+		throws IOException, ServletException
+	{
+		try
+		{
+			long lNow = System.currentTimeMillis();
+			int nType = Integer.parseInt(oReq.getParameter("type"));
+			String sType = TrafCtrlEnums.CTRLS[nType][0];
+			int nControlValue;
+			String sVal = oReq.getParameter("value");
+			if (sVal != null)
+				nControlValue = Integer.parseInt(sVal);
+			else
+			{
+				sVal = oReq.getParameter("value1");
+				if (nType == TrafCtrlEnums.getCtrl("latperm"))
+				{
+					String sVal2 = oReq.getParameter("value2");
+					nControlValue = Integer.parseInt(sVal2);
+					nControlValue <<= 16;
+					nControlValue |= (Integer.parseInt(sVal) & 0xff);
+				}
+				else
+					nControlValue = Integer.parseInt(sVal);
+			}
+			
+			String sId = oReq.getParameter("id");
+			String sFile = g_sCtrlDir + sId + ".bin";
+			TrafCtrl oOriginalCtrl = new TrafCtrl(sFile);
+			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			{
+				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
+			}
+			TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, lNow, lNow, oOriginalCtrl);
+			oNewCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+			ArrayList<TrafCtrl> oCtrls = new ArrayList(1);
+			oCtrls.add(oNewCtrl);
+			ProcCtrl.renderCtrls(sType, oCtrls, oOriginalCtrl.m_oFullGeo.m_oTiles);
+			
+			synchronized (this)
+			{
+				for (int[] nTile : oOriginalCtrl.m_oFullGeo.m_oTiles)
+				{
+//					ProcCtrl.writeIndexFile(oCtrls, nTile[0], nTile[1]);
+					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
+					ProcCtrl.updateIndex(sIndex, oOriginalCtrl.m_yId, oNewCtrl.m_lStart);
+				}
+			}
+			oRes.setContentType("application/json");
+			StringBuilder sBuf = new StringBuilder();
+			sBuf.append("{");
+			sBuf.append("\"id\":\"").append(TrafCtrl.getId(oNewCtrl.m_yId)).append("\"");
+			sBuf.append(",\"vals\":[");
+			ArrayList<String> sVals = new ArrayList(4);
+			TrafCtrlEnums.getCtrlValString(oNewCtrl.m_nControlType, oNewCtrl.m_yControlValue, sVals);
+			for (String sValue : sVals)
+				sBuf.append("\"").append(sValue).append("\",");
+			sBuf.setLength(sBuf.length() - 1);
+			sBuf.append("]}");
+			try (PrintWriter oOut = oRes.getWriter())
+			{
+				oOut.append(sBuf);
+			}
+		}
+		catch (Exception oEx)
+		{
+			throw new ServletException(oEx);
+		}
 	}
 }

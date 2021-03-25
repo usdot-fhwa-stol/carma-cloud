@@ -8,11 +8,13 @@ function check()
 	}
 	else
 	{
-		$.post("api/auth/check",
+		$.ajax(
 		{
-			"token": sToken
-		},
-		function(sData, oStatus)
+			'url': 'api/auth/check',
+			'dataType': 'text',
+			'method': 'POST',
+			'data': {'token': sToken}
+		}).done(function(sData, oStatus) 
 		{
 			sToken = JSON.parse(sData).token;
 			if (sToken === undefined || sToken.length === 0)

@@ -96,6 +96,7 @@ public class Road extends ArrayList<LaneSection>
 		for (int nIndex = 1; nIndex < size(); nIndex++)
 		{
 			ArrayList<Lane> oCurrLanes = new ArrayList();
+			get(nIndex).m_oPrevSect = get(nIndex - 1);
 			get(nIndex).getLanes(oCurrLanes);
 			for (Lane oCurr: oCurrLanes)
 			{
@@ -111,8 +112,8 @@ public class Road extends ArrayList<LaneSection>
 					int nSize = Arrays.size(dPrev);	
 					
 					double dDist = Geo.distance(dCurr[5], dCurr[6], dPrev[nSize - 3], dPrev[nSize - 2]);
-					if (dDist > dTol)
-						System.out.println(dDist);
+//					if (dDist > dTol)
+//						System.out.println(dDist);
 					if (dDist <= dTol && oCurr.m_nLaneType == oPrev.m_nLaneType)
 					{
 						oCurr.m_nLaneIdByRoad = oPrev.m_nLaneIdByRoad;
@@ -131,25 +132,6 @@ public class Road extends ArrayList<LaneSection>
 			}
 			oPrevLanes.clear();
 			oPrevLanes.addAll(oCurrLanes);
-		}
-	}
-	
-	
-	public void getDirectionCtrlLineArcs(ArrayList<CtrlLineArcs> oCtrlLineArcs, double dMaxStep)
-	{
-		ArrayList<Lane> oLanes = new ArrayList();
-		for (LaneSection oSection : this)
-		{
-			oSection.getLanes(oLanes);
-			for (Lane oLane : oLanes)
-			{
-				if (oLane.m_nLaneIndex == 0) // skip zero width center lane
-				{
-					continue;
-				}
-				
-				oCtrlLineArcs.add(new CtrlLineArcs(oLane, dMaxStep));
-			}
 		}
 	}
 	

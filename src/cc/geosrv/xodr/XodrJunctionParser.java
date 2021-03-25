@@ -5,7 +5,6 @@
  */
 package cc.geosrv.xodr;
 
-import cc.util.BufferedInStream;
 import java.io.BufferedInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;

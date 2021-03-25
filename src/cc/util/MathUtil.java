@@ -5,8 +5,10 @@
  */
 package cc.util;
 
+import cc.ctrl.TrafCtrlEnums;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.ArrayList;
 
 
 /**
@@ -135,6 +137,7 @@ public abstract class MathUtil
 		return yBytes;
 	}
 	
+	
 	public static byte[] intToBytes(int nInt, byte[] yBytes)
 	{
 		yBytes[0] = (byte)(nInt >> 24);
@@ -146,10 +149,28 @@ public abstract class MathUtil
 	}
 	
 	
+	public static int bytesToInt(byte[] yBytes)
+	{
+		return ((yBytes[0] & 0xff) << 24) | 
+			   ((yBytes[1] & 0xff) << 16) | 
+			   ((yBytes[2] & 0xff) << 8) | 
+			   ((yBytes[3] & 0xff));
+	}
+	
+	
 	public static double round(double dVal, int nPlaces)
 	{
 		BigDecimal dBd = new BigDecimal(Double.toString(dVal));
 		dBd = dBd.setScale(nPlaces, RoundingMode.HALF_UP);
 		return dBd.doubleValue();
+	}
+	
+	public static void main(String[] s)
+	{
+		byte[] yBytes = new byte[]{0, 1, 0, 2};
+		ArrayList<String> sVals = new ArrayList();
+		TrafCtrlEnums.getCtrlValString("latperm", yBytes, sVals);
+		for (String sVal : sVals)
+			System.out.println(sVal);
 	}
 }

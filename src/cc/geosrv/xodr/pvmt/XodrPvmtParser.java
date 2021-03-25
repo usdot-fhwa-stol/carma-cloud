@@ -27,7 +27,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
-import java.util.Iterator;
 
 
 /**
@@ -59,6 +58,7 @@ public class XodrPvmtParser extends DefaultHandler2
 	protected boolean m_bLane = false;
 	protected int m_nShort = 0;
 	protected int m_nRoads = 0;
+	protected boolean m_bSkip = false;
 
 
 	public XodrPvmtParser()
@@ -112,6 +112,7 @@ public class XodrPvmtParser extends DefaultHandler2
 			{
 				case "road":
 				{
+					m_bSkip = false;
 					m_oCtrlLineArcs.clear();
 					m_oRoad = new Road(Integer.parseInt(iAtt.getValue("id")), Double.parseDouble(iAtt.getValue("length"))); // new road geometry
 					Arrays.add(m_oRoad.m_dTrack, new double[] {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE});
@@ -120,36 +121,43 @@ public class XodrPvmtParser extends DefaultHandler2
 				}
 				case "geometry":
 				{
-					m_dS = Double.parseDouble(iAtt.getValue("s"));
-					m_dX = Double.parseDouble(iAtt.getValue("x"));
-					m_dY = Double.parseDouble(iAtt.getValue("y"));
-					m_dH = Double.parseDouble(iAtt.getValue("hdg"));
-					m_dL = Double.parseDouble(iAtt.getValue("length"));
+					m_dS = XodrUtil.parseDouble(iAtt.getValue("s"));
+					m_dX = XodrUtil.parseDouble(iAtt.getValue("x"));
+					m_dY = XodrUtil.parseDouble(iAtt.getValue("y"));
+					m_dH = XodrUtil.parseDouble(iAtt.getValue("hdg"));
+					m_dL = XodrUtil.parseDouble(iAtt.getValue("length"));
 					break;
 				}
+				case "spiral":
 				case "line":
 				{
-					m_oRoad.m_oGeometries.add(new Line(m_dS, m_dX, m_dY, m_dH, m_dL));
+					if (Double.isFinite(m_dS) && Double.isFinite(m_dX) && Double.isFinite(m_dY) && Double.isFinite(m_dH) && Double.isFinite(m_dL))
+						m_oRoad.m_oGeometries.add(new Line(m_dS, m_dX, m_dY, m_dH, m_dL));
 					break;
 				}
 				case "arc":
 				{
-					m_oRoad.m_oGeometries.add(new Arc(m_dS, m_dX, m_dY, m_dH, m_dL, Double.parseDouble(iAtt.getValue("curvature"))));
+					double dCurvature = XodrUtil.parseDouble(iAtt.getValue("curvature"));
+					if (Double.isFinite(m_dS) && Double.isFinite(m_dX) && Double.isFinite(m_dY) && Double.isFinite(m_dH) && Double.isFinite(m_dL))
+						m_oRoad.m_oGeometries.add(new Arc(m_dS, m_dX, m_dY, m_dH, m_dL, dCurvature));
 					break;
 				}
 				case "laneOffset":
 				{
-					double dS = Double.parseDouble(iAtt.getValue("s"));
-					double dA = Double.parseDouble(iAtt.getValue("a"));
-					double dB = Double.parseDouble(iAtt.getValue("b"));
-					double dC = Double.parseDouble(iAtt.getValue("c"));
-					double dD = Double.parseDouble(iAtt.getValue("d"));
-					m_oRoad.m_oLaneOffsets.add(new LaneOffset(dS, dA, dB, dC, dD));
+					double dS = XodrUtil.parseDouble(iAtt.getValue("s"));
+					double dA = XodrUtil.parseDouble(iAtt.getValue("a"));
+					double dB = XodrUtil.parseDouble(iAtt.getValue("b"));
+					double dC = XodrUtil.parseDouble(iAtt.getValue("c"));
+					double dD = XodrUtil.parseDouble(iAtt.getValue("d"));
+					if (Double.isFinite(dS) && Double.isFinite(dA) && Double.isFinite(dB) && Double.isFinite(dC) && Double.isFinite(dD))
+						m_oRoad.m_oLaneOffsets.add(new LaneOffset(dS, dA, dB, dC, dD));
 					break;
 				}
 				case "laneSection":
 				{
-					m_oLaneSection = new LaneSection(Double.parseDouble(iAtt.getValue("s")), m_oRoad.size());
+					double dS = XodrUtil.parseDouble(iAtt.getValue("s"));
+					if (Double.isFinite(dS))
+						m_oLaneSection = new LaneSection(dS, m_oRoad.size());
 					break;
 				}
 				case "lane":
@@ -160,12 +168,13 @@ public class XodrPvmtParser extends DefaultHandler2
 				}
 				case "width":
 				{
-					double dS = Double.parseDouble(iAtt.getValue("sOffset"));
-					double dA = Double.parseDouble(iAtt.getValue("a"));
-					double dB = Double.parseDouble(iAtt.getValue("b"));
-					double dC = Double.parseDouble(iAtt.getValue("c"));
-					double dD = Double.parseDouble(iAtt.getValue("d"));
-					m_oLane.add(new LaneWidth(dS, dA, dB, dC, dD));
+					double dS = XodrUtil.parseDouble(iAtt.getValue("sOffset"));
+					double dA = XodrUtil.parseDouble(iAtt.getValue("a"));
+					double dB = XodrUtil.parseDouble(iAtt.getValue("b"));
+					double dC = XodrUtil.parseDouble(iAtt.getValue("c"));
+					double dD = XodrUtil.parseDouble(iAtt.getValue("d"));
+					if (Double.isFinite(dS) && Double.isFinite(dA) && Double.isFinite(dB) && Double.isFinite(dC) && Double.isFinite(dD))
+						m_oLane.add(new LaneWidth(dS, dA, dB, dC, dD));
 					break;
 				}
 				default:
@@ -177,7 +186,9 @@ public class XodrPvmtParser extends DefaultHandler2
 		}
 		catch (Exception oEx)
 		{
-			throw new SAXException(oEx);
+			System.out.println("Error parsing Road " + m_oRoad.m_nId);
+			oEx.printStackTrace();
+			m_bSkip = true;
 		}
 	}
 	
@@ -190,10 +201,17 @@ public class XodrPvmtParser extends DefaultHandler2
 		{
 			case "road":
 			{
+				if (m_bSkip)
+					break;
 				if (m_oRoad.m_oLaneOffsets.isEmpty())
 					m_oRoad.m_oLaneOffsets.add(new LaneOffset(0.0, 0.0, 0.0, 0.0, 0.0));
 				Collections.sort(m_oRoad.m_oLaneOffsets);
 				Collections.sort(m_oRoad.m_oGeometries);
+				if (m_oRoad.m_oGeometries.isEmpty())
+				{
+//					System.out.println(String.format("Road %d has no geometries.", m_oRoad.m_nId));
+					break;
+				}
 				m_oRoad.adjustSections(m_dMaxStep);
 				m_oRoad.createPoints(m_dMaxStep, m_oProj);
 				m_oRoad.setLaneIds(m_dMaxStep);
@@ -245,7 +263,18 @@ public class XodrPvmtParser extends DefaultHandler2
 		if (!sDir.endsWith("/"))
 			sDir += '/';
 		m_sBaseDir = sDir;
-		m_sCtrlFile = oXodrFile.getFileName().toString().replace(".xodr.pvmt", ".bin.pvmt");
+		if (!Files.exists(oXodrFile))
+		{
+			String sPvmtFile = oXodrFile.toString();
+			String sXodrFile = sPvmtFile.substring(0, sPvmtFile.lastIndexOf("."));
+			oXodrFile = Paths.get(sXodrFile);
+			m_sCtrlFile = sXodrFile.substring(sXodrFile.lastIndexOf("/") + 1).replace(".xodr", ".bin.pvmt");
+		}
+		else
+		{
+			m_sCtrlFile = oXodrFile.getFileName().toString().replace(".xodr.pvmt", ".bin.pvmt");
+		}
+			
 		
 		XMLReader iXmlReader = SAXParserFactory.newInstance().
 		newSAXParser().getXMLReader();

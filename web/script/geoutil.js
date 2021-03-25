@@ -1,11 +1,11 @@
-var g_sCsv;
-var g_aPOW_OF_2 = [];
-var g_aMETERS_PER_PIXEL = [];
+let sCsv;
+let POW_OF_2 = [];
+let METERS_PER_PIXEL = [];
 
 for (let nIndex = 0; nIndex < 25; nIndex++)
 {
-	g_aPOW_OF_2.push(Math.pow(2, nIndex));
-	g_aMETERS_PER_PIXEL.push(2 * Math.PI * 6378137 / (g_aPOW_OF_2[nIndex] * 256));
+	POW_OF_2.push(Math.pow(2, nIndex));
+	METERS_PER_PIXEL.push(2 * Math.PI * 6378137 / (POW_OF_2[nIndex] * 256));
 }
 
 
@@ -49,7 +49,7 @@ function angle(dX1, dY1, dX2, dY2, dX3, dY3)
 	if (dX3 === undefined && dY3 === undefined)
 	{
 		dX3 = dX2;
-		dY3 = dY2
+		dY3 = dY2;
 		dX2 = dX1;
 		dY2 = dY1;
 		dX1 = dX2 + 1;
@@ -62,12 +62,12 @@ function angle(dX1, dY1, dX2, dY2, dX3, dY3)
 	let dot = dUi * dVi + dUj * dVj;
 	let dLenU = Math.sqrt(dUi * dUi + dUj * dUj);
 	let dLenV = Math.sqrt(dVi * dVi + dVj * dVj);
-	if (dLenU == 0 || dLenV == 0)
-		return NaN;
+	if (dLenU === 0 || dLenV === 0)
+		return Number.NaN;
 	let dVal = dot / (dLenU * dLenV);
 	dVal = (dVal * 1000000000000) / 1000000000000;
 	if (dVal > 1 || dVal < -1)
-		return NaN
+		return Number.NaN;
 	
 	return Math.acos(dVal);
 };
@@ -109,21 +109,21 @@ function snap(dX, dY, dX0, dY0, dHdg, bOnlyPositive)
 
 function snapToLine(dX, dY, dX1, dY1, dX2, dY2)
 {
-	let aReturn = [NaN, NaN];
+	let aReturn = [Number.NaN, Number.NaN];
 	let dXd = dX2 - dX1;
 	let dYd = dY2 - dY1;
 	let dXp = dX - dX1;
 	let dYp = dY - dY1;
 	
-	if (dXd == 0 && dYd == 0) // line segment is a point
-		return aReturn
+	if (dXd === 0 && dYd === 0) // line segment is a point
+		return aReturn;
 
 	let dU = dXp * dXd + dYp * dYd;
 	let dV = dXd * dXd + dYd * dYd;
 
 	if (dU < 0 || dU > dV) // nearest point is not on the line
 	{
-		return aReturn
+		return aReturn;
 	}
 
 	// find the perpendicular intersection of the point on the line
@@ -160,7 +160,7 @@ function rightHand(dX, dY, dX1, dY1, dX2, dY2)
 
 function newCoordinates(dX, dY, nDefaultPoints)
 {
-	if (nDefaultPoints == 1)
+	if (nDefaultPoints === 1)
 		return [dX, dY];
 	
 	let aReturn = [];
@@ -200,7 +200,7 @@ function center(oP1, oP2, oP3)
 	let dM2 = dDeltaY2 / dDeltaX2;
 	
 	if (doubleCmpWithTol(dM1, dM2, 0.000001))
-		return {x: NaN, y: NaN};
+		return {x: Number.NaN, y: Number.NaN};
 	let dX = (dM1 * dM2 * (oP1.y - oP3.y) + dM2 * (oP1.x + oP2.x) - dM1 * (oP2.x + oP3.x)) / (2 * (dM2 - dM1));
 	let dY = -1 * (dX - (oP1.x + oP2.x) / 2) / dM1 + (oP1.y + oP2.y) / 2;
 	
@@ -217,7 +217,7 @@ function centerFlipY(oP1, oP2, oP3)
 	let dM2 = dDeltaY2 / dDeltaX2;
 	
 	if (doubleCmpWithTol(dM1, dM2, 0.000001))
-		return {x: NaN, y: NaN};
+		return {x: Number.NaN, y: Number.NaN};
 	let dX = (dM1 * dM2 * (-oP1.y - (-oP3.y)) + dM2 * (oP1.x + oP2.x) - dM1 * (oP2.x + oP3.x)) / (2 * (dM2 - dM1));
 	let dY = -1 * (dX - (oP1.x + oP2.x) / 2) / dM1 + (-oP1.y + (-oP2.y)) / 2;
 	
@@ -266,7 +266,7 @@ function getSnapInfo(aCoords, oLngLat)
 	}
 	
 	if (dClosest === Number.MAX_VALUE)
-		return {aPt: [NaN, NaN], aSeg: [[NaN, NaN], [NaN, NaN]], dDist: Math.sqrt(dClosest), nIndex: nReturnIndex};
+		return {aPt: [Number.NaN, Number.NaN], aSeg: [[Number.NaN, Number.NaN], [Number.NaN, Number.NaN]], dDist: Math.sqrt(dClosest), nIndex: nReturnIndex};
 	
 	return {aPt: aSnapPoint, aSeg: aReturnSeg, dDist: Math.sqrt(dClosest), nIndex: nReturnIndex};
 }
@@ -357,7 +357,7 @@ function getPolyFromSeg(aSeg, oMap, dPixelDelta)
 	let oP1 = oMap.project(aSeg[0]);
 	let oP2 = oMap.project(aSeg[1]);
 	let dHdg = headingFlipY(oP1, oP2);
-	let dHdgPrime = dHdg + Math.PI
+	let dHdgPrime = dHdg + Math.PI;
 	let aReturn = [];
 	let oLngLat = oMap.unproject([oP1.x - Math.sin(dHdg) * dPixelDelta, oP1.y - Math.cos(dHdg) * dPixelDelta]);
 	aReturn.push([oLngLat.lng, oLngLat.lat]);
@@ -410,7 +410,7 @@ function strCmp(s1, s2)
 	{
 		let c1 = s1[k];
 		let c2 = s2[k++];
-		if (c1 != c2)
+		if (c1 !== c2)
 			return c1 - c2;
 	}
 	return len1 - len2;
@@ -521,26 +521,45 @@ function linesConnect(aL1, aL2, dTol)
 		   (doubleCmpWithTol(aS1[0], aS2[0], dTol) && doubleCmpWithTol(aS1[1], aS2[1], dTol)) ||
 		   (doubleCmpWithTol(aS1[0], aE2[0], dTol) && doubleCmpWithTol(aS1[1], aE2[1], dTol));
 }
-
-
-function decodeGeoString(sEncoded)
+function lon2tile(dLon, nZoom)
 {
-	let sBin = atob(sEncoded);
-	let yBytes = new Int8Array(sBin.length);
-	let aPts = [];
-	for (let i = 0; i < len; i++)
-		yBytes[i] = sBin.charCodeAt(i);
-	
-	for (let i = 0; i < len; i += 4)
-	{
-		let nVal = 0;
-		for (let j = 0; j < 3; j++)
-		{
-			nVal += yBytes[i + j];
-			nVal = nVal << 8;
-		}
-		nVal += yBytes[i + 3];
-	}
+	return (Math.floor((dLon + 180) / 360 * POW_OF_2[nZoom])); 
 }
 
+function lat2tile(dLat, nZoom)
+{
+	return (Math.floor((1 - Math.log(Math.tan(dLat * Math.PI / 180) + 1 / Math.cos(dLat  *Math.PI / 180)) / Math.PI) / 2 * POW_OF_2[nZoom]));
+}
 
+function getPolygonBoundingBox(oFeature)
+{
+	if (oFeature.bbox === undefined)
+	{
+		let nMinX = Number.MAX_VALUE;
+		let nMinY = Number.MAX_VALUE;
+		let nMaxX = -Number.MAX_VALUE;
+		let nMaxY = -Number.MAX_VALUE;
+		
+		for (let aCoord of oFeature.geometry.coordinates[0].values())
+		{
+			if (aCoord[0] < nMinX)
+				nMinX = aCoord[0];
+
+			if (aCoord[0] > nMaxX)
+				nMaxX = aCoord[0];
+
+			if (aCoord[1] < nMinY)
+				nMinY = aCoord[1];
+
+			if (aCoord[1] > nMaxY)
+				nMaxY = aCoord[1];
+		}
+		
+		oFeature.bbox = [[nMinX, nMinY], [nMaxX, nMaxY]];
+	}
+	
+	return oFeature.bbox;
+}
+
+export {METERS_PER_PIXEL, headingA, length, getSnapInfoForFeature, fromIntDeg, createWholePoly,
+	getSnapInfo, createPoly, lon2tile, lat2tile, getPolygonBoundingBox};

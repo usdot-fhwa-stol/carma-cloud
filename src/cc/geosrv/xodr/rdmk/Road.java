@@ -121,8 +121,8 @@ public class Road extends ArrayList<LaneSection>
 					int nSize = Arrays.size(dPrev);	
 					
 					double dDist = Geo.distance(dCurr[5], dCurr[6], dPrev[nSize - 3], dPrev[nSize - 2]);
-					if (dDist > dTol)
-						System.out.println(dDist);
+//					if (dDist > dTol)
+//						System.out.println(dDist);
 					if (dDist <= dTol && oCurr.m_nType == oCurr.m_nType)
 					{
 						oCurr.m_nLaneIdByRoad = oPrev.m_nLaneIdByRoad;
@@ -158,8 +158,6 @@ public class Road extends ArrayList<LaneSection>
 				{
 					continue;
 				}
-//				if (oLane.m_nLaneIndex != -2)
-//					continue;
 				
 				XodrUtil.splitLaneSectionId(XodrUtil.getLaneSectionId(m_nId, oSection.m_nId, oLane.m_nLaneIndex), 1, nSearch);
 				int nIndex = Collections.binarySearch(oRdMkInfo, nSearch, RDMKCOMP);

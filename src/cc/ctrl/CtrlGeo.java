@@ -7,17 +7,13 @@ package cc.ctrl;
 
 import cc.geosrv.Mercator;
 import cc.util.Arrays;
-import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.MathUtil;
-import cc.util.TileUtil;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
-import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -46,16 +42,24 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 	public ArrayList<int[]> m_oTiles = new ArrayList();
 	int m_nZoom;
 	public int m_nCtrlType;
-	public int m_nCtrlValue;
+	public byte[] m_yCtrlValue;
 	public double m_dLength;
 	public double m_dAverageWidth = 0.0;
 	public double[] m_dDebugNT;
 	public double[] m_dDebugPT;
 	
 	
-	public CtrlGeo(DataInputStream oIn)
+	public CtrlGeo(DataInputStream oIn, int nZoom)
+		throws IOException
+	{
+		this(oIn, false, nZoom);
+	}
+	
+	
+	public CtrlGeo(DataInputStream oIn, boolean bUpdateTiles, int nZoom)
 	   throws IOException
 	{
+		m_nZoom = nZoom;
 		oIn.readUTF(); // read version, discard it
 		m_yId = new byte[16];
 		oIn.read(m_yId);
@@ -69,7 +73,8 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 		oIn.skip(13); // skip offset, period, span, regulatory (int, int, int, bool)
 		
 		m_nCtrlType = oIn.readInt();
-		m_nCtrlValue = oIn.readInt();
+		m_yCtrlValue = new byte[oIn.readInt()];
+		oIn.read(m_yCtrlValue);
 		
 		oIn.readUTF(); // read proj, discard it
 		oIn.readUTF(); // read datum, discard it
@@ -84,9 +89,18 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 
 		m_dLength = oIn.readDouble();
 		m_dAverageWidth = oIn.readDouble();
-		m_dC = readPts(oIn, m_dC);
-		m_dNT = readPts(oIn, m_dNT);
-		m_dPT = readPts(oIn, m_dPT);
+		if (bUpdateTiles)
+		{
+			m_dC = readPtsUpdateTiles(oIn, m_dC, m_oTiles, m_nZoom);
+			m_dNT = readPtsUpdateTiles(oIn, m_dNT, m_oTiles, m_nZoom);
+			m_dPT = readPtsUpdateTiles(oIn, m_dPT, m_oTiles, m_nZoom);
+		}
+		else
+		{
+			m_dC = readPts(oIn, m_dC);
+			m_dNT = readPts(oIn, m_dNT);
+			m_dPT = readPts(oIn, m_dPT);
+		}
 	}
 	
 	
@@ -96,7 +110,8 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 		m_nZoom = nZoom;
 		m_yId = new byte[oCtrl.m_yId.length];
 		m_nCtrlType = oCtrl.m_nControlType;
-		m_nCtrlValue = oCtrl.m_nControlValue;
+		m_yCtrlValue = new byte[oCtrl.m_yControlValue.length];
+		System.arraycopy(oCtrl.m_yControlValue, 0, m_yCtrlValue, 0, m_yCtrlValue.length);
 		System.arraycopy(oCtrl.m_yId, 0, m_yId, 0, m_yId.length);
 		int nNumPts = oCtrl.size();
 		double dTotalLength = 0.0;
@@ -358,27 +373,6 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 	}
 	
 	
-	public void write(String sDir)
-	   throws IOException
-	{
-		if (sDir.endsWith("/"))
-			sDir = sDir.substring(0, sDir.length() - 1);
-		try (DataOutputStream oOut = new DataOutputStream(new BufferedOutputStream(FileUtil.newOutputStream(Paths.get(sDir + TrafCtrl.getId(m_yId) + ".geo"), FileUtil.APPENDTO, FileUtil.FILEPERS))))
-		{
-			oOut.write(m_yId);
-			for (int nIndex = 0; nIndex < m_dBB.length; nIndex++)
-				oOut.writeInt((int)(m_dBB[nIndex] * 100.0 + 0.5));
-			oOut.writeInt(m_nCtrlType);
-			oOut.writeInt(m_nCtrlValue);
-			oOut.writeDouble(m_dLength);
-			oOut.writeDouble(m_dAverageWidth);
-			writePts(oOut, m_dC); // center line
-			writePts(oOut, m_dNT); // negative tangent line
-			writePts(oOut, m_dPT); // positive tangent line
-		}
-	}
-	
-	
 	public static void writePts(DataOutputStream oOut, double[] dPts)
 	   throws IOException
 	{
@@ -400,6 +394,34 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 			nPrevX = nCurX;
 			nPrevY = nCurY;
 		}
+	}
+	
+	private static double[] readPtsUpdateTiles(DataInputStream oIn, double[] dPts, ArrayList<int[]> nTiles, int nZoom)
+		throws IOException
+	{
+		int[] nTile = new int[2];
+		double[] dPixel = new double[2];
+		Mercator oM = Mercator.getInstance();
+		double dXPrime;
+		double dYPrime;
+		int nLen = oIn.readInt(); // read array length
+		dPts = Arrays.newDoubleArray(nLen); // create new growable array
+		int nPrevX = oIn.readInt(); // read first point, these values are in mercator cm
+		int nPrevY = oIn.readInt();
+		dPts = Arrays.add(dPts, nPrevX / 100.0, nPrevY / 100.0); // add first point, converting them to mercator meters
+		for (int nIndex = 2; nIndex < nLen; nIndex += 2)
+		{
+			int nX = nPrevX + oIn.readByte(); // calculate the rest of the points by using deltas
+			int nY = nPrevY + oIn.readByte();
+			dXPrime = nX / 100.0;
+			dYPrime = nY / 100.0;
+			dPts = Arrays.add(dPts, nX / 100.0, nY / 100.0); // convert them to mercator meters
+			updateTiles(dXPrime, dYPrime, oM, nTiles, nTile, dPixel, nZoom);
+			nPrevX = nX;
+			nPrevY = nY;
+		}
+		
+		return dPts;
 	}
 	
 	

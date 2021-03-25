@@ -7,14 +7,14 @@
 <link rel="stylesheet" href="css/w3.css"/>
 <link rel="stylesheet" href="css/fontawesome.min.css"/>
 <link rel="stylesheet" href="css/solid.min.css"/>
-<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css"/>
 <link rel="stylesheet" href="css/jquery/themes/overcast/jquery-ui.css"/>
 <link rel="stylesheet" href="css/carmacloud.css"/>
+<link rel="stylesheet" href="css/map.css"/>
+<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css"/>
 <script src="script/jquery/jquery.js"></script>
 <script src="script/jquery/jquery-ui.js"></script>
 <script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
-<script src="script/geoutil.js"></script>
-<script src="script/map.js"></script>
+<script type="module" src="script/map.js"></script>
 <script src="script/check.js"></script>
 </head>
 <body>
@@ -30,6 +30,8 @@
 	</div>
 
 	<div id="dlgLayers" title="Show/Hide"></div>
+	<div id="dlgEdit" title="Edit Control"></div>
+	<div id="dlgDelete" title="Confirm Delete"></div>
 	<div id="geoDetail" style="position: fixed; left: 0px; bottom: 0px; width: 500px; height: 300px; padding: 5px 5px 5px 5px; background-color: #fff; border: 2px solid #000; overflow-y: auto; display: none"></div>
 </body>
 </html>

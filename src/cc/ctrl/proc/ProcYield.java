@@ -15,7 +15,6 @@ import cc.geosrv.xodr.Signal;
 import cc.geosrv.xodr.XodrSignalParser;
 import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
-import cc.util.BufferedInStream;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.TileUtil;
@@ -45,7 +44,7 @@ public class ProcYield extends ProcCtrl
 	private ArrayList<RoadPaths> m_oIncomingRoads = new ArrayList();
 	private String m_sXodrDir;
 	private static double MINLEN = 53.0;
-	private static String[] SIGNAL_TYPES = new String[]{"R1_2"};
+	private static String[] SIGNAL_TYPES = new String[]{"R1_2", "Sign_Yield"};
 	private static final double[][] YIELDSIGN = new double[][]{
 										   new double[]{-0.38, 0.22, 0.38, 0.22, 0.0, -0.44},
 										   new double[]{-0.32, 0.18, 0.32, 0.18, 0.0, -0.37},
@@ -63,6 +62,11 @@ public class ProcYield extends ProcCtrl
 	public void parseMetadata(Path oSource)
 	   throws Exception
 	{
+		m_oJunctions.clear();
+		m_oSignals.clear();
+		m_nInterPaths[0] = 1;
+		m_nSignalRoads[0] = 1;
+		m_oIncomingRoads.clear();
 		new XodrSignalParser(SIGNAL_TYPES).parseSignalData(oSource, m_oJunctions, m_oSignals);
 		for (Signal oSignal : m_oSignals)
 		{
@@ -222,7 +226,6 @@ public class ProcYield extends ProcCtrl
 		
 		int nOuterLimit = oInRoadsToSignals.size();
 		int nInnerLimit = oLanesByRoads.size();
-		int[] nIds = Arrays.newIntArray(nOuterLimit);
 		double dSqTol = dTol * dTol;
 		
 		for (int nOuter = 0; nOuter < nOuterLimit; nOuter++)
@@ -237,16 +240,11 @@ public class ProcYield extends ProcCtrl
 				continue;
 			}
 			
-			nIds[0] = 1;
 			
 			for (int nInner = 0; nInner < nInnerLimit; nInner++)
 			{
 				CtrlLineArcs oCmp = oLanesByRoads.get(nInner);
 
-				int nInsert = java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCmp.m_nLaneId); 
-				if (nInsert >= 0) // skip ids that have already been combined
-					continue;
-				
 				int nConnect = oCur.connects(oCmp, dSqTol);
 				if (nConnect == CtrlLineArcs.CON_TSTART_OEND) // the other linearc connects at the start of this linearc
 				{
@@ -254,7 +252,8 @@ public class ProcYield extends ProcCtrl
 					if (dLen + dOtherLen < MINLEN)
 					{
 						oCur.combine(oCmp, nConnect); // combine the points of oCmp into oCur's point array
-						nIds = Arrays.insert(nIds, oCmp.m_nLaneId, ~nInsert); // add oCmp's id to the list of combined ids
+						oLanesByRoads.remove(nInner);
+						--nInnerLimit;
 						nInner = -1; // start inner loop over
 					}
 					else
@@ -332,7 +331,7 @@ public class ProcYield extends ProcCtrl
 		TdLayer oOutWhite = new TdLayer("yield-ow", sEmpty, sEmpty, TdLayer.POLYGON);
 		TdLayer oRed = new TdLayer("yield-r", sEmpty, sEmpty, TdLayer.POLYGON);
 		TdLayer oInWhite = new TdLayer("yield-iw", sEmpty, sEmpty, TdLayer.POLYGON);
-		TdLayer oStopLine = new TdLayer("stop-sl", sEmpty, sEmpty, TdLayer.POLYGON);
+		TdLayer oStopLine = new TdLayer("yield-sl", sEmpty, sEmpty, TdLayer.POLYGON);
 		int[] nTags = new int[0];
 		double[] dPt = new double[2];
 		double[][] dPolys = new double[YIELDSIGN.length][];

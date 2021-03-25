@@ -53,6 +53,7 @@ public class TcmReqParser extends DefaultHandler2
 			case "tcrV01":
 			{
 				m_oReq.m_sVersion = "1.0";
+				break;
 			}
 			case "TrafficControlBounds":
 			{
@@ -158,7 +159,7 @@ public class TcmReqParser extends DefaultHandler2
 	public static void main(String[] sArgs)
 	   throws Exception
 	{
-		TcmReq oReq = new TcmReqParser().parseRequest(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/CarmaCloud//traf_ctrl/request.xml")));
+		TcmReq oReq = new TcmReqParser().parseRequest(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/CarmaCloud/traf_ctrl/request.xml")));
 		System.out.println();
 	}
 }

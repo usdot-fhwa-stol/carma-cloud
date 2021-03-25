@@ -14,6 +14,7 @@ import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.MathUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -91,7 +92,8 @@ public class ProcClosing extends ProcCtrl
 			double dPercent = 1.0 / nPoints;
 			int nCount = 0;
 			double[] dC = oCtrl.m_oFullGeo.m_dC;
-			boolean bRight = TrafCtrlEnums.getCtrlVal("closing", "right") == oCtrl.m_nControlValue;
+			int nCtrlVal = MathUtil.bytesToInt(oCtrl.m_yControlValue);
+			boolean bRight = TrafCtrlEnums.getCtrlVal("closing", "right") == nCtrlVal;
 			double[] dStraight = bRight ? oCtrl.m_oFullGeo.m_dNT : oCtrl.m_oFullGeo.m_dPT;
 			int nLimit = Arrays.size(dC) - 2;
 			double dDist = 0.0;

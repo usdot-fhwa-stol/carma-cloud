@@ -25,6 +25,8 @@ public class LaneSection
 	private static Comparator<Lane> LEFTLANES = (Lane o1, Lane o2) -> Integer.compare(o1.m_nLaneIndex, o2.m_nLaneIndex);
 	private static Comparator<Lane> RIGHTLANES = (Lane o1, Lane o2) -> Integer.compare(o2.m_nLaneIndex, o1.m_nLaneIndex);
 	public int m_nId;
+	public LaneSection m_oPrevSect;
+	public double[] m_dEdgeEnds;
 	public double[] m_dPavement;
 	public ArrayList<double[]> m_oShoulders = new ArrayList();
 	
@@ -131,6 +133,20 @@ public class LaneSection
 		dPavementCenter = Arrays.add(dPavementCenter, new double[] {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE});
 		
 		int nLimit = Arrays.size(dEdgeR);
+		m_dEdgeEnds = new double[]{dEdgeR[nLimit - 2], dEdgeR[nLimit - 1], dEdgeL[nLimit - 2], dEdgeL[nLimit - 1]};
+		if (m_oPrevSect != null && m_oPrevSect.m_dEdgeEnds != null)
+		{
+			double dXr = m_oPrevSect.m_dEdgeEnds[0];
+			double dYr = m_oPrevSect.m_dEdgeEnds[1];
+			double dXl = m_oPrevSect.m_dEdgeEnds[2];
+			double dYl = m_oPrevSect.m_dEdgeEnds[3];
+			
+			double dPathX = (dXr + dXl) / 2;
+			double dPathY = (dYr + dYl) / 2;
+			double dW = Geo.distance(dXr, dYr, dXl, dYl);
+			dPavementCenter = Arrays.addAndUpdate(dPavementCenter, dPathX, dPathY);
+			dPavementCenter = Arrays.add(dPavementCenter, dW);
+		}
 		for (int nIndex = 5; nIndex < nLimit; nIndex += 2)
 		{
 			double dXr = dEdgeR[nIndex];

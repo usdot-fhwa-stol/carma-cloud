@@ -6,7 +6,6 @@
 package cc.ws;
 
 import cc.util.Arrays;
-import cc.util.BufferedInStream;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.TileUtil;
@@ -34,6 +33,7 @@ public class TrackTiles extends HttpServlet
 	ArrayList<double[]> m_oGeos = null;
 	ArrayList<double[]> m_oLWs = null;
 	ArrayList<double[]> m_oPerps = null;
+	ArrayList<double[]> m_oLSs = null;
 	int[] m_nRoads = null;
 	String m_sTrackFile;
 	
@@ -65,6 +65,7 @@ public class TrackTiles extends HttpServlet
 					ArrayList<double[]> oTracks = new ArrayList();
 					ArrayList<Integer> oRoads = new ArrayList();
 					ArrayList<double[]> oGeos = new ArrayList();
+					ArrayList<double[]> oLSs = new ArrayList();
 					ArrayList<double[]> oLWs = new ArrayList();
 					ArrayList<double[]> oPerps = new ArrayList();
 					try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oTrackFile))))
@@ -74,6 +75,9 @@ public class TrackTiles extends HttpServlet
 							int nPoints = oIn.readInt();
 							for (int nIndex = 0; nIndex < nPoints; nIndex++)
 								oGeos.add(new double[]{oIn.readDouble(), oIn.readDouble()});
+							nPoints = oIn.readInt();
+							for (int nIndex = 0; nIndex < nPoints; nIndex++)
+								oLSs.add(new double[]{oIn.readDouble(), oIn.readDouble()});
 							nPoints = oIn.readInt();
 							for (int nIndex = 0; nIndex < nPoints; nIndex++)
 								oLWs.add(new double[]{oIn.readDouble(), oIn.readDouble()});
@@ -103,6 +107,7 @@ public class TrackTiles extends HttpServlet
 					}
 					m_oTracks = oTracks;
 					m_oGeos = oGeos;
+					m_oLSs = oLSs;
 					m_oLWs = oLWs;
 					m_oPerps = oPerps;
 					m_nRoads = new int[oRoads.size()];
@@ -211,6 +216,23 @@ public class TrackTiles extends HttpServlet
 			if (!Geo.isInside(dGeo[0], dGeo[1], dClipBounds[3], dClipBounds[2], dClipBounds[1], dClipBounds[0], 0))
 				continue;
 			TileUtil.addMercPointToFeature(oFeatureBuilder, nCur, dBounds, nExtent, dGeo[0], dGeo[1]);
+			if (oFeatureBuilder.getGeometryCount() > 0)
+				oLayerBuilder.addFeatures(oFeatureBuilder.build());
+			nCur[0] = nCur[1] = 0;
+			oFeatureBuilder.clearGeometry();
+		}
+		if (oLayerBuilder.getFeaturesCount() > 0)
+				oTile.addLayers(oLayerBuilder.build());
+		
+		oLayerBuilder.clearFeatures();
+		oLayerBuilder.setName("ls");
+		oFeatureBuilder.setType(VectorTile.Tile.GeomType.POINT);
+		for (int nIndex = 0; nIndex < m_oLSs.size(); nIndex++)
+		{
+			double[] dLS = m_oLSs.get(nIndex);
+			if (!Geo.isInside(dLS[0], dLS[1], dClipBounds[3], dClipBounds[2], dClipBounds[1], dClipBounds[0], 0))
+				continue;
+			TileUtil.addMercPointToFeature(oFeatureBuilder, nCur, dBounds, nExtent, dLS[0], dLS[1]);
 			if (oFeatureBuilder.getGeometryCount() > 0)
 				oLayerBuilder.addFeatures(oFeatureBuilder.build());
 			nCur[0] = nCur[1] = 0;

@@ -14,6 +14,7 @@ import cc.geosrv.xodr.pvmt.XodrPvmtParser;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.MathUtil;
 import cc.util.TileUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -132,7 +133,7 @@ public class ProcPavement extends ProcCtrl
 						dClippedPavement = Geo.reverseOrder(dClippedPavement);
 					}
 
-					nTags[1] = oCtrl.m_nControlValue == nDriving ? 0 : 1;
+					nTags[1] = MathUtil.bytesToInt(oCtrl.m_yControlValue) == nDriving ? 0 : 1;
 					oLayer.add(new TdFeature(dClippedPavement, nTags, oCtrl));
 				}
 			}

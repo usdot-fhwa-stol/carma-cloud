@@ -1,5 +1,7 @@
 package cc.ctrl;
 
+import cc.util.MathUtil;
+import cc.util.Text;
 import java.util.ArrayList;
 
 
@@ -12,13 +14,11 @@ public abstract class TrafCtrlEnums
 		{"yield"}, 
 		{"notowing"}, 
 		{"restricted"}, 
-		{"closed"}, 
+		{"closed", "open", "closed", "taperleft", "taperright", "openleft", "openright"}, 
 		{"chains", "no", "permitted", "required"}, 
 		{"direction", "forward", "reverse"}, 
 		{"lataffinity", "left", "right"}, 
 		{"latperm", "none", "permitted", "passing-only", "emergency-only"}, 
-		{"opening", "left", "right"}, 
-		{"closing", "left", "right"}, 
 		{"parking", "no", "parallel", "angled"}, 
 		{"minspeed"}, 
 		{"maxspeed"}, 
@@ -31,6 +31,33 @@ public abstract class TrafCtrlEnums
 		{"minvehocc"},
 		{"pavement"},
 		{"debug"}
+	};
+	
+	
+	public static final String[] UNITS = new String[]
+	{
+		null, // signal
+		null, // stop 
+		null, // yield 
+		null, //notowing 
+		null, //restricted 
+		null, //closed", "open", "closed", "taperleft", "taperright", "openleft", "openright 
+		null, //chains", "no", "permitted", "required 
+		null, //direction", "forward", "reverse 
+		null, //lataffinity", "left", "right 
+		null, //latperm", "none", "permitted", "passing-only", "emergency-only 
+		null, //parking", "no", "parallel", "angled 
+		"mph", //minspeed 
+		"mph", //maxspeed 
+		"ft", //minhdwy 
+		"kg", //maxvehmass 
+		"ft", //maxvehheight 
+		"ft", //maxvehwidth 
+		"ft", //maxvehlength 
+		null, //maxaxles 
+		null, //minvehocc
+		null, //pavement
+		null, //debug"
 	};
 
 	public static final char[] DAYCHARS = new char[]
@@ -113,31 +140,39 @@ public abstract class TrafCtrlEnums
 	}
 	
 	
-	public static void getCtrlValString(String sCtrl, int nVal, ArrayList<String> sVals)
+	public static void getCtrlValString(String sCtrl, byte[] yVal, ArrayList<String> sVals)
 	{
-		getCtrlValString(getCtrl(sCtrl), nVal, sVals);
+		getCtrlValString(getCtrl(sCtrl), yVal, sVals);
 	}
 	
 	
-	public static void getCtrlValString(int nCtrl, int nVal, ArrayList<String> sVals)
+	public static void getCtrlValString(int nCtrl, byte[] yVal, ArrayList<String> sVals)
 	{
 		sVals.add(CTRLS[nCtrl][0]); // ctrl name
 		if (CTRLS[nCtrl].length == 1) // not enumerated type
 		{
-			if (nVal >= 0) // negative values aren't valid
-				sVals.add(Integer.toString(nVal)); 
+			if (yVal.length > 0) // negative values aren't valid
+				sVals.add(Integer.toString(MathUtil.bytesToInt(yVal))); 
 			return;
 		}
 		
 		int nLatPerm = getCtrl("latperm");
+		int nSignal = getCtrl("signal");
 		if (nCtrl == nLatPerm)
 		{
-//			sVals.add(CTRLS[nCtrl][0]);
-			sVals.add(CTRLS[nCtrl][(nVal & 0xffff)]);
+			sVals.add(CTRLS[nCtrl][((yVal[2] & 0xff) << 8) | (yVal[3] & 0xff)]); // outer
+//			sVals.add(CTRLS[nCtrl][(nVal & 0xffff)]);
 			sVals.add(CTRLS[nCtrl][0]);
-			sVals.add(CTRLS[nCtrl][((nVal >> 16) & 0xffff)]);
+			sVals.add(CTRLS[nCtrl][((yVal[0] & 0xff) << 8) | (yVal[1] & 0xff)]); // inner
+//			sVals.add(CTRLS[nCtrl][((nVal >> 16) & 0xffff)]);
+		}
+		else if (nCtrl == nSignal)
+		{
+			sVals.add(Text.toHexString(yVal));
 		}
 		else
-			sVals.add(CTRLS[nCtrl][nVal]);
+		{
+			sVals.add(CTRLS[nCtrl][MathUtil.bytesToInt(yVal)]);
+		}
 	}
 }

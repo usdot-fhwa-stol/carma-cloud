@@ -1,0 +1,135 @@
+{
+	"ctrl":
+	{
+		"source": {"type": "vector", "tiles": ["https://cctest.data-env.com/api/lctrl/{z}/{x}/{y}"], "minzoom": 18},
+		"layers":
+		[
+			{"type": "fill", "source-layer": "pavement", "paint":{"fill-color":"#999", "fill-opacity": 0}}, 
+                        {
+                                "type": "line",
+                                "source-layer": "debug-c",
+                                "layout": {"line-join": "round", "line-cap": "round"},
+                                "paint":
+                                {
+                                        "line-color": "black",
+                                        "line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 0.0, 24.0, 10.0],
+					"line-opacity": 1
+                                }
+                        },
+			{"type": "circle", "source-layer": "debug-p", "paint":{"circle-opacity": 0.5, "circle-color": ["match", ["get", "color"], "black", "black", "blue", "blue", "red", "red", "orange", "orange", "purple", "purple",  "white"], "circle-radius": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 3.0, 24.0, 15.0]}},
+                        {
+                                "type": "line",
+                                "source-layer": "direction",
+                                "layout": {"line-join": "round", "line-cap": "round"},
+                                "paint":
+                                {
+                                        "line-color": "#ccc",
+                                        "line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 0.0, 24.0, 20.0],
+                                        "line-opacity": 1
+                                }
+                        },			
+			{"type": "fill", "source-layer": "signal-body", "paint":{"fill-color": ["rgb", 255, 201, 14]}},
+			{"type": "fill", "source-layer": "signal-lights", "paint":{"fill-outline-color" : "black", "fill-color": ["match", ["get", "color"], "r", ["rgb", 237, 28, 36], "y", ["rgb", 255, 242, 0], "g", ["rgb", 34, 177, 76], "#F00"]}},
+			{"type": "fill", "source-layer": "signal-sl", "paint":{"fill-color": "#fff"}},
+			{"type": "fill", "source-layer": "stop-w", "paint":{"fill-color": ["rgb", 255, 255, 255]}},
+			{"type": "fill", "source-layer": "stop-r", "paint":{"fill-color": ["rgb", 237, 28, 36]}},
+			{"type": "fill", "source-layer": "stop-sl", "paint":{"fill-color": "#fff"}},
+			{"type": "fill", "source-layer": "yield-ow", "paint":{"fill-color": ["rgb", 255, 255, 255]}},
+			{"type": "fill", "source-layer": "yield-r", "paint":{"fill-color": ["rgb", 237, 28, 36]}},
+			{"type": "fill", "source-layer": "yield-iw", "paint":{"fill-color": ["rgb", 255, 255, 255]}},
+			{"type": "fill", "source-layer": "yield-sl", "paint":{"fill-color": "#fff"}},
+			{"type": "line", "source-layer": "latperm", "paint":{"line-width": ["interpolate", ["exponential", 2], ["zoom"], 18.0, 2.0, 24.0, 10.0], "line-color": ["match", ["get", "color"], "standard", ["rgb", 255, 255, 255], "blue", "blue", "green", "green", "red", "red", "white", ["rgb", 255, 255, 255], "yellow", "#FC0", "orange", "orange", "#FFF"]}},
+                        {
+                                "type": "line",
+                                "source-layer": "a",
+                                "layout": {"line-join": "round", "line-cap": "round"},
+                                "paint":
+                                {
+                                        "line-color": "blue",
+                                        "line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 10.0],
+                                        "line-opacity": 1
+                                }
+                        },
+			{"type": "fill", "source-layer": "closed-poly", "paint":{"fill-pattern": "wz-close"}},
+			{"type": "line", "source-layer": "closed-outline", "paint":{"line-color": "#ff7f27", "line-width": 2}},
+			{"type": "fill", "source-layer": "closing-poly", "paint":{"fill-pattern": "wz-close"}},
+			{"type": "line", "source-layer": "closing-outline", "paint":{"line-color": "#ff7f27", "line-width": 2}},
+                        {"type": "fill", "source-layer": "opening-poly", "paint":{"fill-pattern": "wz-close"}},
+                        {"type": "line", "source-layer": "opening-outline", "paint":{"line-color": "#ff7f27", "line-width": 2}}
+		]
+	},
+        "hl-pt-gjson":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}}},
+                "layers":
+                [
+                        {
+                                "type": "circle",
+                                "id": "hl-pt",
+                                "paint":
+                                {
+                                        "circle-color": "#33ffff",
+                                        "circle-radius": 5,
+					"circle-opacity": 0
+                                }
+                        }
+                ]
+        },
+        "created-lanes":
+        {
+                "source": {"type": "geojson", "data": {"type": "FeatureCollection", "features": []}},
+                "layers":
+                [
+                        {
+                                "type": "fill",
+                                "id": "lanes",
+                                "paint":
+                                {
+                                        "fill-color": "#66ffcc",
+                                        "fill-opacity": 1
+                                }
+                        }
+                ]
+        },
+        "hl-poly-gjson":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [1, 0], [0, 0]]]}}},
+                "layers":
+                [
+                        {
+                                "type": "fill",
+                                "id": "hl-poly",
+                                "paint":
+                                {
+                                        "fill-color": "#66ffff",
+                                        "fill-opacity": 0
+                                }
+                        }
+                ]
+        },
+        "hl-line-gjson":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [1, 0], [0, 0]]]}}},
+                "layers":
+                [
+                        {
+                                "type": "fill",
+                                "id": "hl-line",
+                                "paint":
+                                {
+					"fill-opacity" : 0
+                                }
+                        },
+			{
+				"type": "line",
+				"id": "dummy-path-outline",
+				"line-join": "round",
+				"paint":
+				{
+					"line-color": "green",
+					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 10.0]
+				}
+			}
+                ]
+        }
+}

@@ -15,6 +15,7 @@ import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.MathUtil;
 import cc.util.TileUtil;
 import java.awt.geom.AffineTransform;
 import java.io.BufferedInputStream;
@@ -110,14 +111,10 @@ public class ProcDirection extends ProcCtrl
 			}
 		}
 		int nLimit = oLanesByRoads.size();
-		int[] nIds = Arrays.newIntArray(nLimit);
 		double dSqTol = dTol * dTol;
 		for (int nOuter = 0; nOuter < nLimit; nOuter++)
 		{
 			CtrlLineArcs oCur = oLanesByRoads.get(nOuter);
-			
-			if (java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCur.m_nLaneId) >= 0)
-				continue;
 			
 			for (int nInner = 0; nInner < nLimit; nInner++)
 			{
@@ -126,27 +123,19 @@ public class ProcDirection extends ProcCtrl
 				CtrlLineArcs oCmp = oLanesByRoads.get(nInner);
 				if (oCmp.m_nLaneType != oCur.m_nLaneType)
 					continue;
-				
-				int nInsert = java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCmp.m_nLaneId); 
-				if (nInsert >= 0) // skip ids that have already been combined
-					continue;
-				
-				
+
 				int nConnect = oCur.connects(oCmp, dSqTol);
 				if (nConnect == CtrlLineArcs.CON_TEND_OSTART || nConnect == CtrlLineArcs.CON_TSTART_OEND) // the pts of both lines are in the same direction
 				{
 					oCur.combine(oCmp, nConnect); // combine the points of oCmp into oCur's point array
-					nIds = Arrays.insert(nIds, oCmp.m_nLaneId, ~nInsert); // add oCmp's id to the list of combined ids
+					oLanesByRoads.remove(nInner);
+					--nLimit;
 					nInner = -1; // start inner loop over
 				}
 			}
-			
-			int nInsert = java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCur.m_nLaneId);
-			if (nInsert < 0)
-			{
-				nIds = Arrays.insert(nIds, oCur.m_nLaneId, ~nInsert);
-				oCombined.add(oCur);
-			}
+
+			oCombined.add(oCur);
+
 		}
 		return oCombined;
 	}
@@ -184,7 +173,7 @@ public class ProcDirection extends ProcCtrl
 
 				for (int nIndex = 1; nIndex <= nArrows; nIndex++)
 				{
-					boolean bForward = TrafCtrlEnums.getCtrlVal("direction", "forward") == oFullGeo.m_nCtrlValue;
+					boolean bForward = TrafCtrlEnums.getCtrlVal("direction", "forward") == MathUtil.bytesToInt(oFullGeo.m_yCtrlValue);
 					double dHdg = getCoordAndHeadingAtLength(oFullGeo.m_dC, oFullGeo.m_dLength * dPercentStep * nIndex, !bForward, dPt);
 					if (Double.isNaN(dHdg))
 						continue;

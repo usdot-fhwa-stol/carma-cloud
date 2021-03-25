@@ -10,7 +10,6 @@ import cc.ctrl.TrafCtrl;
 import cc.geosrv.Mercator;
 import cc.util.Arrays;
 import cc.util.FileUtil;
-import cc.util.Geo;
 import cc.util.TileUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

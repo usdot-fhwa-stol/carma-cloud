@@ -7,12 +7,11 @@ package cc.ws;
 
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.proc.ProcClosed;
-import cc.ctrl.proc.ProcClosing;
 import cc.ctrl.proc.ProcCtrl;
 import cc.ctrl.proc.ProcDebug;
 import cc.ctrl.proc.ProcDirection;
 import cc.ctrl.proc.ProcLatPerm;
-import cc.ctrl.proc.ProcOpening;
+import cc.ctrl.proc.ProcMaxSpeed;
 import cc.ctrl.proc.ProcPavement;
 import cc.ctrl.proc.ProcSignal;
 import cc.ctrl.proc.ProcStop;
@@ -63,6 +62,7 @@ public class LeidosTiles extends HttpServlet
 			String sXodrDir = oConfig.getInitParameter("xodrdir");
 			String sLineArcBaseDir = oConfig.getInitParameter("linearcdir");
 			String sCtrlDir = oConfig.getInitParameter("ctrldir");
+			String sTrackFile = oConfig.getInitParameter("trackfile");
 			double dExplodeStep = Double.parseDouble(oConfig.getInitParameter("explodestep"));
 			double dCombineTol = Double.parseDouble(oConfig.getInitParameter("combinetol"));
 			m_sTdFileFormat = oConfig.getInitParameter("tileddataformat");
@@ -77,15 +77,16 @@ public class LeidosTiles extends HttpServlet
 			oProcesses.add(new ProcYield("/direction", sXodrDir));
 			oProcesses.add(new ProcLatPerm("/rdmks"));
 			oProcesses.add(new ProcClosed("/direction"));
-			oProcesses.add(new ProcClosing("/direction"));
-			oProcesses.add(new ProcOpening("/direction"));
+			oProcesses.add(new ProcMaxSpeed("/direction", sXodrDir));
+//			oProcesses.add(new ProcClosing("/direction"));
+//			oProcesses.add(new ProcOpening("/direction"));
 			
 			Files.createDirectories(Paths.get(m_sTdFileFormat).getParent().getParent(), FileUtil.DIRPERS);
 			Path oDir = Paths.get(sXodrDir);
 			List<Path> oPaths = Files.walk(oDir).filter((oPath) -> {return Files.isRegularFile(oPath) && oPath.toString().endsWith(".xodr");}).collect(Collectors.toList());
 			for (Path oXodrFile : oPaths)
 			{
-				if (new XodrGeoParser().parseXodrToCLA(oXodrFile, sLineArcBaseDir))
+				if (new XodrGeoParser(sTrackFile).parseXodrToCLA(oXodrFile, sLineArcBaseDir))
 				{
 					new XodrRoadMarkParser().parseXodrToCLA(oXodrFile, sLineArcBaseDir);
 					String sFilename = "/" + oXodrFile.getFileName().toString().replace(".xodr", ".bin");

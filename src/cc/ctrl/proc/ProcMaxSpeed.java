@@ -15,6 +15,7 @@ import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.MathUtil;
 import cc.util.TileUtil;
 import java.awt.geom.AffineTransform;
 import java.io.BufferedInputStream;
@@ -95,31 +96,31 @@ public class ProcMaxSpeed extends ProcCtrl
 		parseMetadata(Paths.get(sLineArcsFile + ".spd"));
 		m_oJunctions = new XodrJunctionParser().parseXodrIntersections(Paths.get(m_sXodrDir + sLineArcsFile.substring(sLineArcsFile.lastIndexOf("/")).replace(".bin", ".xodr")));
 		ArrayList<TrafCtrl> oCtrls = new ArrayList();
-			ArrayList<CtrlLineArcs> oLineArcs = new ArrayList();
-			try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(Paths.get(sLineArcsFile)))))
+		ArrayList<CtrlLineArcs> oLineArcs = new ArrayList();
+		try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(Paths.get(sLineArcsFile)))))
+		{
+			while (oIn.available() > 0)
 			{
-				while (oIn.available() > 0)
-				{
-					oLineArcs.add(new CtrlLineArcs(oIn));
-				}
+				oLineArcs.add(new CtrlLineArcs(oIn));
 			}
-			oLineArcs = combine(oLineArcs, dTol);
-			ArrayList<int[]> oTiles = new ArrayList();
-			int nShoulder = XodrUtil.getLaneType("shoulder");
-			SpdMapping oSearch = new SpdMapping();
-			for (CtrlLineArcs oCLA : oLineArcs)
-			{
-				oSearch.m_nId = oCLA.m_nLaneId;
-				int nIndex = Collections.binarySearch(m_oSpds, oSearch);
-				int nSpeed = nIndex >= 0 ? m_oSpds.get(nIndex).m_nSpd : DEFAULTSPD;
-				TrafCtrl oCtrl = new TrafCtrl("maxspeed", nSpeed, 0, oCLA.m_dLineArcs);
-				String sRoadId = Integer.toString(XodrUtil.getRoadId(oCLA.m_nLaneId));
-				if (oCLA.m_nLaneType != nShoulder && !m_oJunctions.containsKey(sRoadId))
-					oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
-				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
-			}
-			renderTiledData(oCtrls, oTiles);
+		}
+		oLineArcs = combine(oLineArcs, dTol);
+		ArrayList<int[]> oTiles = new ArrayList();
+		int nShoulder = XodrUtil.getLaneType("shoulder");
+		SpdMapping oSearch = new SpdMapping();
+		for (CtrlLineArcs oCLA : oLineArcs)
+		{
+			oSearch.m_nId = oCLA.m_nLaneId;
+			int nIndex = Collections.binarySearch(m_oSpds, oSearch);
+			int nSpeed = nIndex >= 0 ? m_oSpds.get(nIndex).m_nSpd : DEFAULTSPD;
+			TrafCtrl oCtrl = new TrafCtrl("maxspeed", nSpeed, 0, oCLA.m_dLineArcs);
+			String sRoadId = Integer.toString(XodrUtil.getRoadId(oCLA.m_nLaneId));
+			if (oCLA.m_nLaneType != nShoulder && !m_oJunctions.containsKey(sRoadId))
+				oCtrls.add(oCtrl);
+			oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+			updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
+		}
+		renderTiledData(oCtrls, oTiles);
 	}
 
 
@@ -130,6 +131,7 @@ public class ProcMaxSpeed extends ProcCtrl
 		Collections.sort(oLanesByRoads, CtrlLineArcs.CMPBYLANE);
 		ArrayList<CtrlLineArcs> oCombined = new ArrayList();
 		int nIndex = oLanesByRoads.size();
+		SpdMapping oSearch = new SpdMapping();
 		while (nIndex-- > 0)
 		{
 			CtrlLineArcs oCla = oLanesByRoads.get(nIndex);
@@ -141,14 +143,10 @@ public class ProcMaxSpeed extends ProcCtrl
 			}
 		}
 		int nLimit = oLanesByRoads.size();
-		int[] nIds = Arrays.newIntArray(nLimit);
 		double dSqTol = dTol * dTol;
 		for (int nOuter = 0; nOuter < nLimit; nOuter++)
 		{
 			CtrlLineArcs oCur = oLanesByRoads.get(nOuter);
-			
-			if (java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCur.m_nLaneId) >= 0)
-				continue;
 			
 			for (int nInner = 0; nInner < nLimit; nInner++)
 			{
@@ -157,27 +155,27 @@ public class ProcMaxSpeed extends ProcCtrl
 				CtrlLineArcs oCmp = oLanesByRoads.get(nInner);
 				if (oCmp.m_nLaneType != oCur.m_nLaneType)
 					continue;
-				
-				int nInsert = java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCmp.m_nLaneId); 
-				if (nInsert >= 0) // skip ids that have already been combined
-					continue;
-				
-				
+
 				int nConnect = oCur.connects(oCmp, dSqTol);
 				if (nConnect == CtrlLineArcs.CON_TEND_OSTART || nConnect == CtrlLineArcs.CON_TSTART_OEND) // the pts of both lines are in the same direction
 				{
+					oSearch.m_nId = oCur.m_nLaneId;
+					int nSearchIndex = Collections.binarySearch(m_oSpds, oSearch);
+					int nCurSpeed = nSearchIndex >= 0 ? m_oSpds.get(nSearchIndex).m_nSpd : DEFAULTSPD;
+					
+					oSearch.m_nId = oCmp.m_nLaneId;
+					nSearchIndex = Collections.binarySearch(m_oSpds, oSearch);
+					int nCmpSpeed = nSearchIndex >= 0 ? m_oSpds.get(nSearchIndex).m_nSpd : DEFAULTSPD;
+					if (nCurSpeed != nCmpSpeed)
+						continue;
+					
 					oCur.combine(oCmp, nConnect); // combine the points of oCmp into oCur's point array
-					nIds = Arrays.insert(nIds, oCmp.m_nLaneId, ~nInsert); // add oCmp's id to the list of combined ids
+					oLanesByRoads.remove(nInner);
+					--nLimit;
 					nInner = -1; // start inner loop over
 				}
 			}
-			
-			int nInsert = java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCur.m_nLaneId);
-			if (nInsert < 0)
-			{
-				nIds = Arrays.insert(nIds, oCur.m_nLaneId, ~nInsert);
-				oCombined.add(oCur);
-			}
+			oCombined.add(oCur);
 		}
 		return oCombined;
 	}
@@ -277,7 +275,9 @@ public class ProcMaxSpeed extends ProcCtrl
 					oAt.translate(dPt[0], dPt[1]);
 					oAt.rotate(dHdg - Mercator.PI_OVER_TWO, 0, 0);
 					oAt.scale(0.45, 0.45);
-					String sVal = Integer.toString(oCtrl.m_nControlValue);
+					String sVal = Integer.toString(MathUtil.bytesToInt(oCtrl.m_yControlValue));
+					if (sVal.compareTo("0") == 0) // speed limit zero exception
+						sVal += "0";
 					int nNumber = Integer.parseInt(Character.toString(sVal.charAt(0)));
 					oAt.transform(NUMBERS[nNumber], 0, dNumbers[nNumber], 1, nNumbersPts[nNumber]);
 					

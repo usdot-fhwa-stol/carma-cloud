@@ -16,7 +16,6 @@ import cc.geosrv.xodr.Signal;
 import cc.geosrv.xodr.XodrSignalParser;
 import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
-import cc.util.BufferedInStream;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.TileUtil;
@@ -29,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -128,9 +128,12 @@ public class ProcSignal extends ProcCtrl
 			}
 			oLineArcs = combine(oLineArcs, dTol);
 			ArrayList<int[]> oTiles = new ArrayList();
+			SecureRandom oRng = new SecureRandom();
+			byte[] yBytes = new byte[8];
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("signal", "", 0, oCLA.m_dLineArcs); 
+				oRng.nextBytes(yBytes);
+				TrafCtrl oCtrl = new TrafCtrl("signal", yBytes, 0, oCLA.m_dLineArcs); 
 				oCtrls.add(oCtrl);
 				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
@@ -229,7 +232,6 @@ public class ProcSignal extends ProcCtrl
 		
 		int nOuterLimit = oInRoadsToSignals.size();
 		int nInnerLimit = oLanesByRoads.size();
-		int[] nIds = Arrays.newIntArray(nOuterLimit);
 		double dSqTol = dTol * dTol;
 		
 		for (int nOuter = 0; nOuter < nOuterLimit; nOuter++)
@@ -244,15 +246,9 @@ public class ProcSignal extends ProcCtrl
 				continue;
 			}
 			
-			nIds[0] = 1;
-			
 			for (int nInner = 0; nInner < nInnerLimit; nInner++)
 			{
 				CtrlLineArcs oCmp = oLanesByRoads.get(nInner);
-
-				int nInsert = java.util.Arrays.binarySearch(nIds, 1, Arrays.size(nIds), oCmp.m_nLaneId); 
-				if (nInsert >= 0) // skip ids that have already been combined
-					continue;
 				
 				int nConnect = oCur.connects(oCmp, dSqTol);
 				if (nConnect == CtrlLineArcs.CON_TSTART_OEND) // the other linearc connects at the start of this linearc
@@ -261,7 +257,8 @@ public class ProcSignal extends ProcCtrl
 					if (dLen + dOtherLen < MINLEN)
 					{
 						oCur.combine(oCmp, nConnect); // combine the points of oCmp into oCur's point array
-						nIds = Arrays.insert(nIds, oCmp.m_nLaneId, ~nInsert); // add oCmp's id to the list of combined ids
+						oLanesByRoads.remove(nInner);
+						--nInnerLimit;
 						nInner = -1; // start inner loop over
 					}
 					else
@@ -395,7 +392,7 @@ public class ProcSignal extends ProcCtrl
 					oStopLine.add(new TdFeature(dStopLine, nEmptyTags, oCtrl));
 				}
 				double dLen = 0.0;
-				while (dLen < 0.5 && nIndex > 0)
+				while (dLen < 0.5 && nIndex > 3)
 				{
 					double dX1 = dC[nIndex];
 					double dY1 = dC[nIndex + 1];
@@ -404,6 +401,7 @@ public class ProcSignal extends ProcCtrl
 					dLen += Geo.distance(dX1, dY1, dX2, dY2);
 					nIndex -= 2;
 				}
+				
 				double dX1 = dC[nIndex];
 				double dY1 = dC[nIndex + 1];
 				double dX2 = dC[nSize - 2];

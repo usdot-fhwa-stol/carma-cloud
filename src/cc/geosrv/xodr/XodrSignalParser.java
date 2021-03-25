@@ -5,7 +5,6 @@
  */
 package cc.geosrv.xodr;
 
-import cc.util.BufferedInStream;
 import java.io.BufferedInputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -59,8 +58,8 @@ public class XodrSignalParser extends DefaultHandler2
 				}
 				case "signal":
 				{
-					Signal oTemp = new Signal(iAtt.getValue("id"), iAtt.getValue("orientation"), m_nRoadId, iAtt.getValue("type"), iAtt.getValue("dynamic"));
-					if (Arrays.binarySearch(m_sSignalTypes, oTemp.m_sType) >= 0) // filter on signal types we want
+					Signal oTemp = new Signal(iAtt.getValue("id"), iAtt.getValue("orientation"), m_nRoadId, iAtt.getValue("type"), iAtt.getValue("dynamic"), iAtt.getValue("name"));
+					if (Arrays.binarySearch(m_sSignalTypes, oTemp.m_sType) >= 0 || Arrays.binarySearch(m_sSignalTypes, oTemp.m_sName) >= 0) // filter on signal types we want
 					{
 						int nIndex = Collections.binarySearch(m_oSignals, oTemp);
 						if (nIndex < 0)

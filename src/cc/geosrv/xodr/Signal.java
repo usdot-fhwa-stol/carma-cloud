@@ -21,12 +21,13 @@ public class Signal implements Comparable<Signal>
 	public int[] m_nRoads = Arrays.newIntArray();
 	public String m_sType;
 	public boolean m_bDynamic;
+	public String m_sName;
 	
 	public Signal()
 	{
 	}
 	
-	public Signal(String sId, String sOri, int nRoadId, String sType, String sDynamic)
+	public Signal(String sId, String sOri, int nRoadId, String sType, String sDynamic, String sName)
 	{
 		m_sId = sId;
 		if (sOri.compareTo("+") == 0)
@@ -38,6 +39,7 @@ public class Signal implements Comparable<Signal>
 		m_nRoads = Arrays.add(m_nRoads, nRoadId);
 		m_sType = sType;
 		m_bDynamic = sDynamic.compareTo("yes") == 0;
+		m_sName = sName;
 	}
 	
 	

@@ -7,13 +7,14 @@ package cc.ctrl.proc;
 
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
+import cc.ctrl.TrafCtrlEnums;
 import static cc.ctrl.proc.ProcCtrl.g_sTrafCtrlDir;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
-import cc.util.BufferedInStream;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.MathUtil;
 import cc.util.TileUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -58,21 +59,30 @@ public class ProcClosed extends ProcCtrl
 					oLineArcs.add(new CtrlLineArcs(oIn));
 				}
 			}
-			int[] nTileIndices = new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MIN_VALUE, Integer.MIN_VALUE};
 			ArrayList<int[]> nTiles = new ArrayList();
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
-				if (XodrUtil.getLaneType(oCLA.m_nLaneType).compareTo("roadWorks") != 0)
+				String sType = XodrUtil.getLaneType(oCLA.m_nLaneType);
+				TrafCtrl oCtrl = null;
+				if (sType.compareTo("roadWorks") == 0)
+				{
+					oCtrl = new TrafCtrl("closed", "closed", 0, oCLA.m_dLineArcs);
+				}
+				else if (sType.contains("special1"))
+				{
+					oCtrl = new TrafCtrl("closed", sType.contains("1") ? "taperright" : "taperleft", 0, oCLA.m_dLineArcs); 
+				}
+				else if (sType.contains("special2"))
+				{
+					oCtrl = new TrafCtrl("closed", sType.contains("2") ? "openright" : "openleft", 0, oCLA.m_dLineArcs);
+				}
+
+				if (oCtrl == null)
 					continue;
-				
-				TrafCtrl oCtrl = new TrafCtrl("closed", "", 0, oCLA.m_dLineArcs); 
 				oCtrls.add(oCtrl);
 				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
 				updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
-//				updateTileRange(nTileIndices, oCtrl.m_oFullGeo.m_nTileIndices);
 			}
-//			if (checkTileRange(nTileIndices))
-//				throw new Exception("Ctrl spans too many tiles");
 			renderTiledData(oCtrls, nTiles);
 		}
 		catch (Exception oEx)
@@ -88,14 +98,80 @@ public class ProcClosed extends ProcCtrl
 		TdLayer oLayer = new TdLayer("closed-poly", sEmpty, sEmpty, TdLayer.POLYGON);
 		TdLayer oLayerOutline  = new TdLayer("closed-outline", sEmpty, sEmpty, TdLayer.LINESTRING);
 		int[] nTags = new int[0];
+		ArrayList<TrafCtrl> oTaperCtrls = new ArrayList();
+		ArrayList<Integer> oTaperValues = new ArrayList();
+		ArrayList<double[]> dTapers = new ArrayList();
+		for (String sVal : new String[]{"taperleft", "taperright", "openleft", "openright"})
+			oTaperValues.add(TrafCtrlEnums.getCtrlVal("closed", sVal));
+		
+		Collections.sort(oTaperValues);
+		int nCtrlIndex = oCtrls.size();
+		while (nCtrlIndex-- > 0)
+		{
+			TrafCtrl oCtrl = oCtrls.get(nCtrlIndex);
+			int nCtrlVal = MathUtil.bytesToInt(oCtrl.m_yControlValue);
+			if (Collections.binarySearch(oTaperValues, nCtrlVal) >= 0)
+			{
+				oCtrls.remove(nCtrlIndex);
+				oTaperCtrls.add(oCtrl);
+				String sCtrlVal = TrafCtrlEnums.CTRLS[oCtrl.m_nControlType][nCtrlVal];
+				int nPoints = (int)(oCtrl.m_oFullGeo.m_dLength / 0.2) + 1;
+				double dPercent = 1.0 / nPoints;
+				int nCount = nPoints;
+				int nIncrease = -1;
+				if (sCtrlVal.contains("taper"))
+				{
+					nCount = 0;
+					nIncrease = 1;
+				}
+				
+				double[] dC = oCtrl.m_oFullGeo.m_dC;
+				boolean bRight = sCtrlVal.contains(("right"));
+				double[] dStraight = bRight ? oCtrl.m_oFullGeo.m_dNT : oCtrl.m_oFullGeo.m_dPT;
+				int nLimit = Arrays.size(dC) - 2;
+				double dDist = 0.0;
+				double[] dTaper = Arrays.newDoubleArray(nPoints * 2);
+				dTaper = Arrays.add(dTaper, dStraight[1], dStraight[2]);
+				for (int nIndex = 1; nIndex < nLimit; nIndex += 2)
+				{
+					double dX1 = dC[nIndex];
+					double dY1 = dC[nIndex + 1];
+					double dX2 = dC[nIndex + 2];
+					double dY2 = dC[nIndex + 3];
+					dDist += Geo.distance(dX1, dY1, dX2, dY2);
+					if (dDist >= 0.2)
+					{
+						dDist = 0.0;
+						double dX3 = dStraight[nIndex];
+						double dY3 = dStraight[nIndex + 1];
+						double dHeading = Geo.heading(dX3, dY3, dX1, dY1);
+						nCount += nIncrease;
+						double dOffset = Geo.distance(dX3, dY3, dX1, dY1) * 2 * dPercent * nCount;
+						dTaper = Arrays.add(dTaper, dX3 + Math.cos(dHeading) * dOffset, dY3 + Math.sin(dHeading) * dOffset);
+					}
+				}
+				if (bRight)
+				{
+					dTapers.add(dTaper);
+					dTapers.add(dStraight);
+				}
+				else
+				{
+					dTapers.add(dStraight);
+					dTapers.add(dTaper);
+				}
+			}
+		}
 		for (int[] nTile : nTiles)
 		{
 			int nX = nTile[0];
 			int nY = nTile[1];
 			Files.createDirectories(Paths.get(String.format(g_sTdFileFormat, nX, 0, 0, 0)).getParent(), FileUtil.DIRPERS);
 			writeIndexFile(oCtrls, nX, nY);
+			writeIndexFile(oTaperCtrls, nX, nY);
 			oLayer.clear();
 			oLayerOutline.clear();
+			int nTaperCnt = 0;
 			ArrayList<ArrayList<double[]>> oClippedLanes = new ArrayList();
 			double[] dClipBounds = TileUtil.getClippingBounds(g_nDefaultZoom, nX, nY);
 			double[][] dClips = new double[][]{Arrays.newDoubleArray(512), Arrays.newDoubleArray(512), Arrays.newDoubleArray(512)};
@@ -121,12 +197,28 @@ public class ProcClosed extends ProcCtrl
 						dClippedPoly = Geo.reverseOrder(dClippedPoly);
 					}
 
-
 					oLayer.add(new TdFeature(dClippedPoly, nTags, oCtrl));
 					dClippedPoly = Arrays.add(dClippedPoly, dClippedPoly[1], dClippedPoly[2]);
 					oLayerOutline.add(new TdFeature(dClippedPoly, nTags, oCtrl));
 				}
 			}
+			
+			for (TrafCtrl oCtrl : oTaperCtrls)
+			{
+				if (Collections.binarySearch(oCtrl.m_oFullGeo.m_oTiles, nTile, Mercator.TILECOMP) < 0)
+				{
+					nTaperCnt += 2;
+					continue;
+				}
+				
+				double[] dPoly = Geo.createPolygon(dTapers.get(nTaperCnt++), dTapers.get(nTaperCnt++));
+
+				oLayer.add(new TdFeature(dPoly, nTags, oCtrl));
+				dPoly = Arrays.add(dPoly, dPoly[1], dPoly[2]);
+				oLayerOutline.add(new TdFeature(dPoly, nTags, oCtrl));
+			}
+			
+			
 
 			if (!oLayer.isEmpty())
 			{

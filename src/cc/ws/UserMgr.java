@@ -93,7 +93,8 @@ public class UserMgr extends HttpServlet
 			}
 		}
 		sBuf.append("}\n");
-
+		
+		oRep.setContentType("text/plain");
 		try (ServletOutputStream oOut = oRep.getOutputStream())
 		{
 			for (int nIndex = 0; nIndex < sBuf.length(); nIndex++)

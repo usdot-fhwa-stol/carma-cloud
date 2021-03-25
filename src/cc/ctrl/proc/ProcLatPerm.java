@@ -13,7 +13,6 @@ import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrUtil;
 import cc.geosrv.xodr.rdmk.RoadMark;
 import cc.util.Arrays;
-import cc.util.BufferedInStream;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.TileUtil;
@@ -103,15 +102,12 @@ public class ProcLatPerm extends ProcCtrl
 			{
 				XodrUtil.splitLaneSectionId(oCLA.m_lLaneSectionId, 0, nSearch);
 				int nSIndex = Collections.binarySearch(m_oRdMkInfo, nSearch, RDMKCOMP);
-				if (nSIndex < 0)
-					System.currentTimeMillis();
 				int[] nTags = m_oRdMkInfo.get(nSIndex);
 				int nIndex = nTags[2]++;
 				nIndex = 3 + nIndex * 8;
 				if (nIndex == nTags.length)
 				{
 					System.out.println(oCLA.m_lLaneSectionId);
-					System.currentTimeMillis();
 				}
 				int nInnerMarkType = nTags[nIndex++];
 				int nInnerColor = nTags[nIndex++];
@@ -237,8 +233,8 @@ public class ProcLatPerm extends ProcCtrl
 		{
 			if (oCtrl.m_oFullGeo.m_dAverageWidth < WIDTHTH)
 				continue;
-			int nOuterVal = oCtrl.m_nControlValue & 0xff;
-			int nInnerVal = oCtrl.m_nControlValue >> 16;
+			int nOuterVal = ((oCtrl.m_yControlValue[2] & 0xff) << 8) | (oCtrl.m_yControlValue[3] & 0xff);
+			int nInnerVal = ((oCtrl.m_yControlValue[0] & 0xff) << 8) | (oCtrl.m_yControlValue[1] & 0xff);
 			
 			double[] dInner = oCtrl.m_oFullGeo.m_dPT;
 			double[] dOuter = oCtrl.m_oFullGeo.m_dNT;

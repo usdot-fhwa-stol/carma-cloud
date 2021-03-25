@@ -30,8 +30,6 @@ public class Line extends Geometry
 			int nLimit;
 			double dStep;
 			double dEndDistOnRoad = m_dS + m_dL;
-			double dStartX = m_dX;
-			double dStartY = m_dY;
 			ArrayDeque<LaneSection> oDeque = new ArrayDeque();
 			oRoad.getLaneSections(oDeque, m_dS, dEndDistOnRoad);
 			while (!oDeque.isEmpty())
@@ -40,6 +38,9 @@ public class Line extends Geometry
 				double dStart = Math.max(m_dS, oSection.m_dS);
 				double dEnd = oDeque.isEmpty() ? dEndDistOnRoad : oDeque.getFirst().m_dS;
 				double dLength = dEnd - dStart;
+				double dLengthAlongGeo = dStart - m_dS;
+				double dStartX = m_dX + dLengthAlongGeo * Math.cos(m_dHdg);
+				double dStartY = m_dY + dLengthAlongGeo * Math.sin(m_dHdg);
 				if (dMaxStep > dLength)
 				{
 					nLimit = 1;
@@ -55,7 +56,7 @@ public class Line extends Geometry
 				oRoad.m_dLaneZero = Arrays.ensureCapacity(oRoad.m_dLaneZero, nLimit * 2);
 				double dDeltaX = dStep * Math.cos(m_dHdg);
 				double dDeltaY = dStep * Math.sin(m_dHdg);
-				if (bIncludeEnd && oDeque.isEmpty())
+				if (bIncludeEnd)
 					++nLimit;
 				for (int i = 0; i < nLimit; i++)
 				{

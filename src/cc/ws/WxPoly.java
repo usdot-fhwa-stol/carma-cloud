@@ -9,20 +9,17 @@ import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
 import cc.ctrl.proc.ProcCtrl;
 import cc.ctrl.proc.ProcMaxSpeed;
-import cc.ctrl.proc.TdFeature;
-import cc.ctrl.proc.TdLayer;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
+import cc.util.MathUtil;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -131,7 +128,7 @@ public class WxPoly extends HttpServlet
 				{
 					String sId = TrafCtrl.getId(yId);
 					TrafCtrl oCtrl = new TrafCtrl(CtrlTiles.g_sCtrlDir + sId + ".bin");
-					int nSpeed = oCtrl.m_nControlValue;
+					int nSpeed = MathUtil.bytesToInt(oCtrl.m_yControlValue);
 //							if (nSpeed <= 25)
 //								continue;
 					TrafCtrl oSpdLimit = new TrafCtrl("maxspeed", nSpeed - 10, lNow, oCtrl);

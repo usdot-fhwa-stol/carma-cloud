@@ -22,6 +22,9 @@ public abstract class Geometry implements Comparable<Geometry>
 	public double m_dY;
 	public double m_dHdg;
 	public double m_dL;
+	public static int COUNT = 0;
+	public static double PX;
+	public static double PY;
 	
 	public Geometry(double dS, double dX, double dY, double dH, double dL)
 	{
@@ -43,6 +46,11 @@ public abstract class Geometry implements Comparable<Geometry>
 			oRoad.m_dLastGeo = m_dS;
 			oRoad.m_dGeoPoints.add(new double[]{dProjPt[0], dProjPt[1]});
 		}
+		if (oRoad.m_dLastSection != oLaneSection.m_dS)
+		{
+			oRoad.m_dLastSection = oLaneSection.m_dS;
+			oRoad.m_dLSPoints.add(new double[]{dProjPt[0], dProjPt[1]});
+		}
 		oLaneSection.m_oCenter.m_dOuter = Arrays.addAndUpdate(oLaneSection.m_oCenter.m_dOuter, dProjPt[0], dProjPt[1]);
 		addLanePoints(oLaneSection, oLaneSection.m_oLeft, dHdg + Math.PI / 2, dXLaneZero, dYLaneZero, dLengthAlongRoad, oProj, dProjPt, oRoad);
 		addLanePoints(oLaneSection, oLaneSection.m_oRight, dHdg - Math.PI / 2, dXLaneZero, dYLaneZero, dLengthAlongRoad, oProj, dProjPt, oRoad);
@@ -58,6 +66,8 @@ public abstract class Geometry implements Comparable<Geometry>
 		double dYProjPrevLane = dProjPt[1];
 		for (Lane oLane : oLanes)
 		{
+			if (Arrays.size(oLane.m_dCenter) == 251)
+				System.currentTimeMillis();
 			double dPx = dXProjPrevLane;
 			double dPy = dYProjPrevLane;
 			double dLengthAlongSection = dLengthAlongRoad - oLaneSection.m_dS;
@@ -73,7 +83,13 @@ public abstract class Geometry implements Comparable<Geometry>
 			dYProjPrevLane = dProjPt[1];
 			double dXPath = (dXPrevLane + dXNextLane) / 2;
 			double dYPath = (dYPrevLane + dYNextLane) / 2;
+			
 			oLane.m_dCenter = addProjectedPoint(dXPath, dYPath, oLane.m_dCenter, oProj, dProjPt);
+//			if (oLane.m_nLaneIndex == 2)
+//			{
+//				if (dProjPt[0] < -8555840.6442 && dProjPt[0] > -8555840.7746 && dProjPt[1] > 4686050.6342 && dProjPt[1] < 4686050.8053)
+//					System.currentTimeMillis();
+//			}
 			if (this instanceof Arc)
 			{
 				oRoad.m_dPerps.add(new double[]{dPx, dPy, dXProjPrevLane, dYProjPrevLane});
@@ -88,6 +104,7 @@ public abstract class Geometry implements Comparable<Geometry>
 			dYPrevLane = dYNextLane;
 			
 			oLane.m_dCenter = Arrays.add(oLane.m_dCenter, dProjW);
+			
 		}
 	}
 	

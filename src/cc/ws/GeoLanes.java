@@ -5,10 +5,13 @@
  */
 package cc.ws;
 
+import cc.ctrl.CtrlGeo;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
+import cc.util.Arrays;
 import cc.util.FileUtil;
+import cc.util.Geo;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -19,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -75,91 +79,123 @@ public class GeoLanes extends HttpServlet
 	protected void doPost(HttpServletRequest oRequest, HttpServletResponse oResponse)
 	   throws ServletException, IOException
 	{
-		StringBuilder sBuf = new StringBuilder();
-		try (BufferedInputStream oIn = new BufferedInputStream(oRequest.getInputStream()))
+		try
 		{
-			int nByte;
-			while ((nByte = oIn.read()) >= 0)
-				sBuf.append((char)nByte);
-		}
-		String[] sLatLon = sBuf.toString().split(",");
-		double dX = Double.parseDouble(sLatLon[0]);
-		double dY = Double.parseDouble(sLatLon[1]);
-		int[] nTiles = new int[2];
-		Mercator.getInstance().lonLatToTile(dX, dY, CtrlTiles.g_nZoom, nTiles);
-		HttpSession oSess = oRequest.getSession();
-		ArrayList<byte[]> oLoadedIds;
-		ArrayList<byte[]> oIdsToLoad = new ArrayList();
-		synchronized (oSess) // lock the session until all of the ids to load are accumulated and saved to the session
-		{
-			if (oSess.getAttribute("ids") == null)
+			long lNow = System.currentTimeMillis();
+			int nXTile = Integer.parseInt(oRequest.getParameter("x"));
+			int nYTile = Integer.parseInt(oRequest.getParameter("y"));
+			int nType = Integer.parseInt(oRequest.getParameter("type"));
+			Session oSess = SessMgr.getSession(oRequest);
+			ArrayList<byte[]> oLoadedIds;
+			ArrayList<byte[]> oIdsToLoad = new ArrayList();
+			oResponse.setContentType("application/json");
+			synchronized (oSess) // lock the session until all of the ids to load are accumulated and saved to the session
 			{
-				oLoadedIds = new ArrayList();
-				oSess.setAttribute("ids", oLoadedIds);
-			}
-			oLoadedIds = (ArrayList)oSess.getAttribute("ids");
-			int nDebug = TrafCtrlEnums.getCtrl("debug");
-			for (int nX = nTiles[0] - 1; nX <= nTiles[0] + 1; nX++)
-			{
-				for (int nY = nTiles[1] - 1; nY <= nTiles[1] + 1; nY++)
-				{
-					Path oIndexFile = Paths.get(String.format(CtrlTiles.g_sTdFileFormat, nX, CtrlTiles.g_nZoom, nX, nY) + ".ndx");
-					if (!Files.exists(oIndexFile))
-						continue;
+				oLoadedIds = oSess.oLoadedIds;
 
-					byte[] yIdBuf = new byte[16];
-					try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile))))
+				Path oIndexFile = Paths.get(String.format(CtrlTiles.g_sTdFileFormat, nXTile, CtrlTiles.g_nZoom, nXTile, nYTile) + ".ndx");
+				if (!Files.exists(oIndexFile))
+				{
+					try (BufferedWriter oOut = new BufferedWriter(oResponse.getWriter()))
 					{
-						while (oIn.available() > 0)
+						oOut.append("{}");
+					}
+					return;
+				}
+
+				byte[] yIdBuf = new byte[16];
+				try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile))))
+				{
+					while (oIn.available() > 0)
+					{
+						int nTempType = oIn.readInt();
+						oIn.read(yIdBuf);
+						long lStart = oIn.readLong();
+						long lEnd = oIn.readLong();
+						if ((lStart >= lNow || lEnd > lNow) && nType == nTempType) // everything valid now and in the future add to tile
 						{
-							int nType = oIn.readInt();
-							oIn.read(yIdBuf);
-							oIn.skipBytes(16);
-							if (nType == nDebug) 
+							int nIndex = Collections.binarySearch(oLoadedIds, yIdBuf, TrafCtrl.ID_COMP);
+							if (nIndex < 0)
 							{
-								int nIndex = Collections.binarySearch(oLoadedIds, yIdBuf, TrafCtrl.ID_COMP);
+								byte[] yId = new byte[16];
+								System.arraycopy(yIdBuf, 0, yId, 0, 16);
+								oLoadedIds.add(~nIndex, yId);
+								nIndex = Collections.binarySearch(oIdsToLoad, yId, TrafCtrl.ID_COMP);
 								if (nIndex < 0)
-								{
-									byte[] yId = new byte[16];
-									System.arraycopy(yIdBuf, 0, yId, 0, 16);
-									oLoadedIds.add(~nIndex, yId);
-									nIndex = Collections.binarySearch(oIdsToLoad, yId, TrafCtrl.ID_COMP);
-									if (nIndex < 0)
-										oIdsToLoad.add(~nIndex, yId);
-								}	
-							}
+									oIdsToLoad.add(~nIndex, yId);
+							}	
 						}
 					}
 				}
 			}
-		}
-		
-		StringBuilder sResBuf = new StringBuilder();
-		oResponse.setContentType("text/json");
-		sResBuf.append("{");
-		for (byte[] yId : oIdsToLoad)
-		{
-			String sId = TrafCtrl.getId(yId);
-			sResBuf.append("\"").append(sId);
-			try (BufferedInputStream oIn = new BufferedInputStream(Files.newInputStream(Paths.get(m_sBaseDir + sId))))
+
+			StringBuilder sBuf = new StringBuilder();
+			
+			sBuf.append("{");
+			for (byte[] yId : oIdsToLoad)
 			{
-				int nByte;
-				while ((char)(nByte = oIn.read()) != 'c'); // skip to center lane
-				while ((nByte = oIn.read()) >= 0)
-					sResBuf.append((char)nByte);
+				String sId = TrafCtrl.getId(yId);
+				String sFile = CtrlTiles.g_sCtrlDir + sId + ".bin";
+				sBuf.append("\"").append(sId).append("\":{\"a\":[");
+				TrafCtrl oCtrl = new TrafCtrl(sFile);
+				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+				{
+					oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);
+				}
+				
+				double[] dPts = oCtrl.m_oFullGeo.m_dPT;
+				double[] dPt = new double[2];
+				Iterator<double[]> oIt = Arrays.iterator(dPts, dPt, 1, 2);
+				oIt.next();
+				int nPrevX = Geo.toIntDeg(Mercator.xToLon(dPt[0]));
+				int nPrevY = Geo.toIntDeg(Mercator.yToLat(dPt[1]));
+				sBuf.append(nPrevX).append(",").append(nPrevY);
+				while (oIt.hasNext())
+				{
+					oIt.next();
+					int nX = Geo.toIntDeg(Mercator.xToLon(dPt[0]));
+					int nY = Geo.toIntDeg(Mercator.yToLat(dPt[1]));
+					sBuf.append(",").append(nX - nPrevX).append(",").append(nY - nPrevY);
+					nPrevX = nX;
+					nPrevY = nY;
+				}
+				sBuf.append("],");
+				sBuf.append("\"b\":[");
+				dPts = oCtrl.m_oFullGeo.m_dNT;
+				oIt = Arrays.iterator(dPts, dPt, 1, 2);
+				oIt.next();
+				nPrevX = Geo.toIntDeg(Mercator.xToLon(dPt[0]));
+				nPrevY = Geo.toIntDeg(Mercator.yToLat(dPt[1]));
+				sBuf.append(nPrevX).append(",").append(nPrevY);
+				while (oIt.hasNext())
+				{
+					oIt.next();
+					int nX = Geo.toIntDeg(Mercator.xToLon(dPt[0]));
+					int nY = Geo.toIntDeg(Mercator.yToLat(dPt[1]));
+					sBuf.append(",").append(nX - nPrevX).append(",").append(nY- nPrevY);
+					nPrevX = nX;
+					nPrevY = nY;
+				}
+				sBuf.append("],\"vals\":[");
+				ArrayList<String> sVals = new ArrayList(4);
+				TrafCtrlEnums.getCtrlValString(oCtrl.m_nControlType, oCtrl.m_yControlValue, sVals);
+				for (String sVal : sVals)
+					sBuf.append("\"").append(sVal).append("\",");
+				sBuf.setLength(sBuf.length() - 1);
+				sBuf.append("]},");
 			}
-			sResBuf.setLength(sResBuf.length() -1 ); // remove brace at end of file
-			sResBuf.append(",");
+			if (!oIdsToLoad.isEmpty())
+				sBuf.setLength(sBuf.length() - 1);
+			sBuf.append("}");
+			
+			try (BufferedWriter oOut = new BufferedWriter(oResponse.getWriter()))
+			{
+				oOut.append(sBuf);
+			}
 		}
-		sResBuf.setLength(sResBuf.length() - 1); // remove trailing comma
-		sResBuf.append("}");
-		
-		try (BufferedWriter oOut = new BufferedWriter(oResponse.getWriter()))
+		catch (Exception oEx)
 		{
-			if (oIdsToLoad.isEmpty())
-				oOut.append("{}");
-			else
-				oOut.append(sResBuf);
+			throw new ServletException(oEx);
 		}
 	}
 }

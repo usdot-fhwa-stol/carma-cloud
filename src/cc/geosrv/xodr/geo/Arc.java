@@ -48,7 +48,6 @@ public class Arc extends Geometry
 				double dStart = Math.max(m_dS, oSection.m_dS);
 				double dEnd = oDeque.isEmpty() ? dEndDistOnRoad : oDeque.getFirst().m_dS;
 				double dLength = dEnd - dStart;
-
 				if (dMaxStep > dLength)
 					nLimit = 1;
 				else
@@ -58,9 +57,10 @@ public class Arc extends Geometry
 
 				oRoad.m_dLaneZero = Arrays.ensureCapacity(oRoad.m_dLaneZero, nLimit * 2);
 				oRoad.m_dTrack = Arrays.ensureCapacity(oRoad.m_dTrack, nLimit * 2);
+				oRoad.m_dNoProj = Arrays.ensureCapacity(oRoad.m_dNoProj, nLimit * 2);
 				double dAngleStep = dTheta / nLimit;
 				double dLengthStep = dLength / nLimit;
-				if (bIncludeEnd && oDeque.isEmpty()) // add last point for last section and last geometry
+				if (bIncludeEnd) // add last point for last section and last geometry
 					++nLimit;
 				for (int i = 0; i < nLimit; i++)
 				{
@@ -81,7 +81,9 @@ public class Arc extends Geometry
 					oRoad.m_dLaneZero = Arrays.add(oRoad.m_dLaneZero, 0);
 
 					addLanePoints(oRoad, dHdg, dXLaneZero, dYLaneZero, dLengthAlongRoad, oSection, oProj, dProjPt);
+					
 				}
+				dTotalAngle -= dAngleStep;
 			}
 		}
 		catch (Exception oEx)

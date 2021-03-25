@@ -12,21 +12,23 @@ import cc.ctrl.TcmReq;
 import cc.ctrl.TcmReqParser;
 import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
-import cc.util.Arrays;
-import cc.util.BufferedInStream;
 import cc.util.FileUtil;
 import cc.util.Geo;
-import cc.util.Text;
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.nio.channels.Channels;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -36,14 +38,25 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author aaron.cherney
  */
-public class TcmReqServlet extends HttpServlet
+public class TcmReqServlet extends HttpServlet implements Runnable
 {	
+	private final ArrayDeque<StringBuilder> REPLYBUFS = new ArrayDeque();
+	private final ExecutorService THREADPOOL = Executors.newFixedThreadPool(53);
 	private static int[] IGNORE_CTRLS;
 	static
 	{
 		IGNORE_CTRLS = new int[]{TrafCtrlEnums.getCtrl("pavement"), TrafCtrlEnums.getCtrl("debug")};
 		java.util.Arrays.sort(IGNORE_CTRLS);
 	}
+	
+	
+	@Override
+	public void destroy()
+	{
+		THREADPOOL.shutdown();
+	}
+	
+	
 	@Override
 	public void doPost(HttpServletRequest oReq, HttpServletResponse oRes)
 	   throws ServletException, IOException
@@ -135,7 +148,7 @@ public class TcmReqServlet extends HttpServlet
 								TrafCtrl oCtrl = new TrafCtrl(sFile);
 								try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
 								{
-									oCtrl.m_oFullGeo = new CtrlGeo(oIn);
+									oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);
 								}
 								nSearchIndex = ~nSearchIndex;
 								oCtrls.add(nSearchIndex, oCtrl);
@@ -161,33 +174,66 @@ public class TcmReqServlet extends HttpServlet
 			
 			
 			int nMsgCount = 1;
-			StringBuilder sBuf = new StringBuilder();
 			for (TrafCtrl oCtrl : oResCtrls)
 			{
 				int nParts = oCtrl.size() / 256 + 1;
+				StringBuilder sBuf = new StringBuilder();
 				for (int nIndex = 0; nIndex < nParts; nIndex++)
 				{
 					if (nIndex == 0)
 						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, true, 0);
 					else
 						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, false, nIndex * 256 - 1);
-					try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(Paths.get(String.format("/dev/shm/testreqreply%d.xml", nMsgCount++)), FileUtil.WRITE, FileUtil.FILEPERS), "UTF-8")))
+					++nMsgCount;
+					synchronized (REPLYBUFS)
 					{
-						oOut.append(sBuf);
+						REPLYBUFS.push(sBuf);
+						THREADPOOL.execute(this);
 					}
+//					try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(Paths.get(String.format("/dev/shm/testreqreply%d.xml", nMsgCount++)), FileUtil.WRITE, FileUtil.FILEPERS), "UTF-8")))
+//					{
+//						oOut.append(sBuf);
+//					}
 				}
-//				HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://localhost:8080/tcmreply").openConnection();
-//				oHttpClient.setDoOutput(true);
-//				oHttpClient.setRequestMethod("POST");
-//
-//				oHttpClient.connect(); // send post request
-//				System.out.println(oHttpClient.getResponseCode()); // amateur logging
-//				try (OutputStreamWriter oOut = new OutputStreamWriter(oHttpClient.getOutputStream()))
-//				{
-//					oOut.append(sBuf);
-//				}
-//				oHttpClient.disconnect();
 			}
+		}
+		catch (Exception oEx)
+		{
+			oEx.printStackTrace();
+		}
+	}
+	
+	@Override
+	public void run()
+	{
+		StringBuilder sBuf = null;
+		synchronized (REPLYBUFS)
+		{
+			if (!REPLYBUFS.isEmpty())
+				sBuf = REPLYBUFS.removeFirst();
+		}
+		if (sBuf == null)
+			return;
+		
+		try
+		{
+//			Thread.sleep(10000);
+			HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://tcmreplyhost:10001/tcmreply").openConnection();
+			oHttpClient.setDoOutput(true);
+			oHttpClient.setRequestMethod("POST");
+			oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+			oHttpClient.setFixedLengthStreamingMode(sBuf.length());
+			
+			oHttpClient.connect(); // send post request
+			
+			try (OutputStreamWriter oOut = new OutputStreamWriter(oHttpClient.getOutputStream()))
+			{
+				oOut.append(sBuf);
+			}
+			System.out.println(oHttpClient.getResponseCode()); // amateur logging
+
+			
+			oHttpClient.disconnect();
 		}
 		catch (Exception oEx)
 		{

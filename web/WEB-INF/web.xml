@@ -5,10 +5,6 @@
 
 <display-name>CARMAcloud</display-name>
 
-<welcome-file-list>  
- <welcome-file>login.html</welcome-file>  
-</welcome-file-list>
-
 
 <servlet>
  <servlet-name>SessMgr</servlet-name>
@@ -66,12 +62,6 @@
  <servlet-name>EventMgr</servlet-name>
  <servlet-class>cc.ws.EventMgr</servlet-class>
 
- <init-param>
-  <description>REQUIRED: path to event storage file</description>
-  <param-name>eventfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/event.csv</param-value>
- </init-param>
-
  <load-on-startup>3</load-on-startup>
 </servlet>
 
@@ -82,35 +72,16 @@
 
 
 <servlet>
- <servlet-name>RopMgr</servlet-name>
- <servlet-class>cc.ws.RopMgr</servlet-class>
-
- <init-param>
-  <description>REQUIRED: path to RoP storage file</description>
-  <param-name>ropfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/rop.csv</param-value>
- </init-param>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>RopMgr</servlet-name>
- <url-pattern>/api/rop/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
  <servlet-name>ReplayMgr</servlet-name>
  <servlet-class>cc.ws.ReplayMgr</servlet-class>
 
  <init-param>
   <description>REQUIRED: path to storm library CSV file</description>
   <param-name>stormfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/storm.csv</param-value>
+  <param-value>/opt/tomcat/webapps/carmacloud/storms.csv</param-value>
  </init-param>
 
- <load-on-startup>5</load-on-startup>
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>

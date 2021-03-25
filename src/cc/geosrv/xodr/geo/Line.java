@@ -30,16 +30,19 @@ public class Line extends Geometry
 			int nLimit;
 			double dStep;
 			double dEndDistOnRoad = m_dS + m_dL;
-			double dStartX = m_dX;
-			double dStartY = m_dY;
 			ArrayDeque<LaneSection> oDeque = new ArrayDeque();
 			oRoad.getLaneSections(oDeque, m_dS, dEndDistOnRoad);
 			while (!oDeque.isEmpty())
 			{
 				LaneSection oSection = oDeque.removeFirst();
+				if ((int)oSection.m_dS == 88)
+					System.currentTimeMillis();
 				double dStart = Math.max(m_dS, oSection.m_dS);
 				double dEnd = oDeque.isEmpty() ? dEndDistOnRoad : oDeque.getFirst().m_dS;
 				double dLength = dEnd - dStart;
+				double dLengthAlongGeo = dStart - m_dS;
+				double dStartX = m_dX + dLengthAlongGeo * Math.cos(m_dHdg);
+				double dStartY = m_dY + dLengthAlongGeo * Math.sin(m_dHdg);
 				if (dMaxStep > dLength)
 				{
 					nLimit = 1;
@@ -53,9 +56,10 @@ public class Line extends Geometry
 
 				oRoad.m_dTrack = Arrays.ensureCapacity(oRoad.m_dTrack, nLimit * 2);
 				oRoad.m_dLaneZero = Arrays.ensureCapacity(oRoad.m_dLaneZero, nLimit * 2);
+				oRoad.m_dNoProj = Arrays.ensureCapacity(oRoad.m_dNoProj, nLimit * 2);
 				double dDeltaX = dStep * Math.cos(m_dHdg);
 				double dDeltaY = dStep * Math.sin(m_dHdg);
-				if (bIncludeEnd && oDeque.isEmpty())
+				if (bIncludeEnd)
 					++nLimit;
 				for (int i = 0; i < nLimit; i++)
 				{
@@ -63,6 +67,9 @@ public class Line extends Geometry
 					double dY = dStartY + dDeltaY * i;
 					oRoad.m_dTrack = addProjectedPoint(dX, dY, oRoad.m_dTrack, oProj, dProjPt);
 					oRoad.m_dTrack = Arrays.add(oRoad.m_dTrack, 0);
+
+					oRoad.m_dNoProj = Arrays.addAndUpdate(oRoad.m_dNoProj, dX, dY);
+					oRoad.m_dNoProj = Arrays.add(oRoad.m_dNoProj, 0);
 
 					double dLengthAlongRoad = dStep * i + dStart;
 					LaneOffset oLaneOffset = LaneOffset.getLaneOffset(dLengthAlongRoad, oRoad.m_oLaneOffsets);

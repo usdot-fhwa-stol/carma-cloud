@@ -5,6 +5,8 @@
  */
 package cc.geosrv.xodr;
 
+import cc.util.Text;
+
 /**
  *
  * @author aaron.cherney
@@ -112,5 +114,14 @@ public abstract class XodrUtil
 		lNew <<= 32;
 		lNew |= nSearch[1];
 		System.out.println(lNew);
+	}
+	
+	
+	public static double parseDouble(String sVal)
+	{
+		if (sVal.endsWith("inf"))
+			sVal = sVal.replace("inf", "Infinity");
+		
+		return Double.parseDouble(sVal);
 	}
 }

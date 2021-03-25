@@ -39,8 +39,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	int m_nSpan;
 
 	public boolean m_bRegulatory = true;
-	int m_nControlType;
-	public int m_nControlValue = Integer.MIN_VALUE;
+	public int m_nControlType;
+	public byte[] m_yControlValue;
 
 	String m_sProj = "epsg:3785"; // spherical mercator for map tiles
 	String m_sDatum = "WGS84";
@@ -74,10 +74,20 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	
 	public TrafCtrl(String sControlType, int nControlValue, long lTime, TrafCtrl oCtrl)
 	{
+		this(sControlType, nControlValue, lTime, 0, oCtrl);
+	}
+	
+	
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, TrafCtrl oCtrl)
+	{
 		this();
 		m_nControlType = TrafCtrlEnums.getCtrl(sControlType);
-		m_nControlValue = nControlValue;
+		if (nControlValue == Integer.MIN_VALUE)
+			m_yControlValue = new byte[0];
+		else
+			m_yControlValue = MathUtil.intToBytes(nControlValue, new byte[4]);
 		m_lTime = lTime;
+		m_lStart = lStart;
 		m_nLon = oCtrl.m_nLon;
 		m_nLat = oCtrl.m_nLat;
 		m_nHeading = oCtrl.m_nHeading;
@@ -93,12 +103,38 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, oCtrl);
 	}
 	
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, double[] dLineArcs)
+	{
+		this(sControlType, lTime, dLineArcs);
+		m_lStart = lStart;
+		if (nControlValue == Integer.MIN_VALUE)
+			m_yControlValue = new byte[0];
+		else
+			m_yControlValue = MathUtil.intToBytes(nControlValue, new byte[4]);
+		
+		generateId();
+	}
 	
 	public TrafCtrl(String sControlType, int nControlValue, long lTime, double[] dLineArcs)
 	{
+		this(sControlType, nControlValue, lTime, 0, dLineArcs);
+	}
+	
+	
+	public TrafCtrl(String sControlType, byte[] yControlValue, long lTime, double[] dLineArcs)
+	{
+		this(sControlType, lTime, dLineArcs);
+		m_yControlValue = new byte[yControlValue.length];
+		System.arraycopy(yControlValue, 0, m_yControlValue, 0, m_yControlValue.length);
+		
+		generateId();
+	}
+	
+	
+	public TrafCtrl(String sControlType, long lTime, double[] dLineArcs)
+	{
 		this();
 		m_nControlType = TrafCtrlEnums.getCtrl(sControlType);
-		m_nControlValue = nControlValue;
 		m_lTime = lTime;
 		m_nLon = Geo.toIntDeg(Mercator.xToLon(MathUtil.round(dLineArcs[5], 2)));
 		m_nLat = Geo.toIntDeg(Mercator.yToLat(MathUtil.round(dLineArcs[6], 2)));
@@ -119,7 +155,6 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			nPrevPt[0] = nX;
 			nPrevPt[1] = nY;
 		}
-		generateId();
 	}
 	
 	
@@ -158,7 +193,10 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 
 			m_bRegulatory = oIn.readBoolean();
 			m_nControlType = oIn.readInt();
-			m_nControlValue = oIn.readInt();
+
+			m_yControlValue = new byte[oIn.readInt()];
+			oIn.read(m_yControlValue);
+			
 
 			m_sProj = oIn.readUTF();
 			m_sDatum = oIn.readUTF();
@@ -221,8 +259,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 
 			oAbsorb.writeBoolean(m_bRegulatory);
 			oAbsorb.writeByte(m_nControlType);
-			if (m_nControlValue >= 0) // skip null control value
-				oAbsorb.writeByte(m_nControlValue);
+			oAbsorb.write(m_yControlValue);
 
 			oAbsorb.writeLong(m_lTime);
 			oAbsorb.writeInt(m_nLon);
@@ -307,7 +344,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 
 			oOut.writeBoolean(m_bRegulatory);
 			oOut.writeInt(m_nControlType);
-			oOut.writeInt(m_nControlValue);
+			oOut.writeInt(m_yControlValue.length);
+			oOut.write(m_yControlValue);
 
 			oOut.writeUTF(m_sProj);
 			oOut.writeUTF(m_sDatum);
@@ -427,8 +465,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		sBuf.append("\t\"regulatory\":").append(m_bRegulatory).append(",\n");
 		String[] sCtrl = TrafCtrlEnums.CTRLS[m_nControlType];
 		sBuf.append("\t\"controltype\":\"").append(sCtrl[0]).append("\",\n");
-		if (m_nControlValue >= 0) // ignore null values
-			sBuf.append("\t\"controlvalue\":\"").append(m_nControlValue).append("\",\n");
+		if (m_yControlValue.length > 0) // ignore null values
+			sBuf.append("\t\"controlvalue\":\"").append(MathUtil.bytesToInt(m_yControlValue)).append("\",\n");
 //			sBuf.append("\t\"controlvalue\":\"").append(sCtrl[m_nControlValue]).append("\",\n");
 
 		sBuf.append("\t\"proj\":\"").append(m_sProj).append("\",\n");
@@ -530,7 +568,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			sBuf.append("\t\t\t<regulatory>").append(m_bRegulatory).append("</regulatory>\n");
 			sBuf.append("\t\t\t<detail>\n");
 			ArrayList<String> sVals = new ArrayList(4);
-			TrafCtrlEnums.getCtrlValString(m_nControlType, m_nControlValue, sVals);
+			TrafCtrlEnums.getCtrlValString(m_nControlType, m_yControlValue, sVals);
 			for (int nIndex = 0; nIndex < sVals.size(); nIndex++)
 			{
 				String sTag = sVals.get(nIndex++);

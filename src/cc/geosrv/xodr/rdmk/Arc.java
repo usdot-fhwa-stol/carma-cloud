@@ -45,7 +45,7 @@ public class Arc extends Geometry
 				LaneSection oSection = oDeque.removeFirst();
 				double dStart = Math.max(m_dS, oSection.m_dS);
 				double dEnd = oDeque.isEmpty() ? dEndDistOnRoad : oDeque.getFirst().m_dS;
-				double dLength = dEnd - dStart;
+				double dLength = dEnd - dStart;				
 
 				if (dMaxStep > dLength)
 					nLimit = 1;
@@ -80,6 +80,7 @@ public class Arc extends Geometry
 
 					addLanePoints(oRoad, dHdg, dXLaneZero, dYLaneZero, dLengthAlongRoad, oSection, oProj, dProjPt);
 				}
+				dTotalAngle -= dAngleStep;
 			}
 		}
 		catch (Exception oEx)

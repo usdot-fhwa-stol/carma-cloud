@@ -8,13 +8,18 @@ package cc.ctrl.proc;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.CtrlLineArcs;
 import cc.geosrv.Mercator;
+import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.TileUtil;
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -197,7 +202,7 @@ public abstract class ProcCtrl
 		dStop = Arrays.add(dStop, dNT[nIndex] + Math.cos(dAngle) * STOPLINELATOFFSET, dNT[nIndex + 1] + Math.sin(dAngle) * STOPLINELATOFFSET);
 		nIndex -= 2;
 		double dLen = 0.0;
-		while (dLen < STOPLINEENDOFFSET && nIndex > 0)
+		while (dLen < STOPLINEENDOFFSET && nIndex > 3)
 		{
 			double dX1 = dC[nIndex];
 			double dY1 = dC[nIndex + 1];
@@ -238,6 +243,122 @@ public abstract class ProcCtrl
 			{
 				oCtrl.writeIndex(oOut);
 			}
+		}
+	}
+	
+	
+	public static void updateIndex(String sIndexFile, byte[] yId, long lTimestamp)
+		throws IOException
+	{
+		Path oIndexFile = Paths.get(sIndexFile);
+		int nPos = 0;
+		byte[] yIdBuf = new byte[16];
+		long lSize = Files.size(oIndexFile);
+		int nParts = (int)(lSize / 36);
+		int nCount = 0;
+		try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile))))
+		{
+			while (oIn.available() > 0)
+			{
+				oIn.skipBytes(4); // skip type (int)
+				oIn.read(yIdBuf);
+				if (TrafCtrl.ID_COMP.compare(yIdBuf, yId) == 0)
+					break;
+				oIn.skipBytes(16); // skip both timestamps (2 longs)
+				nPos += 36;
+			}
+		}
+		if (nPos >= lSize)
+			throw new IOException("Id not found");
+		System.out.println(sIndexFile + " " + nPos);
+		try (RandomAccessFile oRaf = new RandomAccessFile(sIndexFile, "rw"))
+		{
+			oRaf.seek(nPos);
+			oRaf.skipBytes(4);
+			oRaf.read(yIdBuf);
+			System.out.println(TrafCtrl.getId(yIdBuf));
+			oRaf.seek(nPos + 28); // want to edit the end timestamp, so seek to the record position and skip type(4) id(16) startts(8)
+			oRaf.writeLong(lTimestamp);
+		}
+	}
+	
+	
+	public static void renderCtrls(String sCtrlType, ArrayList<TrafCtrl> oCtrls, ArrayList<int[]> nTiles)
+		throws IOException
+	{
+		switch (sCtrlType)
+		{
+			case "signal":
+			{
+				ProcSignal.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+			case "stop":
+			{
+				ProcStop.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+			case "yield":
+			{
+				ProcYield.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+//			case "notowing":
+//				break;
+//			case "restricted":
+//				break;
+			case "closed":
+			{
+				ProcClosed.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+//			case "chains":
+//				break; 
+			case "direction":
+			{
+				ProcDirection.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+//			case "lataffinity":
+//				break;
+			case "latperm":
+			{
+				ProcLatPerm.renderTiledData(oCtrls, nTiles, new int[]{2, 4, 4});
+				break;
+			}
+			case "opening":
+			{
+				ProcOpening.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+			case "closing":
+			{
+				ProcClosing.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+//			case "parking":
+//				break;
+//			case "minspeed":
+//				break;
+			case "maxspeed":
+			{
+				ProcMaxSpeed.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+//			case "minhdwy":
+//				break;
+//			case "maxvehmass":
+//				break;
+//			case "maxvehheight":
+//				break;
+//			case "maxvehwidth":
+//				break;
+//			case "maxvehlength":
+//				break; 
+//			case "maxaxles":
+//				break; 
+//			case "minvehocc":
+//				break;
 		}
 	}
 }

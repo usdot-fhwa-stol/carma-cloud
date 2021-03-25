@@ -22,14 +22,17 @@ public class Road extends ArrayList<LaneSection>
 {
 	public int m_nId;
 	public double m_dLength;
+	public double[] m_dNoProj;
 	public double[] m_dTrack;
 	public double[] m_dLaneZero;
 	public double[] m_dBounds = new double[]{Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
 	ArrayList<LaneOffset> m_oLaneOffsets = new ArrayList();
 	ArrayList<Geometry> m_oGeometries = new ArrayList();
 	public double m_dLastGeo = Double.MAX_VALUE;
+	public double m_dLastSection = Double.MAX_VALUE;
 	public int m_nMaxSpeed;
 	public ArrayList<double[]> m_dGeoPoints = new ArrayList();
+	public ArrayList<double[]> m_dLSPoints = new ArrayList();
 	public ArrayList<double[]> m_dLWPoints = new ArrayList();
 	public ArrayList<double[]> m_dPerps = new ArrayList();
 	
@@ -45,6 +48,7 @@ public class Road extends ArrayList<LaneSection>
 		m_dLength = dLength;
 		m_dTrack = Arrays.newDoubleArray();
 		m_dLaneZero = Arrays.newDoubleArray();
+		m_dNoProj = Arrays.newDoubleArray();
 	}
 	
 	
@@ -111,8 +115,8 @@ public class Road extends ArrayList<LaneSection>
 					int nSize = Arrays.size(dPrev);	
 					
 					double dDist = Geo.distance(dCurr[5], dCurr[6], dPrev[nSize - 3], dPrev[nSize - 2]);
-					if (dDist > dTol)
-						System.out.println(dDist);
+//					if (dDist > dTol)
+//						System.out.println(dDist);
 					if (dDist <= dTol && oCurr.m_nLaneType == oPrev.m_nLaneType)
 					{
 						oCurr.m_nLaneIdByRoad = oPrev.m_nLaneIdByRoad;

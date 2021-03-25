@@ -6,7 +6,6 @@ import cc.geosrv.xodr.XodrUtil;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.nio.file.Paths;
 import java.util.Iterator;
