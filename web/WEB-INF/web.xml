@@ -7,6 +7,19 @@
 
 
 <servlet>
+ <servlet-name>RegHub</servlet-name>
+ <servlet-class>cc.ws.RegHub</servlet-class>
+
+ <load-on-startup>-1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>RegHub</servlet-name>
+ <url-pattern>/carmacloud/v2xhub/*</url-pattern>
+</servlet-mapping>
+
+
+<servlet>
  <servlet-name>SessMgr</servlet-name>
  <servlet-class>cc.ws.SessMgr</servlet-class>
 
@@ -27,7 +40,7 @@
  <init-param>
   <description>REQUIRED: path to user credential file</description>
   <param-name>pwdfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/user.csv</param-value>
+  <param-value>/opt/tomcat/webapps/user.csv</param-value>
  </init-param>
 
  <load-on-startup>1</load-on-startup>
@@ -40,54 +53,154 @@
 
 
 <servlet>
- <servlet-name>GeoSvc</servlet-name>
- <servlet-class>cc.ws.GeoSvc</servlet-class>
+ <servlet-name>CtrlTiles</servlet-name>
+ <servlet-class>cc.ws.CtrlTiles</servlet-class>
 
  <init-param>
-  <description>REQUIRED: path to OSM road definition directory</description>
-  <param-name>osmfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/osmbin</param-value>
+  <description>REQUIRED: path to .xodr file containing road defintions</description>
+  <param-name>xodrdir</param-name>
+  <param-value>/opt/tomcat/webapps/xodr/</param-value>
  </init-param>
 
- <load-on-startup>2</load-on-startup>
+ <init-param>
+  <description>REQUIRED: </description>
+  <param-name>linearcdir</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/linearcs/</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: format string for tiled data filenames</description>
+  <param-name>tileddataformat</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/td/%d/ctrls_%d_%d_%d.bin</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: format string for tiled data filenames</description>
+  <param-name>ctrldir</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/traf_ctrls</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: zoom level used to create tiled data</description>
+  <param-name>zoom</param-name>
+  <param-value>17</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: zoom level used to create tiled data</description>
+  <param-name>explodestep</param-name>
+  <param-value>0.06</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: zoom level used to create tiled data</description>
+  <param-name>combinetol</param-name>
+  <param-value>0.1</param-value>
+ </init-param>
+
+ <load-on-startup>1</load-on-startup>
 </servlet>
 
 <servlet-mapping>
- <servlet-name>GeoSvc</servlet-name>
- <url-pattern>/api/geosvc/*</url-pattern>
+ <servlet-name>CtrlTiles</servlet-name>
+ <url-pattern>/api/ctrl/*</url-pattern>
 </servlet-mapping>
 
 
 <servlet>
- <servlet-name>EventMgr</servlet-name>
- <servlet-class>cc.ws.EventMgr</servlet-class>
+ <servlet-name>TcmReq</servlet-name>
+ <servlet-class>cc.ws.TcmReqServlet</servlet-class>
 
- <load-on-startup>3</load-on-startup>
+ <load-on-startup>1</load-on-startup>
 </servlet>
 
 <servlet-mapping>
- <servlet-name>EventMgr</servlet-name>
- <url-pattern>/api/event/*</url-pattern>
+ <servlet-name>TcmReq</servlet-name>
+ <url-pattern>/carmacloud/tcmreq/*</url-pattern>
 </servlet-mapping>
 
 
 <servlet>
- <servlet-name>ReplayMgr</servlet-name>
- <servlet-class>cc.ws.ReplayMgr</servlet-class>
+ <servlet-name>GeoLanes</servlet-name>
+ <servlet-class>cc.ws.GeoLanes</servlet-class>
 
  <init-param>
-  <description>REQUIRED: path to storm library CSV file</description>
-  <param-name>stormfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/storms.csv</param-value>
+  <param-name>dir</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/geolanes</param-value>
  </init-param>
 
- <load-on-startup>4</load-on-startup>
+ <load-on-startup>1</load-on-startup>
 </servlet>
 
 <servlet-mapping>
- <servlet-name>ReplayMgr</servlet-name>
- <url-pattern>/api/replay/*</url-pattern>
+ <servlet-name>GeoLanes</servlet-name>
+ <url-pattern>/api/geolanes/*</url-pattern>
 </servlet-mapping>
 
 
+<servlet>
+ <servlet-name>WxPoly</servlet-name>
+ <servlet-class>cc.ws.WxPoly</servlet-class>
+
+ <load-on-startup>1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>WxPoly</servlet-name>
+ <url-pattern>/api/wxpoly/*</url-pattern>
+</servlet-mapping>
+
+<servlet>
+ <servlet-name>LeidosTiles</servlet-name>
+ <servlet-class>cc.ws.LeidosTiles</servlet-class>
+
+ <init-param>
+  <description>REQUIRED: path to .xodr file containing road defintions</description>
+  <param-name>xodrdir</param-name>
+  <param-value>/opt/tomcat/webapps/xodr/</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: </description>
+  <param-name>linearcdir</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/leidos/linearcs/</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: format string for tiled data filenames</description>
+  <param-name>tileddataformat</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/leidos/td/%d/ctrls_%d_%d_%d.bin</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: format string for tiled data filenames</description>
+  <param-name>ctrldir</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/leidos/traf_ctrls</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: zoom level used to create tiled data</description>
+  <param-name>zoom</param-name>
+  <param-value>17</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: zoom level used to create tiled data</description>
+  <param-name>explodestep</param-name>
+  <param-value>0.06</param-value>
+ </init-param>
+
+ <init-param>
+  <description>REQUIRED: zoom level used to create tiled data</description>
+  <param-name>combinetol</param-name>
+  <param-value>0.1</param-value>
+ </init-param>
+
+ <load-on-startup>1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>LeidosTiles</servlet-name>
+ <url-pattern>/api/lctrl/*</url-pattern>
+</servlet-mapping>
 </web-app>

@@ -1,42 +1,215 @@
 {
-	"xodr":
+	"ctrl":
 	{
-		"source": {"type": "vector", "tiles": ["https://carmacloud.data-env.com/api/xodr/{z}/{x}/{y}"], "minzoom": 15},
+		"source": {"type": "vector", "tiles": ["https://carmacloud.data-env.com/api/ctrl/{z}/{x}/{y}"], "minzoom": 17},
 		"layers":
 		[
-			{"type": "fill", "source-layer": "xodrlanes", "paint":{"fill-color":"#bebebe", "fill-antialias":false}}, 
+			{"type": "fill", "source-layer": "pavement", "paint":{"fill-color": ["match", ["get", "type"], "d", "#666", "s", "#999",  "#666"]}}, 
+                        {
+                                "type": "line",
+                                "source-layer": "debug-c",
+                                "layout": {"line-join": "round", "line-cap": "round"},
+                                "paint":
+                                {
+                                        "line-color": "black",
+                                        "line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 10.0]
+                                }
+                        },
+			{"type": "circle", "source-layer": "debug-p", "paint":{"circle-color": ["match", ["get", "color"], "black", "black", "blue", "blue", "red", "red", "orange", "orange", "purple", "purple",  "white"], "circle-radius": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 3.0, 24.0, 15.0]}},
+			{"type": "line", "source-layer": "debug-o", "paint":{"line-dasharray" : [6, 3], "line-color": "#060", "line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 20.0]}},
+                        {
+                                "type": "line",
+                                "source-layer": "direction",
+                                "layout": {"line-join": "round", "line-cap": "round"},
+                                "paint":
+                                {
+                                        "line-color": "#ccc",
+                                        "line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 20.0],
+                                        "line-opacity": 1
+                                }
+                        },
+			{"type": "fill", "source-layer": "signal-body", "paint":{"fill-color": ["rgb", 255, 201, 14]}},
+			{"type": "fill", "source-layer": "signal-lights", "paint":{"fill-outline-color" : "black", "fill-color": ["match", ["get", "color"], "r", ["rgb", 237, 28, 36], "y", ["rgb", 255, 242, 0], "g", ["rgb", 34, 177, 76], "#F00"]}},
+			{"type": "fill", "source-layer": "signal-sl", "paint":{"fill-color": "#fff"}},
+			{"type": "fill", "source-layer": "stop-w", "paint":{"fill-color": ["rgb", 255, 255, 255]}},
+			{"type": "fill", "source-layer": "stop-r", "paint":{"fill-color": ["rgb", 237, 28, 36]}},
+			{"type": "fill", "source-layer": "stop-sl", "paint":{"fill-color": "#fff"}},
+			{"type": "fill", "source-layer": "yield-ow", "paint":{"fill-color": ["rgb", 255, 255, 255]}},
+			{"type": "fill", "source-layer": "yield-r", "paint":{"fill-color": ["rgb", 237, 28, 36]}},
+			{"type": "fill", "source-layer": "yield-iw", "paint":{"fill-color": ["rgb", 255, 255, 255]}},
+			{"type": "fill", "source-layer": "yield-sl", "paint":{"fill-color": "#fff"}},
+			{"type": "line", "source-layer": "latperm", "paint":{"line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 22.0, 10.0], "line-color": ["match", ["get", "color"], "standard", ["rgb", 255, 255, 255], "blue", "blue", "green", "green", "red", "red", "white", ["rgb", 255, 255, 255], "yellow", "#FC0", "orange", "orange", "#FFF"]}},
+			{"type": "fill", "source-layer": "closed-poly", "paint":{"fill-pattern": "wz-close"}},
+			{"type": "line", "source-layer": "closed-outline", "paint":{"line-color": "#ff7f27", "line-width": 2}},
+			{"type": "fill", "source-layer": "maxspeed", "paint":{"fill-color": ["match", ["get", "color"], "white", ["rgb", 255, 255, 255], "yellow", ["rgb", 255, 201, 14], "#F00"], "fill-outline-color": "#000"}},
+			{"type": "line", "source-layer": "maxspeed-numbers", "paint":{"line-color": "#000", "line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 5.0]}}
+		]
+	},
+        "hl-pt-gjson":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}}},
+                "layers":
+                [
+                        {
+                                "type": "circle",
+                                "id": "hl-pt",
+                                "paint":
+                                {
+                                        "circle-color": "#33ffff",
+                                        "circle-radius": 5,
+					"circle-opacity": 0
+                                }
+                        }
+                ]
+        },
+	"existing-ctrls-outline":
+	{
+		"source": {"type": "geojson", "data": {"type": "FeatureCollection", "features": []}},
+		"layers": 
+		[
+			{"type": "line", "id": "existing-ctrls-outline", "paint": {"line-color" : "#000", "line-opacity" : ["case", ["boolean", ["feature-state", "on"], false], 1.0, 0]}}
+		]
+	},
+	"existing-ctrls-fill":
+	{
+		"source": {"type": "geojson", "data": {"type": "FeatureCollection", "features": []}},
+		"layers": 
+		[
+			{"type": "fill", "id": "existing-ctrls-fill", "paint": {
+			"fill-color" : ["case", ["boolean", ["feature-state", "delete"], false], "#ff0000", ["boolean", ["feature-state", "selected"], false], "#66c2ff", "#66ffcc"],
+			"fill-opacity": ["case", ["boolean", ["feature-state", "selected"], false], 1.0, ["boolean", ["all", ["any", ["boolean", ["feature-state", "hover"]], ["boolean", ["feature-state", "delete"]]], ["boolean", ["feature-state", "on"]]], false], 1.0, 0]}}
+		]
+	},
+        "created-lanes":
+        {
+                "source": {"type": "geojson", "data": {"type": "FeatureCollection", "features": []}},
+                "layers":
+                [
+                        {
+                                "type": "fill",
+                                "id": "lanes",
+                                "paint":
+                                {
+                                        "fill-color": "#66ffcc",
+                                        "fill-opacity": 1
+                                }
+                        }
+                ]
+        },
+	"weather-polygon":
+	{
+		"source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [1, 0], [0, 0]]]}}},
+		"layers":
+		[
+			{"type": "fill", "id": "w-poly", "paint": {"fill-color" : "#66c2ff", "fill-opacity" : 0}}
+		]
+	},
+        "weather-line":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "LineString", "coordinates": [[0, 0], [0, 1], [1, 1], [1, 0], [0, 0]]}}},
+                "layers":
+                [
+                        {"type": "line", "id": "w-line", "paint": {"line-opacity" : 0, "line-color" : "#66c2ff", "line-dasharray" : [6, 3]}}
+                ]
+        },
+        "hl-poly-gjson":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [1, 0], [0, 0]]]}}},
+                "layers":
+                [
+                        {
+                                "type": "fill",
+                                "id": "hl-poly",
+                                "paint":
+                                {
+                                        "fill-color": "#66ffff",
+                                        "fill-opacity": 0
+                                }
+                        }
+                ]
+        },
+        "hl-line-gjson":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [1, 0], [0, 0]]]}}},
+                "layers":
+                [
+                        {
+                                "type": "fill",
+                                "id": "hl-line",
+                                "paint":
+                                {
+					"fill-opacity" : 0
+                                }
+                        },
 			{
-				"type": "line", 
-				"source-layer": "roadmarks_broken", 
-				"layout": {"line-join": "round", "line-cap": "round"}, 
-				"paint": 
+				"type": "line",
+				"id": "dummy-path-outline",
+				"line-join": "round",
+				"paint":
 				{
-					"line-color": ["match", ["get", "roadmark_color"], "none", ["rgba", 0, 0, 0, 0], "yellow", "#FC0", "white", "#FFF", "#F00"], 
-					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 10.0], 
-					"line-dasharray": [60, 180]
-				}
-			}, 
-			{
-				"type": "line", 
-				"source-layer": "roadmarks_solid", 
-				"layout": {"line-join": "round", "line-cap": "round"}, 
-				"paint": 
-				{
-					"line-color": ["match", ["get", "roadmark_color"], "none", ["rgba", 0, 0, 0, 0], "yellow", "#FC0", "white", "#FFF", "#F00"], 
-					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 10.0]
-				}
-			}, 
-			{
-				"type": "line", 
-				"source-layer": "roadmarks_solid_solid", 
-				"layout": {"line-join": "round", "line-cap": "round"}, 
-				"paint": 
-				{
-					"line-color": ["match", ["get", "roadmark_color"], "none", ["rgba", 0, 0, 0, 0], "yellow", "#FC0", "white", "#FFF", "#F00"], 
-					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 30.0], 
-					"line-gap-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 10.0]
+					"line-color": "green",
+					"line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 10.0]
 				}
 			}
+                ]
+        },
+	"origin-gjson":
+	{
+		"source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}}},
+                "layers":
+                [
+                        {
+                                "type": "circle",
+                                "id": "origin-pt",
+                                "paint":
+                                {
+                                        "circle-color": "#00cc00",
+					"circle-radius": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 3.0, 24.0, 300.0],
+                                        "circle-stroke-width" : ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 10.0],
+                                        "circle-stroke-opacity" : 0,
+                                        "circle-opacity": 0  
+                              }
+                        }
+                ]
+
+	},
+        "dest-gjson":
+        {
+                "source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}}},
+                "layers":
+                [
+                        {
+                                "type": "circle",
+                                "id": "dest-pt",
+                                "paint":
+                                {
+                                        "circle-color": "#ff0000",
+					"circle-radius": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 3.0, 24.0, 300.0],
+					"circle-stroke-width" : ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 10.0],
+					"circle-stroke-opacity" : 0,
+                                        "circle-opacity": 0
+                                }
+                        }
+                ]
+
+        },
+	"veh-gjson":
+	{
+		"source": {"type": "geojson", "data": {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0]}}},
+		"layers":
+		[
+			{
+                                "type": "circle",
+                                "id": "veh-pt",
+                                "paint":
+                                {
+                                        "circle-color": "#ffffff",
+                                        "circle-radius": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 3.0, 24.0, 300.0],
+                                        "circle-opacity": 0,
+					"circle-stroke-width" : ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 24.0, 10.0],
+					"circle-stroke-opacity" : 0
+                                }
+                        }
 		]
 	}
 }

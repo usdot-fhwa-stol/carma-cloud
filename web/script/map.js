@@ -281,7 +281,7 @@ async function initialize()
 	}).promise();
 	let pSourceLayers = $.getJSON('mapbox/sourcelayers.json').promise();
 	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
-		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': 'pk.eyJ1Ijoia3J1ZWdlcmIiLCJhIjoiY2l6ZDl4dTlwMjJvaDJ3bW44bXFkd2NrOSJ9.KXqbeWgASgEUYQu0oi7Hbg'});
+		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<your access token goes here>'});
 
 //	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/streets-v11.json', 'attributionControl': false,
 //			'minZoom': 14, 'maxZoom': 22, 'center': [-76.8552198, 38.7474584], 'zoom': 17});
