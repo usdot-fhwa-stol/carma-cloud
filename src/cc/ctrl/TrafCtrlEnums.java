@@ -49,7 +49,7 @@ public abstract class TrafCtrlEnums
 		null, //parking", "no", "parallel", "angled 
 		"mph", //minspeed 
 		"mph", //maxspeed 
-		"ft", //minhdwy 
+		"sec", //minhdwy 
 		"kg", //maxvehmass 
 		"ft", //maxvehheight 
 		"ft", //maxvehwidth 

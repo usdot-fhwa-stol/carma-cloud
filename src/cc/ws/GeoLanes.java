@@ -176,7 +176,9 @@ public class GeoLanes extends HttpServlet
 					nPrevX = nX;
 					nPrevY = nY;
 				}
-				sBuf.append("],\"vals\":[");
+				sBuf.append("],\"label\":\"").append(oCtrl.m_sLabel).append("\"");
+				sBuf.append(",\"reg\":").append(oCtrl.m_bRegulatory);
+				sBuf.append(",\"vals\":[");
 				ArrayList<String> sVals = new ArrayList(4);
 				TrafCtrlEnums.getCtrlValString(oCtrl.m_nControlType, oCtrl.m_yControlValue, sVals);
 				for (String sVal : sVals)

@@ -8,7 +8,6 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
-import static cc.ctrl.proc.ProcCtrl.g_sTrafCtrlDir;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
@@ -65,7 +64,7 @@ public class ProcOpening extends ProcCtrl
 				if (!sType.contains("special2"))
 					continue;
 				
-				TrafCtrl oCtrl = new TrafCtrl("opening", sType.contains("2") ? "right" : "left", 0, oCLA.m_dLineArcs); 
+				TrafCtrl oCtrl = new TrafCtrl("opening", sType.contains("2") ? "right" : "left", 0, oCLA.m_dLineArcs, "", true); 
 				oCtrls.add(oCtrl);
 				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);

@@ -8,7 +8,6 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlPt;
-import static cc.ctrl.proc.ProcCtrl.g_sTdFileFormat;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrJunctionParser;
 import cc.geosrv.xodr.XodrUtil;
@@ -75,12 +74,12 @@ public class ProcDebug extends ProcCtrl
 			ArrayList<int[]> oTiles = new ArrayList();
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("debug", "", 0, oCLA.m_dLineArcs); 
+				TrafCtrl oCtrl = new TrafCtrl("debug", "", 0, oCLA.m_dLineArcs, "", false); 
 				oCtrls.add(oCtrl);
 				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
-			renderTiledData(oCtrls, oTiles, m_sXodrDir);
+			renderTiledData(oCtrls, oTiles);
 		}
 		catch (Exception oEx)
 		{
@@ -139,14 +138,14 @@ public class ProcDebug extends ProcCtrl
 	}	
 
 
-	public static void renderTiledData(ArrayList<TrafCtrl> oCtrls, ArrayList<int[]> nTiles, String sXodrDir) throws IOException
+	public static void renderTiledData(ArrayList<TrafCtrl> oCtrls, ArrayList<int[]> nTiles) throws IOException
 	{
 		String[] sEmpty = new String[0];
 		TdLayer oPoints = new TdLayer("debug-p", new String[]{"color"}, new String[]{"black", "blue", "red"}, TdLayer.POINT);
 		TdLayer oCenters = new TdLayer("debug-c", sEmpty, sEmpty, TdLayer.LINESTRING);
 		for (TrafCtrl oCtrl : oCtrls)
 		{
-			writeGeoLanes(oCtrl, sXodrDir.contains("leidos"));
+			writeGeoLanes(oCtrl);
 		}
 //		ArrayList<EncodedGeo> oGeos = new ArrayList();
 //		StringBuilder sBuf = new StringBuilder(16);
@@ -281,7 +280,7 @@ public class ProcDebug extends ProcCtrl
 	}
 	
 	
-	private static void writeGeoLanes(TrafCtrl oCtrl, boolean bLeidos)
+	private static void writeGeoLanes(TrafCtrl oCtrl)
 	   throws IOException
 	{
 		StringBuilder sBuf = new StringBuilder();
@@ -340,8 +339,7 @@ public class ProcDebug extends ProcCtrl
 		sBuf.append("]");
 		sBuf.append("}");
 		
-		String sFile = bLeidos ? "/dev/shm/cc/leidos/geolanes/" : "/dev/shm/cc/geolanes/";
-		Path oPath = Paths.get(sFile + TrafCtrl.getId(oCtrl.m_yId));
+		Path oPath = Paths.get(g_sGeolanesDir + TrafCtrl.getId(oCtrl.m_yId));
 		Files.createDirectories(oPath.getParent(), FileUtil.DIRPERS);
 		try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(oPath, FileUtil.WRITE, FileUtil.FILEPERS), "UTF-8")))
 		{

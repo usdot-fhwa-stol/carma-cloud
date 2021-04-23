@@ -61,8 +61,7 @@ public class CreateCtrls
 					dCenter = Arrays.add(dCenter, dW);
 				}
 				CtrlLineArcs oCla = new CtrlLineArcs(-1, -1, nOrder, -1, XodrUtil.getLaneType("driving"), dCenter, 0.1);
-				TrafCtrl oCtrl = new TrafCtrl(sControlType, nControlValue, lTime, oCla.m_dLineArcs);
-				oCtrl.m_bRegulatory = bReg;
+				TrafCtrl oCtrl = new TrafCtrl(sControlType, nControlValue, lTime, oCla.m_dLineArcs, "", bReg);
 				ArrayList<int[]> nTiles = new ArrayList();
 				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
 //				oCtrl.m_oFullGeo = new CtrlGeo(oCtrl, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);

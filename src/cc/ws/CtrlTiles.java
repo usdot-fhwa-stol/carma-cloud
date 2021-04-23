@@ -32,6 +32,8 @@ import cc.geosrv.xodr.rdmk.XodrRoadMarkParser;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.MathUtil;
+import cc.util.Text;
 import cc.util.TileUtil;
 import cc.vector_tile.VectorTile;
 import java.awt.geom.Area;
@@ -430,6 +432,16 @@ public class CtrlTiles extends HttpServlet
 			int nType = Integer.parseInt(oReq.getParameter("type"));
 			String sType = TrafCtrlEnums.CTRLS[nType][0];
 			int nControlValue;
+			String sLabel = oReq.getParameter("label");
+			if (sLabel == null)
+				sLabel = "";
+			sLabel = Text.truncate(sLabel, 63).trim();
+			String sReg = oReq.getParameter("reg");
+			boolean bReg;
+			if (sReg == null || sReg.compareTo("on") != 0)
+				bReg = false;
+			else
+				bReg = true;
 			String sVal = oReq.getParameter("value");
 			if (sVal != null)
 				nControlValue = Integer.parseInt(sVal);
@@ -473,7 +485,7 @@ public class CtrlTiles extends HttpServlet
 				dCenter = Arrays.add(dCenter, dW);
 			}
 			CtrlLineArcs oCla = new CtrlLineArcs(-1, -1, -1, -1, XodrUtil.getLaneType("driving"), dCenter, 0.1);
-			TrafCtrl oCtrl = new TrafCtrl(TrafCtrlEnums.CTRLS[nType][0], nControlValue, lNow, lNow, oCla.m_dLineArcs);
+			TrafCtrl oCtrl = new TrafCtrl(TrafCtrlEnums.CTRLS[nType][0], nControlValue, lNow, lNow, oCla.m_dLineArcs, sLabel, bReg);
 			oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
 			ArrayList<TrafCtrl> oCtrls = new ArrayList();
 			oCtrls.add(oCtrl);
@@ -481,7 +493,8 @@ public class CtrlTiles extends HttpServlet
 		}
 		catch (Exception oEx)
 		{
-			throw new ServletException(oEx);
+			oEx.printStackTrace();
+			oRes.sendError(HttpServletResponse.SC_BAD_REQUEST);
 		}
 	}
 	
@@ -510,7 +523,8 @@ public class CtrlTiles extends HttpServlet
 		}
 		catch (Exception oEx)
 		{
-			throw new ServletException(oEx);
+			oEx.printStackTrace();
+			oRes.sendError(HttpServletResponse.SC_BAD_REQUEST);
 		}
 	}
 	
@@ -525,6 +539,13 @@ public class CtrlTiles extends HttpServlet
 			String sType = TrafCtrlEnums.CTRLS[nType][0];
 			int nControlValue;
 			String sVal = oReq.getParameter("value");
+			String sLabel = oReq.getParameter("label");
+			if (sLabel == null)
+				sLabel = "";
+			sLabel = Text.truncate(sLabel, 63).trim();
+			String sReg = oReq.getParameter("reg");
+			boolean bReg;
+			bReg = !(sReg == null || sReg.compareTo("on") != 0);
 			if (sVal != null)
 				nControlValue = Integer.parseInt(sVal);
 			else
@@ -544,32 +565,45 @@ public class CtrlTiles extends HttpServlet
 			String sId = oReq.getParameter("id");
 			String sFile = g_sCtrlDir + sId + ".bin";
 			TrafCtrl oOriginalCtrl = new TrafCtrl(sFile);
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			TrafCtrl oCtrlToWrite;
+			if (MathUtil.bytesToInt(oOriginalCtrl.m_yControlValue) == nControlValue && bReg == oOriginalCtrl.m_bRegulatory) // value and regulatory are the same so only the label has changed
 			{
-				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
+				oOriginalCtrl.m_sLabel = sLabel;
+				oOriginalCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oCtrlToWrite = oOriginalCtrl;
 			}
-			TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, lNow, lNow, oOriginalCtrl);
-			oNewCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
-			ArrayList<TrafCtrl> oCtrls = new ArrayList(1);
-			oCtrls.add(oNewCtrl);
-			ProcCtrl.renderCtrls(sType, oCtrls, oOriginalCtrl.m_oFullGeo.m_oTiles);
-			
-			synchronized (this)
-			{
-				for (int[] nTile : oOriginalCtrl.m_oFullGeo.m_oTiles)
+			else
+			{	
+				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
 				{
-//					ProcCtrl.writeIndexFile(oCtrls, nTile[0], nTile[1]);
-					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
-					ProcCtrl.updateIndex(sIndex, oOriginalCtrl.m_yId, oNewCtrl.m_lStart);
+					oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
+				}
+				TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, lNow, lNow, oOriginalCtrl, sLabel, bReg);
+				oCtrlToWrite = oNewCtrl;
+				oNewCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				ArrayList<TrafCtrl> oCtrls = new ArrayList(1);
+				oCtrls.add(oNewCtrl);
+				ProcCtrl.renderCtrls(sType, oCtrls, oOriginalCtrl.m_oFullGeo.m_oTiles);
+
+				synchronized (this)
+				{
+					for (int[] nTile : oOriginalCtrl.m_oFullGeo.m_oTiles)
+					{
+	//					ProcCtrl.writeIndexFile(oCtrls, nTile[0], nTile[1]);
+						String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
+						ProcCtrl.updateIndex(sIndex, oOriginalCtrl.m_yId, oNewCtrl.m_lStart);
+					}
 				}
 			}
 			oRes.setContentType("application/json");
 			StringBuilder sBuf = new StringBuilder();
 			sBuf.append("{");
-			sBuf.append("\"id\":\"").append(TrafCtrl.getId(oNewCtrl.m_yId)).append("\"");
+			sBuf.append("\"id\":\"").append(TrafCtrl.getId(oCtrlToWrite.m_yId)).append("\"");
+			sBuf.append(",\"label\":\"").append(oCtrlToWrite.m_sLabel).append("\"");
+				sBuf.append(",\"reg\":").append(oCtrlToWrite.m_bRegulatory);
 			sBuf.append(",\"vals\":[");
 			ArrayList<String> sVals = new ArrayList(4);
-			TrafCtrlEnums.getCtrlValString(oNewCtrl.m_nControlType, oNewCtrl.m_yControlValue, sVals);
+			TrafCtrlEnums.getCtrlValString(oCtrlToWrite.m_nControlType, oCtrlToWrite.m_yControlValue, sVals);
 			for (String sValue : sVals)
 				sBuf.append("\"").append(sValue).append("\",");
 			sBuf.setLength(sBuf.length() - 1);
@@ -581,7 +615,8 @@ public class CtrlTiles extends HttpServlet
 		}
 		catch (Exception oEx)
 		{
-			throw new ServletException(oEx);
+			oEx.printStackTrace();
+			oRes.sendError(HttpServletResponse.SC_BAD_REQUEST);
 		}
 	}
 }

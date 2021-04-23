@@ -80,6 +80,7 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 		oIn.readUTF(); // read datum, discard it
 		
 		oIn.skip(24); // skip time, lon, lat, alt, heading (long, int, int, int, int)
+		oIn.readUTF(); // read label, discard it
 
 		nCount = oIn.readInt();
 		oIn.skip(nCount * 16); // skip all the points (each are 4 ints)

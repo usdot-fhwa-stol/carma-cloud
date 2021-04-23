@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 
 /**
@@ -36,15 +37,40 @@ public abstract class ProcCtrl
 	public static double g_dExplodeStep;
 	public static String g_sTrafCtrlDir;
 	public static String g_sTdFileFormat;
+	public static String g_sGeolanesDir;
 	public static int g_nDefaultZoom = Integer.MIN_VALUE;
 	protected static final double WIDTHTH = 1.5;
 	protected static final double LENLOWTH = 75.0;
 	protected static final double STOPLINEENDOFFSET = 0.6;
 	protected static final double STOPLINELATOFFSET = 0.1;
+	protected static double[][] NUMBERS = new double[][]
+	{
+		new double[]{-0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, -0.2, 0.1, -0.3, -0.1, -0.3, -0.2, -0.2, -0.2, 0.2, -0.1, 0.3},
+		new double[]{-0.1, 0.2, 0.0, 0.3, 0.0, -0.3, -0.1, -0.3, 0.1, -0.3},
+		new double[]{-0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.0, -0.1, 0.0, -0.2, -0.1, -0.2, -0.3, 0.2, -0.3},
+		new double[]{-0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.2, -0.1, 0.2, -0.2, 0.1, -0.3, -0.1, -0.3, -0.2, -0.2},
+		new double[]{0.2, -0.1, -0.2, -0.1, -0.2, 0.0, 0.1, 0.3, 0.1, -0.3},
+		new double[]{0.2, 0.3, -0.2, 0.3, -0.2, 0.0, 0.1, 0.0, 0.2, -0.1, 0.2, -0.2, 0.1, -0.3, -0.2, -0.3},
+		new double[]{0.1, 0.3, 0.0, 0.3, -0.2, 0.1, -0.2, -0.2, -0.1, -0.3, 0.1, -0.3, 0.2, -0.2, 0.2, -0.1, 0.1, 0.0, -0.2, 0.0},
+		new double[]{-0.2, 0.3, 0.2, 0.3, 0.2, 0.2, 0.0, 0.0, -0.1, -0.2, -0.1, -0.3},
+		new double[]{-0.1, 0.0, -0.2, 0.1, -0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.0, 0.2, -0.1, 0.2, -0.2, 0.1, -0.3, -0.1, -0.3, -0.2, -0.2, -0.2, -0.1, -0.1, 0.0, 0.1, 0.0},
+		new double[]{0.2, 0.0, -0.1, 0.0, -0.2, 0.1, -0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, -0.1, 0.0, -0.3, -0.1, -0.3}
+	};
 	protected static Comparator<int[]> LANETYPECOMP = (int[] n1, int[] n2) -> 
 	{
 		return Integer.compare(n1[0], n2[0]);
 	};
+	protected final static HashMap<String, double[]> CHARS = new HashMap();
+	static
+	{
+		CHARS.put("A", new double[]{0.05, 0.0, -0.05, 0.0, -0.1, -0.2, 0.0, 0.2, 0.1, -0.2});
+		CHARS.put("H", new double[]{-0.1, -0.2, -0.1, 0.2, -0.1, 0.0, 0.1, 0.0, 0.1, 0.2, 0.1, -0.2});
+		CHARS.put("M", new double[]{-0.1, -0.2, -0.1, 0.2, 0.0, 0.0, 0.1, 0.2, 0.1, -0.2});
+		CHARS.put("P", new double[]{-0.1, -0.2, -0.1, 0.2, 0.1, 0.2, 0.1, 0.0, -0.1, 0.0});
+		CHARS.put("X", new double[]{-0.1, -0.2, 0.1, 0.2, 0.0, 0.0, -0.1, 0.2, 0.1, -0.2});
+		CHARS.put("s", new double[]{0.1, 0.0, -0.1, 0.0, -0.1, -0.1, 0.1, -0.1, 0.1, -0.2, -0.1, -0.2});
+		CHARS.put(".", new double[]{0.1, -0.075, 0.1, -0.1, 0.075, -0.1, 0.075, -0.075, 0.1, -0.075});
+	}
 	
 	public String m_sLineArcDir;
 	
@@ -79,6 +105,7 @@ public abstract class ProcCtrl
 		g_sTrafCtrlDir = sDir;
 		g_sTdFileFormat = sTdFF;
 		g_nDefaultZoom = nZoom;
+		g_sGeolanesDir = sTdFF.substring(0, sTdFF.indexOf("/td/") + 1) + "geolanes";
 	}
 	
 	
@@ -345,8 +372,11 @@ public abstract class ProcCtrl
 				ProcMaxSpeed.renderTiledData(oCtrls, nTiles);
 				break;
 			}
-//			case "minhdwy":
-//				break;
+			case "minhdwy":
+			{
+				ProcHeadway.renderTiledData(oCtrls, nTiles);
+				break;
+			}
 //			case "maxvehmass":
 //				break;
 //			case "maxvehheight":

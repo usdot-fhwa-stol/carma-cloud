@@ -8,7 +8,6 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlGeo;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
-import static cc.ctrl.proc.ProcCtrl.g_sTdFileFormat;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.Connection;
 import cc.geosrv.xodr.Junction;

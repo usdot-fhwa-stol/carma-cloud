@@ -7,7 +7,6 @@ package cc.ctrl.proc;
 
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
-import static cc.ctrl.proc.ProcCtrl.g_sTdFileFormat;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.Connection;
 import cc.geosrv.xodr.Junction;
@@ -109,7 +108,7 @@ public class ProcStop extends ProcCtrl
 			int nShoulder = XodrUtil.getLaneType("shoulder");
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("stop", "", 0, oCLA.m_dLineArcs); 
+				TrafCtrl oCtrl = new TrafCtrl("stop", "", 0, oCLA.m_dLineArcs, "", true); 
 				if (oCLA.m_nLaneType != nShoulder)
 					oCtrls.add(oCtrl);
 				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);

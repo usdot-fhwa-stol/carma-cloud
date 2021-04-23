@@ -47,7 +47,7 @@ import javax.servlet.http.HttpServletResponse;
  *
  * @author aaron.cherney
  */
-public class LeidosTiles extends HttpServlet
+public class ValidateXodrTiles extends HttpServlet
 {
 	int m_nZoom;
 	String m_sTdFileFormat;

@@ -131,8 +131,7 @@ public class WxPoly extends HttpServlet
 					int nSpeed = MathUtil.bytesToInt(oCtrl.m_yControlValue);
 //							if (nSpeed <= 25)
 //								continue;
-					TrafCtrl oSpdLimit = new TrafCtrl("maxspeed", nSpeed - 10, lNow, oCtrl);
-					oSpdLimit.m_bRegulatory = false;
+					TrafCtrl oSpdLimit = new TrafCtrl("maxspeed", nSpeed - 10, lNow, oCtrl, "weather", false);
 					oSpdLimit.m_lEnd = lNow + 1800000;
 					oSpdLimit.write(CtrlTiles.g_sCtrlDir, ProcCtrl.g_dExplodeStep, CtrlTiles.g_nZoom);
 					ProcCtrl.updateTiles(oTiles, oSpdLimit.m_oFullGeo.m_oTiles);

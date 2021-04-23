@@ -326,7 +326,7 @@ public class XodrGeoParser extends DefaultHandler2
 //				dLines.add(oLane.m_dOuterW);
 			}
 		}
-//		String sPath = m_sBaseDir.contains("leidos") ? "/dev/shm/cc/leidos/track.bin" : "/dev/shm/cc/track.bin";
+		
 		try (DataOutputStream oOut = new DataOutputStream(new BufferedOutputStream(FileUtil.newOutputStream(Paths.get(m_sTrackFile), FileUtil.APPENDTO, FileUtil.FILEPERS))))
 		{
 			oOut.writeInt(m_oRoad.m_dGeoPoints.size());

@@ -8,7 +8,6 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlGeo;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
-import static cc.ctrl.proc.ProcCtrl.g_sTrafCtrlDir;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrJunctionParser;
 import cc.geosrv.xodr.XodrUtil;
@@ -43,29 +42,7 @@ public class ProcMaxSpeed extends ProcCtrl
 	private HashMap<String, String> m_oJunctions;
 	private static double[] SIGN = new double[]{-0.5, 0.33, 0.5, 0.33, 0.5, -0.33, -0.5, -0.33};
 	private static int DEFAULTSPD = 25;
-	private static double[][] NUMBERS = new double[][]
-	{
-		new double[]{-0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, -0.2, 0.1, -0.3, -0.1, 0.3, -0.2, -0.2, -0.2, 0.2, -0.1, 0.3},
-		new double[]{-0.1, 0.2, 0.0, 0.3, 0.0, -0.3, -0.1, -0.3, 0.1, -0.3},
-		new double[]{-0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.0, -0.1, 0.0, -0.2, -0.1, -0.2, -0.3, 0.2, -0.3},
-		new double[]{-0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.2, -0.1, 0.2, -0.2, 0.1, -0.3, -0.1, -0.3, -0.2, -0.2},
-		new double[]{0.2, -0.1, -0.2, -0.1, -0.2, 0.0, 0.1, 0.3, 0.1, -0.3},
-		new double[]{0.2, 0.3, -0.2, 0.3, -0.2, 0.0, 0.1, 0.0, 0.2, -0.1, 0.2, -0.2, 0.1, -0.3, -0.2, -0.3},
-		new double[]{0.1, 0.3, 0.0, 0.3, -0.2, 0.1, -0.2, -0.2, -0.1, -0.3, 0.1, -0.3, 0.2, -0.2, 0.2, -0.1, 0.1, 0.0, -0.2, 0.0},
-		new double[]{-0.2, 0.3, 0.2, 0.3, 0.2, 0.2, 0.0, 0.0, -0.1, -0.2, -0.1, -0.3},
-		new double[]{-0.1, 0.0, -0.2, 0.1, -0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.0, 0.2, -0.1, 0.2, -0.2, 0.1, -0.3, -0.1, -0.3, -0.2, -0.2, -0.2, -0.1, -0.1, 0.0, 0.1, 0.0},
-		new double[]{0.2, 0.0, -0.1, 0.0, -0.2, 0.1, -0.2, 0.2, -0.1, 0.3, 0.1, 0.3, 0.2, 0.2, 0.2, -0.1, 0.0, -0.3, -0.1, -0.3}
-	};
 	
-	private static HashMap<String, double[]> CHARS = new HashMap();
-	static
-	{
-		CHARS.put("A", new double[]{0.05, 0.0, -0.05, 0.0, -0.1, -0.2, 0.0, 0.2, 0.1, -0.2});
-		CHARS.put("H", new double[]{-0.1, -0.2, -0.1, 0.2, -0.1, 0.0, 0.1, 0.0, 0.1, 0.2, 0.1, -0.2});
-		CHARS.put("M", new double[]{-0.1, -0.2, -0.1, 0.2, 0.0, 0.0, 0.1, 0.2, 0.1, -0.2});
-		CHARS.put("P", new double[]{-0.1, -0.2, -0.1, 0.2, 0.1, 0.2, 0.1, 0.0, -0.1, 0.0});
-		CHARS.put("X", new double[]{-0.1, -0.2, 0.1, 0.2, 0.0, 0.0, -0.1, 0.2, 0.1, -0.2});
-	}
 	
 	public ProcMaxSpeed(String sLineArcDir, String sXodrDir)
 	{
@@ -113,7 +90,7 @@ public class ProcMaxSpeed extends ProcCtrl
 			oSearch.m_nId = oCLA.m_nLaneId;
 			int nIndex = Collections.binarySearch(m_oSpds, oSearch);
 			int nSpeed = nIndex >= 0 ? m_oSpds.get(nIndex).m_nSpd : DEFAULTSPD;
-			TrafCtrl oCtrl = new TrafCtrl("maxspeed", nSpeed, 0, oCLA.m_dLineArcs);
+			TrafCtrl oCtrl = new TrafCtrl("maxspeed", nSpeed, 0, oCLA.m_dLineArcs, "", true);
 			String sRoadId = Integer.toString(XodrUtil.getRoadId(oCLA.m_nLaneId));
 			if (oCLA.m_nLaneType != nShoulder && !m_oJunctions.containsKey(sRoadId))
 				oCtrls.add(oCtrl);
@@ -226,7 +203,6 @@ public class ProcMaxSpeed extends ProcCtrl
 				if (Collections.binarySearch(oFullGeo.m_oTiles, nTile, Mercator.TILECOMP) < 0 || oFullGeo.m_dLength < LENLOWTH || oFullGeo.m_dAverageWidth < WIDTHTH)
 					continue;
 
-
 				double dHdg = getCoordAndHeadingAtLength(oFullGeo.m_dC, 5.0, false, dPt);
 				if (Double.isNaN(dHdg))
 					continue;
@@ -276,8 +252,8 @@ public class ProcMaxSpeed extends ProcCtrl
 					oAt.rotate(dHdg - Mercator.PI_OVER_TWO, 0, 0);
 					oAt.scale(0.45, 0.45);
 					String sVal = Integer.toString(MathUtil.bytesToInt(oCtrl.m_yControlValue));
-					if (sVal.compareTo("0") == 0) // speed limit zero exception
-						sVal += "0";
+					if (sVal.length() == 1) // speed limit zero exception
+						sVal = "0" + sVal;
 					int nNumber = Integer.parseInt(Character.toString(sVal.charAt(0)));
 					oAt.transform(NUMBERS[nNumber], 0, dNumbers[nNumber], 1, nNumbersPts[nNumber]);
 					

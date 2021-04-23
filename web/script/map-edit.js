@@ -1,4 +1,4 @@
-import {oMap, oPopup, carmaclPopupPos, aCtrlEnums, nCtrlZoom, setMode, resetMode, nMode, setCursor, refreshVectorTiles, switchMode, oCtrlUnits} from './map.js';
+import {oMap, oPopup, carmaclPopupPos, aCtrlEnums, nCtrlZoom, setMode, resetMode, nMode, setCursor, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex} from './map.js';
 import {fromIntDeg, createWholePoly, lon2tile, lat2tile, getPolygonBoundingBox} from './geoutil.js';
 
 let nHoverId;
@@ -10,6 +10,10 @@ let nCtrlType;
 let nFeatureCount = 0;
 let aCheckedState = [];
 let aOriginalValues;
+let sOriginalLabel;
+let bOriginalReg;
+let aDirty = [false, false, false, false, false];
+let aValid = [false, false];
 let bReload = false;
 
 function resetAllLayers()
@@ -301,7 +305,7 @@ function doneLoadCtrls(oData)
 		}
 		let oPoly = createWholePoly(oCoords['a'], oCoords['b']);
 		oExistingCtrls[this.ctrlType].push(nFeatureCount);
-		oFillData.features.push({'type': 'Feature', 'id': nFeatureCount, 'properties': {'ccid': sId, 'vals': oVals.vals}, 'geometry': {'type': 'Polygon', 'coordinates': oPoly}});
+		oFillData.features.push({'type': 'Feature', 'id': nFeatureCount, 'properties': {'ccid': sId, 'vals': oVals.vals, 'reg': oVals.reg, 'label': oVals.label}, 'geometry': {'type': 'Polygon', 'coordinates': oPoly}});
 		oOutlineData.features.push({'type': 'Feature', 'id': nFeatureCount++, 'geometry': {'type': 'LineString', 'coordinates': oPoly[0]}});
 	}
 	oFillSrc.setData(oFillData);
@@ -394,13 +398,18 @@ function carmaclClickEdit(oEvent)
 	let oData = oMap.getSource('existing-ctrls-fill')._data;
 	let aCtrlVals = oData.features[nSelectedId].properties.vals;
 	let sHtml = '<form id="edit-form"><table>';
-	let fHandler;
+	let nType;
 	aOriginalValues = [];
-
+	sOriginalLabel = oData.features[nSelectedId].properties.label;
+	bOriginalReg = oData.features[nSelectedId].properties.reg;
+	let nOriginalIndex;
+	aDirty = [false, false, false, false, false];
+	aValid = [true, true];
+	
 	if (aCtrlEnums[nCtrlType].length === 1) // not an enumerated type
 	{
 		sHtml += `<tr><td>value</td><td><input id="edit-input" name="value" value="${aCtrlVals[1]}">${oCtrlUnits[nCtrlType] ? '&nbsp;' + oCtrlUnits[nCtrlType] : ''}</td></tr>`;
-		fHandler = carmaclCheckInput;
+		nType = 0;
 		aOriginalValues.push(aCtrlVals[1]);
 	}
 	else
@@ -421,7 +430,7 @@ function carmaclClickEdit(oEvent)
 			let sHeading = '';
 			if (aCtrlVals.length > 2)
 			{
-				fHandler = carmaclCheckBothSelect;
+				nType = 2;
 				if (nValIndex === 1)
 					sHeading = 'outer edge';
 				else
@@ -429,40 +438,136 @@ function carmaclClickEdit(oEvent)
 			}
 			else
 			{
-				fHandler = carmaclCheckSelect;
+				nType = 1;
+				sHeading = 'Select control value';
 			}
 			sHtml += `<tr><td>${sHeading}</td><td><select id="${nValIndex === 1 ? 'edit-select1' : 'edit-select2'}" name="${nValIndex === 1 ? 'value1' : 'value2'}">${sOptions}</select>`;
 		}
 	}
+	sHtml += `<tr><td><label for="edit-regulatory">Regulatory</label></td><td><input id="edit-regulatory" type="checkbox" name="reg"${bOriginalReg ? ' checked' : ''}></td></tr>`;
+	let sOptions = '';
+	let bHasOtherLabel = true;
+	for (let nIndex = 0; nIndex < aLabelOpts.length; nIndex++)
+	{
+		let sSelected = '"';
+		if (aLabelOpts[nIndex] === sOriginalLabel)
+		{
+			sSelected = '" selected';
+			bHasOtherLabel = false;
+			nOriginalIndex = nIndex;
+		}
+		sOptions += `<option value="${nIndex}${sSelected}>${aLabelOpts[nIndex]}</option>`;
+	}
+		
+	sHtml += `<tr><td><label for="edit-label">Label</label></td><td><select id="edit-label">${sOptions}</select></td></tr>`;
+	sHtml += `<tr><td></td><td><input style="display: none;" type="text" id="edit-label-text" name="label" maxlength="63"></td></tr>`;
+	
 	sHtml += '</table></form>';
 	$('#edit-content').html(sHtml);
-	if (fHandler === carmaclCheckInput)
-		$('#edit-input').on('input', fHandler);
-	else if (fHandler === carmaclCheckBothSelect)
-		$('#edit-select1,#edit-select2').on('change', fHandler);
-	else if (fHandler === carmaclCheckSelect)
-		$('#edit-select1').on('change', fHandler);
+	$('#edit-label-text').val(sOriginalLabel);
+	if (bHasOtherLabel)
+	{
+		$('#edit-label-text').show();
+		$('#edit-label').val(nOtherIndex);
+		nOriginalIndex = nOtherIndex;
+	}
+	if (nType === 0)
+	{
+		$('#edit-input').on('input', {'val': aOriginalValues[0], 'index': 0}, carmaclCheckDirty);
+		$('#edit-input').on('input', function() 
+		{
+			aValid[0] = $(this).val().length !== 0;
+			$('#edit-save').prop('disabled', !checkValid());
+		});
+	}
+	else if (nType === 1)
+	{
+		$('#edit-select1').on('input', {'val': aOriginalValues[0], 'index': 1}, carmaclCheckDirty);
+	}
+	else if (nType === 2)
+	{
+		$('#edit-select1').on('change', {'val': aOriginalValues[0], 'index': 1}, carmaclCheckDirty);
+		$('#edit-select2').on('change', {'val': aOriginalValues[1], 'index': 2}, carmaclCheckDirty);
+	}
+	
+	$('#edit-label').on('change', {'val': nOriginalIndex, 'index': 4}, carmaclCheckDirty);
+	$('#edit-label').on('change', function() 
+	{
+		let sText = aLabelOpts[this.value];
+		if (sText === 'other')
+		{
+			$('#edit-label-text').show().val('').on('input', {'val': sOriginalLabel, 'index': 4}, carmaclCheckDirty).on('input', checkOther).on('input', checkOtherLength);
+			aValid[1] = false;
+			$('#edit-save').prop('disabled', !checkDirty() ||!checkValid());
+		}
+		else
+		{
+			aValid[1] = true;
+			$('#edit-label-text').hide().val(sText).off('input', carmaclCheckDirty).off('input', checkOther).off('input', checkOtherLength);;
+			$('#edit-save').prop('disabled', !checkDirty() || !checkValid());
+		}
+	});
+	
+	$('#edit-regulatory').on('change', carmaclCheckDirtyReg);
 	$('#edit-save').prop('disabled', true);
 	$('#dlgEdit').dialog('option', 'title', `Edit ${aCtrlEnums[nCtrlType][0]} Control`);
 	$('#dlgEdit').dialog('open');
 	document.activeElement.blur();
 }
 
-
-function carmaclCheckInput()
+function checkOther()
 {
-	$('#edit-save').prop('disabled', $('#edit-input').val() == aOriginalValues[0]);
+	if ($('#edit-label-text').val() === 'other')
+	{
+		$('#edit-label-text').val('');
+		aValid[1] = false;
+	}
+	
+	$('#edit-save').prop('disabled', !checkValid());
 }
 
-function carmaclCheckBothSelect()
+function checkOtherLength()
 {
-	$('#edit-save').prop('disabled', $('#edit-select1').val() == aOriginalValues[0] && $('#edit-select2').val() == aOriginalValues[1]);
+	aValid[1] = $('#edit-label-text').val().length !== 0;
+	$('#edit-save').prop('disabled', !checkValid());
 }
 
-function carmaclCheckSelect()
+function carmaclCheckDirty(oEvent)
 {
-	$('#edit-save').prop('disabled', $('#edit-select1').val() == aOriginalValues[0]);
+	aDirty[oEvent.data.index] = $(this).val() != oEvent.data.val;
+	$('#edit-save').prop('disabled', !checkDirty());
 }
+
+function checkValid()
+{
+	for (let bBool of aValid.values())
+	{
+		if (!bBool)
+			return false;
+	}
+	
+	return true;
+}
+
+
+function checkDirty()
+{
+	for (let bBool of aDirty.values())
+	{
+		if (bBool)
+			return true;
+	}
+	
+	return false;
+}
+
+
+function carmaclCheckDirtyReg()
+{
+	aDirty[3] = $('#edit-regulatory').prop('checked') !== bOriginalReg;
+	$('#edit-save').prop('disabled', !checkDirty());
+}
+
 
 function saveEdit()
 {
@@ -489,6 +594,8 @@ function doneSaveEdit(oData)
 	let oMapData = oSrc._data;
 	oMapData.features[nSelectedId].properties.ccid = oData.id;
 	oMapData.features[nSelectedId].properties.vals = oData.vals;
+	oMapData.features[nSelectedId].properties.reg = oData.reg;
+	oMapData.features[nSelectedId].properties.label = oData.label;
 	oSrc.setData(oMapData);
 	console.log(oData.id);;
 	refreshVectorTiles();

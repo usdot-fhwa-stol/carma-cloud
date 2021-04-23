@@ -49,6 +49,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	public int m_nLat;
 	int m_nAlt;
 	int m_nHeading;
+	public String m_sLabel;
 	public CtrlGeo m_oFullGeo = null;
 	public static Comparator<byte[]> ID_COMP = (byte[] y1, byte[] y2) -> 
 	{
@@ -67,18 +68,20 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	public TrafCtrl()
 	{
 		super();
+		m_bRegulatory = true;
+		m_sLabel = "";
 		for (int nIndex = 3; nIndex < TrafCtrlEnums.VTYPES.length - 2; nIndex++)
 			m_nVTypes.add(nIndex); // exclude pedestrians, rail, and unknown
 	}
 	
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, TrafCtrl oCtrl)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, TrafCtrl oCtrl, String sLabel, boolean bReg)
 	{
-		this(sControlType, nControlValue, lTime, 0, oCtrl);
+		this(sControlType, nControlValue, lTime, 0, oCtrl, sLabel, bReg);
 	}
 	
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, TrafCtrl oCtrl)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, TrafCtrl oCtrl, String sLabel, boolean bReg)
 	{
 		this();
 		m_nControlType = TrafCtrlEnums.getCtrl(sControlType);
@@ -91,6 +94,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		m_nLon = oCtrl.m_nLon;
 		m_nLat = oCtrl.m_nLat;
 		m_nHeading = oCtrl.m_nHeading;
+		m_sLabel = sLabel;
+		m_bRegulatory = bReg;
 		for (TrafCtrlPt oPt : oCtrl)
 			add(new TrafCtrlPt(oPt.m_nX, oPt.m_nY, oPt.m_nZ, oPt.m_nW));
 		
@@ -98,14 +103,16 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 	
 	
-	public TrafCtrl(String sControlType, String sControlValue, long lTime, TrafCtrl oCtrl)
+	public TrafCtrl(String sControlType, String sControlValue, long lTime, TrafCtrl oCtrl, String sLabel, boolean bReg)
 	{
-		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, oCtrl);
+		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, oCtrl, sLabel, bReg);
 	}
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, double[] dLineArcs)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, double[] dLineArcs, String sLabel, boolean bReg)
 	{
 		this(sControlType, lTime, dLineArcs);
+		m_sLabel = sLabel;
+		m_bRegulatory = bReg;
 		m_lStart = lStart;
 		if (nControlValue == Integer.MIN_VALUE)
 			m_yControlValue = new byte[0];
@@ -115,9 +122,9 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		generateId();
 	}
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, double[] dLineArcs)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, double[] dLineArcs, String sLabel, boolean bReg)
 	{
-		this(sControlType, nControlValue, lTime, 0, dLineArcs);
+		this(sControlType, nControlValue, lTime, 0, dLineArcs, sLabel, bReg);
 	}
 	
 	
@@ -158,9 +165,9 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 	
 	
-	public TrafCtrl(String sControlType, String sControlValue, long lTime, double[] dLineArcs)
+	public TrafCtrl(String sControlType, String sControlValue, long lTime, double[] dLineArcs, String sLabel, boolean bReg)
 	{
-		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, dLineArcs);
+		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, dLineArcs, sLabel, bReg);
 	}
 	
 	
@@ -205,6 +212,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			m_nLat = oIn.readInt();
 			m_nAlt = oIn.readInt();
 			m_nHeading = oIn.readInt();
+			m_sLabel = oIn.readUTF();
 
 			nCount = oIn.readInt();
 			ensureCapacity(nCount);
@@ -354,7 +362,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			oOut.writeInt(m_nLat);
 			oOut.writeInt(m_nAlt);
 			oOut.writeInt(m_nHeading);
-
+			oOut.writeUTF(m_sLabel == null ? "" : m_sLabel);
+			
 			oOut.writeInt(size());
 			for (TrafCtrlPt oPt : this)
 				oPt.writeBin(oOut);
@@ -517,6 +526,14 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		sBuf.append("</id>\n");
 		sBuf.append("\t\t<updated>").append(m_lUpdated / 1000 / 60).append("</updated>\n"); // convert to epoch minutes
 		
+		sBuf.append("\t\t<TrafficControlPackage>\n");
+		sBuf.append("\t\t\t<label>").append(Text.truncate(m_sLabel, 63)).append("</label>\n");
+		sBuf.append("\t\t\t<tcids>\n");
+		sBuf.append("\t\t\t\t<");
+		Text.toHexString(m_yId, 0, m_yId.length, sBuf);
+		sBuf.append("/>\n");
+		sBuf.append("\t\t\t</tcids>\n");
+		sBuf.append("\t\t</TrafficControlPackage\n");
 		// add TrafficControlPackage Tag
 		if (bIncludeParams)
 		{

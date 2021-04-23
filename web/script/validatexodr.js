@@ -3,7 +3,7 @@ var g_sCurLane;
 var g_aCurPath = [];
 var g_oLanes = {};
 var g_oPaths = [];
-const g_oSourceLayers = $.getJSON('mapbox/leidos_sourcelayers.json').promise();
+const g_oSourceLayers = $.getJSON('mapbox/validatexodr_sourcelayers.json').promise();
 var g_oPopup;
 var g_bDebug = false;
 var g_oSources;
@@ -121,7 +121,7 @@ function buildSourceMap(sourceData)
 async function initialize()
 {
 	g_oMap = new mapboxgl.Map({"container": "mapid", "style": "mapbox://styles/mapbox/satellite-v8", "attributionControl": false,
-                "minZoom": 4, "maxZoom": 24, "center": [-77.1488930, 38.9562550], "zoom": 18, "accessToken": "<your access token goes here>"});
+                "minZoom": 4, "maxZoom": 24, "center": [-77.1488930, 38.9562550], "zoom": 18, "accessToken": "pk.eyJ1Ijoia3J1ZWdlcmIiLCJhIjoiY2tuajlwYWZ5MGI0ZTJ1cGV1bTk5emtsaCJ9.En7O3cNsbmy7Gk555ZjmVQ"});
 //	g_oMap = new mapboxgl.Map({"container": "mapid", "style": "mapbox/satellite-v8.json", "attributionControl": false,
 //                "minZoom": 4, "maxZoom": 24, "center": [-76.856, 38.750], "zoom": 18});
 

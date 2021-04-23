@@ -159,7 +159,8 @@ public class TcmReqParser extends DefaultHandler2
 	public static void main(String[] sArgs)
 	   throws Exception
 	{
-		TcmReq oReq = new TcmReqParser().parseRequest(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/CarmaCloud/traf_ctrl/request.xml")));
-		System.out.println();
+		System.out.println(String.valueOf(false));
+//		TcmReq oReq = new TcmReqParser().parseRequest(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/CarmaCloud/traf_ctrl/request.xml")));
+//		System.out.println();
 	}
 }

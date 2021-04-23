@@ -16,10 +16,13 @@ let oListeners = ['click', 'mousemove'];
 let nMode = 0; // {0: no handlers, 1: travel mode, 2: wxpoly mode, 3: add mode, 4: edit mode, 5: delete mode}
 let nCtrlZoom;
 let aCtrlEnums;
-let aEditLayers = ['direction', 'latperm', 'closed', 'maxspeed'];
-let aDeleteLayers = ['direction', 'stop', 'yield', 'latperm', 'closed', 'maxspeed'];
+let aEditLayers = ['direction', 'latperm', 'closed', 'maxspeed', 'minhdwy'];
+let aDeleteLayers = ['direction', 'stop', 'yield', 'latperm', 'closed', 'maxspeed', 'minhdwy'];
 let nCtrlType;
 let oCtrlUnits;
+let aLabelOpts = ['', 'workzone', 'incident', 'weather', 'other'];
+let nOtherIndex = aLabelOpts.indexOf('other');
+let aValid = [false, false];
 
 
 function setCtrlVars(oCtrlInfo)
@@ -254,7 +257,7 @@ function buildLayerDialog()
 function buildEditDialog()
 {
 	let oDlg = $('#dlgEdit');
-	oDlg.dialog({autoOpen: false, position: {my: 'center', at: 'center', of: '#mapid'}, resizable: false, width: 400, height: 250});
+	oDlg.dialog({autoOpen: false, position: {my: 'center', at: 'center', of: '#mapid'}, resizable: false, width: 400, height: 300});
 	let sHtml = '<div class="overlay" id="dlg-edit-overlay"><p class="centered-element"></p></div><div id="edit-content"></div><div class="dlg-buttons"><button id="edit-cancel" class="w3-button w3-dark-gray">Cancel</button><button id="edit-save" class="w3-button w3-dark-gray" disabled>Save</button></div>';
 	oDlg.html(sHtml);
 }
@@ -282,11 +285,7 @@ async function initialize()
 	let pSourceLayers = $.getJSON('mapbox/sourcelayers.json').promise();
 	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
 		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<your access token goes here>'});
-
-//	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/streets-v11.json', 'attributionControl': false,
-//			'minZoom': 14, 'maxZoom': 22, 'center': [-76.8552198, 38.7474584], 'zoom': 17});
-//			'minZoom': 14, 'maxZoom': 22, 'center': [-77.20083, 38.9479027-77.149, 38.956], 'zoom': 17});
-
+	
 	oMap.dragRotate.disable(); // disable map rotation using right click + drag
 	oMap.touchZoomRotate.disableRotation(); // disable map rotation using touch rotation gesture
 	oMap.addControl(new mapboxgl.NavigationControl({showCompass: false}));
@@ -649,11 +648,11 @@ function carmaclEndLanePoly({target, lngLat, point})
 	let sType = aCtrlEnums[nCtrlType][0];
 	if (sType === 'yield' || sType === 'stop')
 	{
-		sHtml += `<tr><td></td><td>No value to set for this control</td></tr>`;
+		sHtml += `<p style="margin: 1% 3% 1% 3%;">No value to set for this control</p>`;
 	}
 	else if (aCtrlEnums[nCtrlType].length === 1) // not an enumerated type
 	{
-		sHtml += `<tr><td>Enter control value</td><td><input id="edit-input" name="value" value=""></td></tr>`;
+		sHtml += `<tr><td>value</td><td><input id="edit-input" name="value">${oCtrlUnits[nCtrlType] ? '&nbsp;' + oCtrlUnits[nCtrlType] : ''}</td></tr>`;
 	}
 	else
 	{
@@ -677,12 +676,47 @@ function carmaclEndLanePoly({target, lngLat, point})
 			{
 				sHeading = 'Select control value';
 			}
-			sHtml += `<tr><td>${sHeading}</td><td><select id="${nSelectIndex === 0 ? 'edit-select1' : 'edit-select2'}" name="${nSelectIndex === 0 ? 'value1' : 'value2'}">${sOptions}</select>`;
+			sHtml += `<tr><td>${sHeading}</td><td><select id="${nSelectIndex === 0 ? 'edit-select1' : 'edit-select2'}" name="${nSelectIndex === 0 ? 'value1' : 'value2'}">${sOptions}</select></td></tr>`;
 		}
 	}
+
+	sHtml += `<tr><td><label for="edit-regulatory">Regulatory</label></td><td><input id="edit-regulatory" type="checkbox" name="reg" checked></td></tr>`
+	let sOptions = '';
+	for (let nIndex = 0; nIndex < aLabelOpts.length; nIndex++)
+		sOptions += `<option value="${nIndex}">${aLabelOpts[nIndex]}</option>`;
+	sHtml += `<tr><td><label for="edit-label">Label</label></td><td><select id="edit-label">${sOptions}</select></td></tr>`;
+	sHtml += '<tr><td></td><td><input style="display: none;" type="text" id="edit-label-text" name="label" maxlength="63"></td></tr>';
 	sHtml += '</table></form>';
 	$('#edit-content').html(sHtml);
-	$('#edit-save').prop('disabled', false);
+	$('#edit-label').on('change', function() 
+	{
+		let sText = aLabelOpts[this.value];
+		if (sText === 'other')
+		{
+			$('#edit-label-text').show().val('').on('input', checkOther).on('input', checkOtherLength);
+			$('#edit-save').prop('disabled', true);
+		}
+		else
+		{
+			$('#edit-label-text').hide().val(sText).off('input', checkOther).off('input', checkOtherLength);
+			$('#edit-save').prop('disabled', false);
+		}
+	});
+	if (document.getElementById('edit-input'))
+	{
+		$('#edit-input').on('input', function() 
+		{
+			aValid[0] = $(this).val().length !== 0;
+			$('#edit-save').prop('disabled', !checkValid());
+		});
+		$('#edit-save').prop('disabled', true);
+	}
+	else
+	{
+		$('#edit-save').prop('disabled', false);
+		aValid[0] = true;
+	}
+	aValid[1] = true;
 	$('#dlgEdit').dialog('option', 'title', `Confirm Adding ${aCtrlEnums[nCtrlType][0]} Control`);
 	$('#dlgEdit').dialog('open');
 	document.activeElement.blur();
@@ -713,6 +747,35 @@ function carmaclEndLanePoly({target, lngLat, point})
 	setCursor('');
 }
 
+
+function checkOther()
+{
+	if ($('#edit-label-text').val() === 'other')
+	{
+		$('#edit-label-text').val('');
+		aValid[1] = false;
+	}
+	
+	$('#edit-save').prop('disabled', !checkValid());
+}
+
+function checkValid()
+{
+	for (let bBool of aValid.values())
+	{
+		if (!bBool)
+			return false;
+	}
+	
+	return true;
+}
+
+
+function checkOtherLength()
+{
+	aValid[1] = $('#edit-label-text').val().length !== 0;
+	$('#edit-save').prop('disabled', !checkValid());
+}
 
 function addControl()
 {
@@ -981,4 +1044,4 @@ $(document).on('initPage', initialize);
 
 export {oMap, oPopup, switchListener, setCursor, resetMode, getClosestLineFeature,
 	carmaclPopupPos, addCtrlSources, removeCtrlSources, nMode, setMode, aCtrlEnums,
-	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits};
+	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex};

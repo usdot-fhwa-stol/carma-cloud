@@ -8,7 +8,6 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
-import static cc.ctrl.proc.ProcCtrl.g_sTrafCtrlDir;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrUtil;
 import cc.geosrv.xodr.rdmk.RoadMark;
@@ -125,7 +124,7 @@ public class ProcLatPerm extends ProcCtrl
 				sRoadMark = RoadMark.getType(nOuterMarkType);
 				sLaneType = XodrUtil.getLaneType(nOuterRoadType);
 				nCtrlVal |= (getOuterLatPerm(sRoadMark, sLaneType, bSameOuterDir) & 0xff);
-				TrafCtrl oCtrl = new TrafCtrl("latperm", nCtrlVal, 0, oCLA.m_dLineArcs);
+				TrafCtrl oCtrl = new TrafCtrl("latperm", nCtrlVal, 0, oCLA.m_dLineArcs, "", true);
 				if (oCLA.m_nLaneType != nShoulder)
 				{
 					oCtrls.add(oCtrl);

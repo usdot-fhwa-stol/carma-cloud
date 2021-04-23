@@ -8,7 +8,6 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
-import static cc.ctrl.proc.ProcCtrl.g_sTrafCtrlDir;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
@@ -66,15 +65,15 @@ public class ProcClosed extends ProcCtrl
 				TrafCtrl oCtrl = null;
 				if (sType.compareTo("roadWorks") == 0)
 				{
-					oCtrl = new TrafCtrl("closed", "closed", 0, oCLA.m_dLineArcs);
+					oCtrl = new TrafCtrl("closed", "closed", 0, oCLA.m_dLineArcs, "", true);
 				}
 				else if (sType.contains("special1"))
 				{
-					oCtrl = new TrafCtrl("closed", sType.contains("1") ? "taperright" : "taperleft", 0, oCLA.m_dLineArcs); 
+					oCtrl = new TrafCtrl("closed", sType.contains("1") ? "taperright" : "taperleft", 0, oCLA.m_dLineArcs, "", true); 
 				}
 				else if (sType.contains("special2"))
 				{
-					oCtrl = new TrafCtrl("closed", sType.contains("2") ? "openright" : "openleft", 0, oCLA.m_dLineArcs);
+					oCtrl = new TrafCtrl("closed", sType.contains("2") ? "openright" : "openleft", 0, oCLA.m_dLineArcs, "", true);
 				}
 
 				if (oCtrl == null)
