@@ -128,6 +128,7 @@ TrafficControlGeometry ::= SEQUENCE
 	reflon Longitude,
 	reflat Latitude,
 	refelv Elevation, -- decimeter offset -4096 from reference datum
+	refwidth INTEGER (0..32767) -- default reference lane width in units of cm
 	heading INTEGER (0..3599), -- initial path heading clockwise from north in tenths of degrees
 	nodes SEQUENCE (SIZE(1..255)) OF PathNode
 }
