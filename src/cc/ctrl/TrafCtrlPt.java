@@ -76,8 +76,10 @@ public class TrafCtrlPt
 	void writeXml(StringBuilder sBuf)
 	{
 		sBuf.append("<PathNode><x>").append(m_nX).append("</x><y>").append(m_nY).append("</y>");
+//		sBuf.append("<PathNode><x>").append("0").append("</x><y>").append("0").append("</y>");
 		if (m_nZ != 0)
 			sBuf.append("<z>").append(m_nZ).append("</z>");
 		sBuf.append("<width>").append(m_nW).append("</width></PathNode>\n");
+//		sBuf.append("<width>").append("10").append("</width></PathNode>\n");
 	}
 }

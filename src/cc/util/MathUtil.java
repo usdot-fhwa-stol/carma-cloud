@@ -167,10 +167,25 @@ public abstract class MathUtil
 	
 	public static void main(String[] s)
 	{
-		byte[] yBytes = new byte[]{0, 1, 0, 2};
+//		byte[] yBytes = new byte[]{0, 1, 0, 2};
+//		ArrayList<String> sVals = new ArrayList();
+//		TrafCtrlEnums.getCtrlValString("latperm", yBytes, sVals);
+//		for (String sVal : sVals)
+//			System.out.println(sVal);
+		
+		int nCount = 0;
+		int nVal1 = 2;
+		nVal1 <<= 16;
+		nVal1 |= (1 & 0xff);
+
+		int nVal2 = 1;
+		nVal2 <<= 16;
+		nVal2 |= (2 & 0xff);
+		
 		ArrayList<String> sVals = new ArrayList();
+		byte[] yBytes = new byte[4];
+		MathUtil.intToBytes(nVal2, yBytes);
 		TrafCtrlEnums.getCtrlValString("latperm", yBytes, sVals);
-		for (String sVal : sVals)
-			System.out.println(sVal);
+		sVals.forEach(sVal -> System.out.println(sVal));
 	}
 }

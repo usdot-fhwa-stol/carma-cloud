@@ -49,6 +49,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	public int m_nLat;
 	int m_nAlt;
 	int m_nHeading;
+	int m_nWidth;
 	public String m_sLabel;
 	public CtrlGeo m_oFullGeo = null;
 	public static Comparator<byte[]> ID_COMP = (byte[] y1, byte[] y2) -> 
@@ -145,7 +146,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		m_lTime = lTime;
 		m_nLon = Geo.toIntDeg(Mercator.xToLon(MathUtil.round(dLineArcs[5], 2)));
 		m_nLat = Geo.toIntDeg(Mercator.yToLat(MathUtil.round(dLineArcs[6], 2)));
-		int[] nPrevPt = new int[]{Mercator.mToCm(dLineArcs[5]), Mercator.mToCm(dLineArcs[6])};
+		m_nWidth = Mercator.mToCm(dLineArcs[7]);
+		int[] nPrevPt = new int[]{Mercator.mToCm(dLineArcs[5]), Mercator.mToCm(dLineArcs[6]), m_nWidth};
 		double dHdg = Geo.heading(nPrevPt[0], nPrevPt[1], dLineArcs[8], dLineArcs[9]);
 		dHdg = Math.toDegrees(dHdg);
 		m_nHeading = (int)(dHdg * 10 + 0.5);
@@ -155,12 +157,15 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			double[] dPt = oIt.next();
 			int nX = Mercator.mToCm(dPt[0]);
 			int nY = Mercator.mToCm(dPt[1]);
+			int nW = Mercator.mToCm(dPt[2]);
 			int nXd = nX - nPrevPt[0];
 			int nYd = nY - nPrevPt[1];
-			TrafCtrlPt oTemp = new TrafCtrlPt(nXd, nYd, Mercator.mToCm(dPt[2]));
+			int nWd = nW - nPrevPt[2];
+			TrafCtrlPt oTemp = new TrafCtrlPt(nXd, nYd, nWd);
 			add(oTemp);
 			nPrevPt[0] = nX;
 			nPrevPt[1] = nY;
+			nPrevPt[2] = nW;
 		}
 	}
 	
@@ -171,63 +176,62 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 	
 	
-	public TrafCtrl(String sPath)
+	public TrafCtrl(DataInputStream oIn, boolean bConcat)
 		throws Exception
 	{
-		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sPath))))
+		m_sVersion = oIn.readUTF();
+		m_yId = new byte[16];
+		oIn.read(m_yId); // might need read loop
+		m_lUpdated = oIn.readLong();
+
+		int nCount = oIn.readInt();
+		m_nVTypes.ensureCapacity(nCount);
+		while (nCount-- > 0)
+			m_nVTypes.add(oIn.readInt());
+
+		m_lStart = oIn.readLong();
+		m_lEnd = oIn.readLong();
+		m_nDoW = oIn.readInt();
+		nCount = oIn.readInt();
+		m_nBetween.ensureCapacity(nCount);
+		while (nCount-- > 0)
+			m_nBetween.add(new int[]{oIn.readInt(), oIn.readInt()});
+
+		m_nOffset = oIn.readInt();
+		m_nPeriod = oIn.readInt();
+		m_nSpan = oIn.readInt();
+
+		m_bRegulatory = oIn.readBoolean();
+		m_nControlType = oIn.readInt();
+
+		m_yControlValue = new byte[oIn.readInt()];
+		oIn.read(m_yControlValue);
+
+
+		m_sProj = oIn.readUTF();
+		m_sDatum = oIn.readUTF();
+		m_lTime = oIn.readLong();
+		m_nLon = oIn.readInt();
+		m_nLat = oIn.readInt();
+		m_nAlt = oIn.readInt();
+		m_nWidth = oIn.readInt();
+		m_nHeading = oIn.readInt();
+		m_sLabel = oIn.readUTF();
+
+		nCount = oIn.readInt();
+		ensureCapacity(nCount);
+		while (nCount-- > 0)
+			add(new TrafCtrlPt(oIn));
+
+		if (bConcat)
 		{
-			m_sVersion = oIn.readUTF();
-			m_yId = new byte[16];
-			oIn.read(m_yId); // might need read loop
-			m_lUpdated = oIn.readLong();
-
-			int nCount = oIn.readInt();
-			m_nVTypes.ensureCapacity(nCount);
-			while (nCount-- > 0)
-				m_nVTypes.add(oIn.readInt());
-
-			m_lStart = oIn.readLong();
-			m_lEnd = oIn.readLong();
-			m_nDoW = oIn.readInt();
-			nCount = oIn.readInt();
-			m_nBetween.ensureCapacity(nCount);
-			while (nCount-- > 0)
-				m_nBetween.add(new int[]{oIn.readInt(), oIn.readInt()});
-
-			m_nOffset = oIn.readInt();
-			m_nPeriod = oIn.readInt();
-			m_nSpan = oIn.readInt();
-
-			m_bRegulatory = oIn.readBoolean();
-			m_nControlType = oIn.readInt();
-
-			m_yControlValue = new byte[oIn.readInt()];
-			oIn.read(m_yControlValue);
-			
-
-			m_sProj = oIn.readUTF();
-			m_sDatum = oIn.readUTF();
-			m_lTime = oIn.readLong();
-			m_nLon = oIn.readInt();
-			m_nLat = oIn.readInt();
-			m_nAlt = oIn.readInt();
-			m_nHeading = oIn.readInt();
-			m_sLabel = oIn.readUTF();
-
-			nCount = oIn.readInt();
-			ensureCapacity(nCount);
-			while (nCount-- > 0)
-				add(new TrafCtrlPt(oIn));
-			
-			// don't think we actually need to skip the bytes because the file gets closed
-			// skip the rest of the file that contains the full geometry
-//			oIn.skip(16); // skip length and average width, both doubles
-//			for (int nIndex = 0; nIndex < 3; nIndex++) // there are 3 sets of points: center, nt, pt
-//			{
-//				int nLen = oIn.readInt(); // read array length
-//				oIn.skip(8); // skip start x and start y, both ints
-//				oIn.skip(nLen * 2 - 2); // skip the rest of the point which are deltas written as bytes
-//			}
+			oIn.skip(16); // skip length and average width, both doubles
+			for (int nIndex = 0; nIndex < 3; nIndex++) // there are 3 sets of points: center, nt, pt
+			{
+				int nLen = oIn.readInt(); // read array length
+				oIn.skip(8); // skip start x and start y, both ints
+				oIn.skip(nLen * 2 - 2); // skip the rest of the point which are deltas written as bytes
+			}
 		}
 	}
 
@@ -273,6 +277,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			oAbsorb.writeInt(m_nLon);
 			oAbsorb.writeInt(m_nLat);
 			oAbsorb.writeInt(m_nAlt);
+			oAbsorb.writeInt(m_nWidth);
 			oAbsorb.writeShort(m_nHeading);
 
 			for (TrafCtrlPt oPt : this) // include path points
@@ -361,6 +366,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			oOut.writeInt(m_nLon);
 			oOut.writeInt(m_nLat);
 			oOut.writeInt(m_nAlt);
+			oOut.writeInt(m_nWidth);
 			oOut.writeInt(m_nHeading);
 			oOut.writeUTF(m_sLabel == null ? "" : m_sLabel);
 			
@@ -510,11 +516,11 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	   throws IOException
 	{
 		sBuf.setLength(0);
-		if (sVersion.compareTo("1.0") != 0)
-		{
-			sBuf.append("invalid version");
-			return;
-		}
+//		if (sVersion.compareTo("1.0") != 0)
+//		{
+//			sBuf.append("invalid version");
+//			return;
+//		}
 		sBuf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n").append("<TrafficControlMessage>\n");
 		sBuf.append("\t<tcmV01>\n");
 		sBuf.append("\t\t<reqid>").append(sReqId).append("</reqid>\n");
@@ -526,18 +532,26 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		sBuf.append("</id>\n");
 		sBuf.append("\t\t<updated>").append(m_lUpdated / 1000 / 60).append("</updated>\n"); // convert to epoch minutes
 		
-		sBuf.append("\t\t<TrafficControlPackage>\n");
-		sBuf.append("\t\t\t<label>").append(Text.truncate(m_sLabel, 63)).append("</label>\n");
+		sBuf.append("\t\t<package>\n");
+		if (m_sLabel != null && !m_sLabel.isEmpty())
+		{
+			sBuf.append("\t\t\t<label>").append(Text.truncate(m_sLabel, 63)).append("</label>\n");
+		}
+		else
+		{
+			sBuf.append("\t\t\t<label>null</label>\n");
+		}
+			
 		sBuf.append("\t\t\t<tcids>\n");
-		sBuf.append("\t\t\t\t<");
+		sBuf.append("\t\t\t\t<Id128b>");
 		Text.toHexString(m_yId, 0, m_yId.length, sBuf);
-		sBuf.append("/>\n");
+		sBuf.append("</Id128b>\n");
 		sBuf.append("\t\t\t</tcids>\n");
-		sBuf.append("\t\t</TrafficControlPackage\n");
-		// add TrafficControlPackage Tag
+		sBuf.append("\t\t</package>\n");
+			
 		if (bIncludeParams)
 		{
-			sBuf.append("\t\t<TrafficControlParams>\n");
+			sBuf.append("\t\t<params>\n");
 			sBuf.append("\t\t\t<vclasses>\n");
 			for (int nIndex = 0; nIndex < m_nVTypes.size(); nIndex++)
 				sBuf.append("\t\t\t\t<").append(TrafCtrlEnums.VTYPES[m_nVTypes.get(nIndex)]).append("/>\n");
@@ -545,18 +559,18 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			sBuf.append("\t\t\t<schedule>\n");
 			sBuf.append("\t\t\t\t<start>").append(m_lStart / 1000 / 60).append("</start>\n"); // convert to epoch minutes
 			sBuf.append("\t\t\t\t<end>").append(m_lEnd / 1000 / 60).append("</end>\n"); // convert to epoch minutes
-			sBuf.append("\t\t\t\t<dow>\n");
-			int nCount = 0;
+			sBuf.append("\t\t\t\t<dow>");
 			int nDoW = m_nDoW; // bit-shift day-of-week characters
-			while (nDoW != 0)
+			for (int nDay = 0; nDay < 7; nDay++)
 			{
 				if ((nDoW & 1) > 0)
-					sBuf.append("\t\t\t\t\t<").append(TrafCtrlEnums.DAYS[nCount]).append("/>\n");
-
-				++nCount;
+					sBuf.append('1');
+				else
+					sBuf.append('0');
 				nDoW >>= 1;
 			}
-			sBuf.append("\t\t\t\t</dow>\n");
+
+			sBuf.append("</dow>\n");
 
 			if (!m_nBetween.isEmpty())
 			{
@@ -582,24 +596,31 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			}
 
 			sBuf.append("\t\t\t</schedule>\n");
-			sBuf.append("\t\t\t<regulatory>").append(m_bRegulatory).append("</regulatory>\n");
+			sBuf.append("\t\t\t<regulatory><").append(m_bRegulatory).append("/></regulatory>\n");
 			sBuf.append("\t\t\t<detail>\n");
 			ArrayList<String> sVals = new ArrayList(4);
 			TrafCtrlEnums.getCtrlValString(m_nControlType, m_yControlValue, sVals);
-			for (int nIndex = 0; nIndex < sVals.size(); nIndex++)
+			String sTag = sVals.get(0);
+			sBuf.append("\t\t\t\t<").append(sTag);
+			if (sVals.size() == 1) // null value so empty tag
+				sBuf.append("/>");
+			else
 			{
-				String sTag = sVals.get(nIndex++);
-				sBuf.append("\t\t\t\t<").append(sTag);
-				if (nIndex == sVals.size()) // null value so empty tag
-					sBuf.append("/>");
-				else
-					sBuf.append(">").append(sVals.get(nIndex)).append("</").append(sTag).append(">");
-				sBuf.append("\n");
+				if (TrafCtrlEnums.CTRLS[m_nControlType].length == 1)
+					sBuf.append(">").append(sVals.get(1)).append("</").append(sTag).append(">");
+				else // enumerated value that needs to be an empty tag, not a value
+				{
+					if (sVals.size() == 2)
+						sBuf.append("><").append(sVals.get(1)).append("/></").append(sTag).append(">");
+					if (sVals.size() == 4)
+						sBuf.append("><").append(sVals.get(1)).append("/><").append(sVals.get(3)).append("/></").append(sTag).append(">");
+				}
 			}
+			sBuf.append("\n");
 			sBuf.append("\t\t\t</detail>\n");
-			sBuf.append("\t\t</TrafficControlParams>\n");
+			sBuf.append("\t\t</params>\n");
 		}
-		sBuf.append("\t\t<TrafficControlGeometry>\n");
+		sBuf.append("\t\t<geometry>\n");
 		
 		sBuf.append("\t\t\t<proj>").append(m_sProj).append("</proj>\n");
 		sBuf.append("\t\t\t<datum>").append(m_sDatum).append("</datum>\n");
@@ -607,6 +628,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		sBuf.append("\t\t\t<reflon>").append(m_nLon).append("</reflon>\n");
 		sBuf.append("\t\t\t<reflat>").append(m_nLat).append("</reflat>\n");
 		sBuf.append("\t\t\t<refelv>").append(m_nAlt).append("</refelv>\n");
+//		sBuf.append("\t\t\t<refwidth>").append(m_nWidth).append("</refwidth>\n");
 		sBuf.append("\t\t\t<heading>").append(m_nHeading).append("</heading>\n");
 		sBuf.append("\t\t\t<nodes>\n");
 		int nEnd = Math.min(size(), (nPtsIndex / 256 + 1) * 256);
@@ -616,7 +638,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			get(nIndex).writeXml(sBuf);
 		}
 		sBuf.append("\t\t\t</nodes>\n");
-		sBuf.append("\t\t</TrafficControlGeometry>\n");
+		sBuf.append("\t\t</geometry>\n");
 		sBuf.append("\t</tcmV01>\n");
 		sBuf.append("</TrafficControlMessage>");
 	}

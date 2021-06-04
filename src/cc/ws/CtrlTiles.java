@@ -11,14 +11,12 @@ import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
 import cc.ctrl.proc.ProcClosed;
-import cc.ctrl.proc.ProcClosing;
 import cc.ctrl.proc.ProcCtrl;
 import cc.ctrl.proc.ProcDebug;
 import cc.ctrl.proc.ProcDebugOutlines;
 import cc.ctrl.proc.ProcDirection;
 import cc.ctrl.proc.ProcLatPerm;
 import cc.ctrl.proc.ProcMaxSpeed;
-import cc.ctrl.proc.ProcOpening;
 import cc.ctrl.proc.ProcPavement;
 import cc.ctrl.proc.ProcSignal;
 import cc.ctrl.proc.ProcStop;
@@ -41,12 +39,12 @@ import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.RandomAccessFile;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.ServletConfig;
@@ -388,6 +386,11 @@ public class CtrlTiles extends HttpServlet
 			addControl(oReq, oRes);
 			return;
 		}
+		else if (sMethod.compareTo("split") == 0)
+		{
+			splitLineArcs(oReq, oRes);
+			return;
+		}
 		synchronized (oSession)
 		{
 			oSession.oLoadedIds.clear();
@@ -467,7 +470,12 @@ public class CtrlTiles extends HttpServlet
 			int nStartIndex = Integer.parseInt(oReq.getParameter("s")) * 4 + 1; // add one since we use the growable arrays with the insertion index at position 0
 			int nEndIndex = Integer.parseInt(oReq.getParameter("e")) * 4 + 1;
 			String sFile = g_sCtrlDir + sId + ".bin";
-			TrafCtrl oOriginalCtrl = new TrafCtrl(sFile);
+			TrafCtrl oOriginalCtrl;
+			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			{
+				oOriginalCtrl = new TrafCtrl(oIn, false);
+			}
+			
 			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
 			{
 				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
@@ -507,7 +515,11 @@ public class CtrlTiles extends HttpServlet
 			long lNow = System.currentTimeMillis() - 10;
 			String sId = oReq.getParameter("id");
 			String sFile = g_sCtrlDir + sId + ".bin";
-			TrafCtrl oOriginalCtrl = new TrafCtrl(sFile);
+			TrafCtrl oOriginalCtrl;
+			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			{
+				oOriginalCtrl = new TrafCtrl(oIn, false);
+			}
 			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
 			{
 				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
@@ -564,7 +576,11 @@ public class CtrlTiles extends HttpServlet
 			
 			String sId = oReq.getParameter("id");
 			String sFile = g_sCtrlDir + sId + ".bin";
-			TrafCtrl oOriginalCtrl = new TrafCtrl(sFile);
+			TrafCtrl oOriginalCtrl;
+			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			{
+				oOriginalCtrl = new TrafCtrl(oIn, false);
+			}
 			TrafCtrl oCtrlToWrite;
 			if (MathUtil.bytesToInt(oOriginalCtrl.m_yControlValue) == nControlValue && bReg == oOriginalCtrl.m_bRegulatory) // value and regulatory are the same so only the label has changed
 			{
@@ -617,6 +633,272 @@ public class CtrlTiles extends HttpServlet
 		{
 			oEx.printStackTrace();
 			oRes.sendError(HttpServletResponse.SC_BAD_REQUEST);
+		}
+	}
+	
+	
+	private void splitLineArcs(HttpServletRequest oReq, HttpServletResponse oRes)
+		throws IOException, ServletException
+	{
+		try
+		{
+			String sLineArcFile = oReq.getParameter("clafile");
+			if (sLineArcFile == null)
+				return;
+			String sPvmtFile = sLineArcFile.replace("/direction", "/pavement") + ".pvmt";
+			Path oPath = Paths.get(sLineArcFile);
+			if (!Files.exists(oPath))
+				return;
+			ArrayList<CtrlLineArcs> oClas = new ArrayList();
+			int nShoulder = XodrUtil.getLaneType("shoulder");
+			try (DataInputStream oIn = new DataInputStream(Files.newInputStream(oPath)))
+			{
+				while (oIn.available() > 0)
+				{
+					CtrlLineArcs oCla = new CtrlLineArcs(oIn);
+					if (oCla.m_nLaneType == nShoulder)
+						continue;
+					oClas.add(oCla);
+				}
+			}
+
+			double dMaxStep = ProcCtrl.g_dExplodeStep;
+			double[] dSeg = new double[9];
+			ArrayList<CtrlLineArcs> oLanesByRoads = ProcCtrl.combineLaneByRoad(oClas, 0.1);
+			ArrayList<CtrlLineArcs> oNewClas = new ArrayList();
+			for (CtrlLineArcs oCla : oLanesByRoads)
+			{
+				double[] dNew1 = Arrays.newDoubleArray((int)Arrays.size(oCla.m_dLineArcs));
+				double[] dNew2 = Arrays.newDoubleArray((int)Arrays.size(oCla.m_dLineArcs));
+				dNew1 = Arrays.add(dNew1, new double[]{0,0,0,0});
+				dNew2 = Arrays.add(dNew2, new double[]{0,0,0,0});
+				Iterator<double[]> oIt = Arrays.iterator(oCla.m_dLineArcs, dSeg, 5, 6);
+				double[] dCenter = new double[2];
+				double dTotalLen = 0.0;
+				double dLastTan = 0;
+				while (oIt.hasNext())
+				{
+					oIt.next();
+					double dR = Geo.circle(dSeg[0], dSeg[1], dSeg[3], dSeg[4], dSeg[6], dSeg[7], dCenter);
+					if (!Double.isFinite(dR) || dR >= 10000) // expand line
+					{
+						double dHdg = Geo.heading(dSeg[0], dSeg[1], dSeg[6], dSeg[7]);
+						double dLength = Geo.distance(dSeg[0], dSeg[1], dSeg[6], dSeg[7]);
+						if (Double.isNaN(dHdg) || dLength == 0.0)
+							continue;
+						dLastTan = dHdg;
+						double dAngle = dHdg - Mercator.PI_OVER_TWO;
+
+						double dW = dSeg[2] / 4;
+						double dDeltaX = Math.cos(dAngle) * dW;
+						double dDeltaY = Math.sin(dAngle) * dW;
+
+						double dX = dSeg[0] + dDeltaX;
+						double dY = dSeg[1] + dDeltaY;
+						dNew1 = Arrays.add(dNew1, dX, dY);
+						dNew1 = Arrays.add(dNew1, dW * 2);
+
+						dX = dSeg[0] - dDeltaX;
+						dY = dSeg[1] - dDeltaY;
+
+						dNew2 = Arrays.add(dNew2, dX, dY);
+						dNew2 = Arrays.add(dNew2, dW * 2);
+
+						dW = dSeg[5] / 4;
+						dDeltaX = Math.cos(dAngle) * dW;
+						dDeltaY = Math.sin(dAngle) * dW;
+
+						dX = dSeg[3] + dDeltaX;
+						dY = dSeg[4] + dDeltaY;
+
+						dNew1 = Arrays.add(dNew1, dX, dY);
+						dNew1 = Arrays.add(dNew1, dW * 2);
+
+						dX = dSeg[3] - dDeltaX;
+						dY = dSeg[4] - dDeltaY;
+
+						dNew2 = Arrays.add(dNew2, dX, dY);
+						dNew2 = Arrays.add(dNew2, dW * 2);
+					}
+					else
+					{
+						int nRightHand = Geo.rightHand(dSeg[3], dSeg[4], dSeg[0], dSeg[1], dSeg[6], dSeg[7]);
+						double dRForCalcs = dR * -nRightHand;
+						double dC = 1 / dRForCalcs;
+						double dCmAngleStep = dC / 100;
+						double dH = dCenter[0];
+						double dK = dCenter[1];
+						double dHdg = Geo.heading(dH, dK, dSeg[0], dSeg[1]);
+
+						double dTheta = dCmAngleStep;
+						double dDist;
+						while (true)
+						{
+							double dCirX = dH + dR * Math.cos(dHdg + dTheta);
+							double dCirY = dK + dR * Math.sin(dHdg + dTheta);
+							dDist = Geo.distance(dSeg[6], dSeg[7], dCirX, dCirY);
+
+							if (dDist > 0.02)
+								dTheta += dCmAngleStep; 
+							else
+							{
+								if (nRightHand == Geo.rightHand(dCirX, dCirY, dSeg[0], dSeg[1], dSeg[6], dSeg[7]))
+									dTheta += -nRightHand * Geo.angle(dCirX, dCirY, dH, dK, dSeg[6], dSeg[7]);
+								else
+									dTheta -= -nRightHand * Geo.angle(dCirX, dCirY, dH, dK, dSeg[6], dSeg[7]);
+								break;
+							}
+						}
+						double dTanAdd = dTheta > 0 ? Mercator.PI_OVER_TWO : -Mercator.PI_OVER_TWO;
+						double dInitHdg = dHdg + dTanAdd;
+						double dAngle = dInitHdg - Mercator.PI_OVER_TWO;
+
+						double dW = dSeg[2] / 4;
+						double dDeltaX = Math.cos(dAngle) * dW;
+						double dDeltaY = Math.sin(dAngle) * dW;
+
+						double dX = dSeg[0] + dDeltaX;
+						double dY = dSeg[1] + dDeltaY;
+						dNew1 = Arrays.add(dNew1, dX, dY);
+						dNew1 = Arrays.add(dNew1, dW * 2);
+
+						dX = dSeg[0] - dDeltaX;
+						dY = dSeg[1] - dDeltaY;
+
+						dNew2 = Arrays.add(dNew2, dX, dY);
+						dNew2 = Arrays.add(dNew2, dW * 2);
+
+						dInitHdg += dTheta / 2;
+						dAngle = dInitHdg - Mercator.PI_OVER_TWO;
+						dW = dSeg[5] / 4;
+						dDeltaX = Math.cos(dAngle) * dW;
+						dDeltaY = Math.sin(dAngle) * dW;
+
+						dX = dSeg[3] + dDeltaX;
+						dY = dSeg[4] + dDeltaY;
+
+						dNew1 = Arrays.add(dNew1, dX, dY);
+						dNew1 = Arrays.add(dNew1, dW * 2);
+
+						dX = dSeg[3] - dDeltaX;
+						dY = dSeg[4] - dDeltaY;
+
+						dNew2 = Arrays.add(dNew2, dX, dY);
+						dNew2 = Arrays.add(dNew2, dW * 2);
+
+						dLastTan = dHdg + dTheta + dTanAdd;
+					}
+				}
+
+				double dW = dSeg[8] / 4;
+				double dXPrime = dSeg[6] + Math.sin(dLastTan) * dW; // cos(x - pi/2) = sin(x)
+				double dYPrime = dSeg[7] - Math.cos(dLastTan) * dW; // sin(x - pi/2) = -cos(x)
+				dNew1 = Arrays.add(dNew1, dXPrime, dYPrime);
+				dNew1 = Arrays.add(dNew1, dW * 2);
+
+				dXPrime = dSeg[6] - Math.sin(dLastTan) * dW; // cos(x + pi/2 = -sin(x)
+				dYPrime = dSeg[7] + Math.cos(dLastTan) * dW; // sin(x + pi/2) = cos(x)
+				dNew2 = Arrays.add(dNew2, dXPrime, dYPrime);
+				dNew2 = Arrays.add(dNew2, dW * 2);
+
+				oNewClas.add(new CtrlLineArcs(-100, -1, -1, -1, XodrUtil.getLaneType("driving"), dNew1, 0.1));
+				oNewClas.add(new CtrlLineArcs(-100, -1, -1, -1, XodrUtil.getLaneType("driving"), dNew2, 0.1));
+			}
+
+			ArrayList<int[]> nTiles = new ArrayList();
+			ArrayList<TrafCtrl> oCtrls = new ArrayList();
+			System.out.println("new line arces: " + oNewClas.size());
+			for (CtrlLineArcs oCla : oNewClas)
+			{
+				TrafCtrl oCtrl = new TrafCtrl("debug", "", 0, oCla.m_dLineArcs, "", false); 
+				oCtrls.add(oCtrl);
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
+			}
+			ProcDebug.renderTiledData(oCtrls, nTiles);
+			
+			nTiles.clear();
+			oCtrls.clear();
+			for (CtrlLineArcs oCla : oNewClas)
+			{
+				TrafCtrl oCtrl = new TrafCtrl("direction", "forward", 0, oCla.m_dLineArcs, "", true);
+				System.out.println(Text.toHexString(oCtrl.m_yId));
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
+				oCtrls.add(oCtrl);
+			}
+			ProcDirection.renderTiledData(oCtrls, nTiles);
+			
+			nTiles.clear();
+			oCtrls.clear();
+			for (CtrlLineArcs oCla : oNewClas)
+			{
+				TrafCtrl oCtrl = new TrafCtrl("maxspeed", 70, 0, oCla.m_dLineArcs, "", true);
+				System.out.println(Text.toHexString(oCtrl.m_yId));
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
+				oCtrls.add(oCtrl);
+			}
+			ProcMaxSpeed.renderTiledData(oCtrls, nTiles);
+			
+			nTiles.clear();
+			oCtrls.clear();
+			int nCount = 0;
+			int nVal1 = 2;
+			nVal1 <<= 16;
+			nVal1 |= (1 & 0xff);
+			
+			int nVal2 = 1;
+			nVal2 <<= 16;
+			nVal2 |= (2 & 0xff);
+			int[] nColors = Arrays.newIntArray();
+			for (CtrlLineArcs oCla : oNewClas)
+			{
+				int nVal;
+				if (nCount++ % 2 == 0)
+				{
+					nVal = nVal1;
+					nColors = Arrays.add(nColors, 4, 4);
+				}
+				else
+				{
+					nVal = nVal2;
+					nColors = Arrays.add(nColors, 5, 4);
+				}
+				
+				TrafCtrl oCtrl = new TrafCtrl("latperm", nVal, 0, oCla.m_dLineArcs, "", true);
+				System.out.println(Text.toHexString(oCtrl.m_yId));
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
+				oCtrls.add(oCtrl);
+			}
+			ProcLatPerm.renderTiledData(oCtrls, nTiles, nColors);
+			
+			ArrayList<CtrlLineArcs> oPvmt = new ArrayList();
+			try (DataInputStream oIn = new DataInputStream(Files.newInputStream(Paths.get(sPvmtFile))))
+			{
+				while (oIn.available() > 0)
+				{
+					CtrlLineArcs oCla = new CtrlLineArcs(oIn);
+					oPvmt.add(oCla);
+				}
+			}
+			
+			nTiles.clear();
+			oCtrls.clear();
+			for (CtrlLineArcs oCla : oPvmt)
+			{
+				TrafCtrl oCtrl = new TrafCtrl("pavement", oCla.m_nLaneType, 0, oCla.m_dLineArcs, "", true);
+				System.out.println(Text.toHexString(oCtrl.m_yId));
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
+				oCtrls.add(oCtrl);
+			}
+			ProcPavement.renderTiledData(oCtrls, nTiles);
+		}
+		catch (Exception oEx)
+		{
+			throw new ServletException(oEx);
 		}
 	}
 }

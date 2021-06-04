@@ -65,7 +65,7 @@ public class ProcClosed extends ProcCtrl
 				TrafCtrl oCtrl = null;
 				if (sType.compareTo("roadWorks") == 0)
 				{
-					oCtrl = new TrafCtrl("closed", "closed", 0, oCLA.m_dLineArcs, "", true);
+					oCtrl = new TrafCtrl("closed", "notopen", 0, oCLA.m_dLineArcs, "", true);
 				}
 				else if (sType.contains("special1"))
 				{

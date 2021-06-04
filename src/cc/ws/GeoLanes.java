@@ -137,7 +137,11 @@ public class GeoLanes extends HttpServlet
 				String sId = TrafCtrl.getId(yId);
 				String sFile = CtrlTiles.g_sCtrlDir + sId + ".bin";
 				sBuf.append("\"").append(sId).append("\":{\"a\":[");
-				TrafCtrl oCtrl = new TrafCtrl(sFile);
+				TrafCtrl oCtrl;
+				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+				{
+					oCtrl = new TrafCtrl(oIn, false);
+				}
 				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
 				{
 					oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);

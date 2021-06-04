@@ -127,7 +127,11 @@ public class WxPoly extends HttpServlet
 				for (byte[] yId : oCurrentIds)
 				{
 					String sId = TrafCtrl.getId(yId);
-					TrafCtrl oCtrl = new TrafCtrl(CtrlTiles.g_sCtrlDir + sId + ".bin");
+					TrafCtrl oCtrl;
+					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(CtrlTiles.g_sCtrlDir + sId + ".bin"))))
+					{
+						oCtrl = new TrafCtrl(oIn, false);
+					}
 					int nSpeed = MathUtil.bytesToInt(oCtrl.m_yControlValue);
 //							if (nSpeed <= 25)
 //								continue;

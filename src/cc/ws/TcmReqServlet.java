@@ -8,19 +8,24 @@ package cc.ws;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.CtrlGeo;
 import cc.ctrl.TcBounds;
+import cc.ctrl.TcmReqParser2;
 import cc.ctrl.TcmReq;
 import cc.ctrl.TcmReqParser;
 import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.SimpleHull;
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -64,8 +69,22 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 		try
 		{
 			long lNow = System.currentTimeMillis();
-			TcmReqParser oReqParser = new TcmReqParser();
-			TcmReq oTcmReq = oReqParser.parseRequest(oReq.getInputStream());
+			
+			StringBuilder sReq = new StringBuilder();
+			try (BufferedInputStream oIn = new BufferedInputStream(oReq.getInputStream()))
+			{
+				int nByte;
+				while ((nByte = oIn.read()) >= 0)
+					sReq.append((char)nByte);
+			}
+			TcmReqParser oReqParser;
+			
+			if (sReq.indexOf("<tcrV01>") >= 0)
+				oReqParser = new TcmReqParser();
+			else
+				oReqParser = new TcmReqParser2();
+			
+			TcmReq oTcmReq = oReqParser.parseRequest(new ByteArrayInputStream(sReq.toString().getBytes(StandardCharsets.UTF_8)));;
 			ArrayList<TrafCtrl> oResCtrls = new ArrayList();
 			ArrayList<TrafCtrl> oCtrls = new ArrayList();
 			ArrayList<TileIds> oTiles = new ArrayList();
@@ -93,6 +112,10 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 					if (dY > dTcMercBounds[3])
 						dTcMercBounds[3] = dY;
 				}
+				new SimpleHull().getConvexHull(true, 0, dCorners);
+				for (int n = 0; n < dCorners.length; n += 2) 
+					System.out.print(String.format("[%2.7f,%2.7f],", Mercator.xToLon(dCorners[n]), Mercator.yToLat(dCorners[n + 1])));
+				System.out.println();
 				Mercator oM = Mercator.getInstance();
 				int[] nTiles = new int[2];
 				int[] nTileIndices = new int[4];
@@ -125,7 +148,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 									oIn.read(yIdBuf);
 									long lStart = oIn.readLong();
 									long lEnd = oIn.readLong();
-									if (lEnd > lNow && java.util.Arrays.binarySearch(IGNORE_CTRLS, nType) < 0) // skip out controls and control types to ignore
+									if (oBounds.m_lOldest <= lStart && lEnd > lNow && java.util.Arrays.binarySearch(IGNORE_CTRLS, nType) < 0) // skip out controls and control types to ignore
 									{
 										byte[] yId = new byte[16];
 										System.arraycopy(yIdBuf, 0, yId, 0, 16);
@@ -145,7 +168,11 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 							if (nSearchIndex < 0) // only load controls once
 							{
 								String sFile = CtrlTiles.g_sCtrlDir + TrafCtrl.getId(yId) + ".bin";
-								TrafCtrl oCtrl = new TrafCtrl(sFile);
+								TrafCtrl oCtrl;
+								try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+								{
+									oCtrl = new TrafCtrl(oIn, false);
+								}
 								try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
 								{
 									oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);
@@ -160,10 +187,11 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 							{
 								if (!Geo.boundingBoxesIntersect(dTcMercBounds, oCtrl.m_oFullGeo.m_dBB))
 									continue;
-								System.out.println(TrafCtrl.getId(oCtrl.m_yId));
+								
 								if (!Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dC) && !Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dNT) && !Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dPT))
 									continue;
-
+								
+								System.out.println(TrafCtrl.getId(oCtrl.m_yId));
 								oResCtrls.add(~nSearchIndex, oCtrl);
 								nMsgTot += (oCtrl.size() / 256 + 1);
 							}
@@ -190,10 +218,10 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 						REPLYBUFS.push(sBuf);
 						THREADPOOL.execute(this);
 					}
-//					try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(Paths.get(String.format("/dev/shm/testreqreply%d.xml", nMsgCount++)), FileUtil.WRITE, FileUtil.FILEPERS), "UTF-8")))
-//					{
-//						oOut.append(sBuf);
-//					}
+					try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(Paths.get(String.format("/dev/shm/testreqreply%d.xml", nMsgCount - 1)), FileUtil.WRITE, FileUtil.FILEPERS), "UTF-8")))
+					{
+						oOut.append(sBuf);
+					}
 				}
 			}
 		}

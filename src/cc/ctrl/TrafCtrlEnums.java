@@ -14,7 +14,7 @@ public abstract class TrafCtrlEnums
 		{"yield"}, 
 		{"notowing"}, 
 		{"restricted"}, 
-		{"closed", "open", "closed", "taperleft", "taperright", "openleft", "openright"}, 
+		{"closed", "open", "notopen", "taperleft", "taperright", "openleft", "openright"}, 
 		{"chains", "no", "permitted", "required"}, 
 		{"direction", "forward", "reverse"}, 
 		{"lataffinity", "left", "right"}, 

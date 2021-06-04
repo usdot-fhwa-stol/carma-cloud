@@ -5,42 +5,23 @@
  */
 package cc.ctrl;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
-import org.xml.sax.ext.DefaultHandler2;
 
 /**
  *
  * @author aaron.cherney
  */
-public class TcmReqParser extends DefaultHandler2
+public class TcmReqParser2 extends TcmReqParser
 {
-	protected TcmReq m_oReq;
-	protected StringBuilder m_sBuf = new StringBuilder();
-	protected TcBounds m_oBounds;
-	protected int[] m_nXs = new int[3];
-	protected int[] m_nYs = new int[3];
-	protected int m_nXCount = 0;
-	protected int m_nYCount = 0;
-	public TcmReqParser()
+	public TcmReqParser2()
 	{
 		super();
-	}
-	
-	
-	@Override
-	public void characters(char[] cBuf, int nPos, int nLen)
-	{
-		m_sBuf.setLength(0);
-		m_sBuf.append(cBuf, nPos, nLen);
 	}
 	
 	
@@ -51,20 +32,11 @@ public class TcmReqParser extends DefaultHandler2
 	{
 		switch (sQname)
 		{
-			case "tcrV01":
-			{
-				m_oReq.m_sVersion = "1.0";
-				break;
-			}
-			case "TrafficControlBounds":
+			case "bounds":
 			{
 				m_oBounds = new TcBounds();
 				m_nXCount = 0;
 				m_nYCount = 0;
-				break;
-			}
-			case "bounds":
-			{
 				m_oReq.m_oBounds = new ArrayList();
 				break;
 			}
@@ -131,7 +103,7 @@ public class TcmReqParser extends DefaultHandler2
 				break;
 			}
 			
-			case "TrafficControlBounds":
+			case "bounds":
 			{
 				m_oBounds.setCorners(m_nXs, m_nYs, m_oReq.m_nScale);
 				m_oReq.m_oBounds.add(m_oBounds);
@@ -148,20 +120,12 @@ public class TcmReqParser extends DefaultHandler2
 	   throws Exception
 	{
 		m_oReq = new TcmReq();
+		m_oReq.m_sVersion = "0.1";
 		XMLReader iXmlReader = SAXParserFactory.newInstance().
 			newSAXParser().getXMLReader();
 		iXmlReader.setContentHandler(this);
 		iXmlReader.parse(new InputSource(oIn));
 		
 		return m_oReq;
-	}
-	
-	
-	public static void main(String[] sArgs)
-	   throws Exception
-	{
-		System.out.println(String.valueOf(false));
-//		TcmReq oReq = new TcmReqParser().parseRequest(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/CarmaCloud/traf_ctrl/request.xml")));
-//		System.out.println();
 	}
 }

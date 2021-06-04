@@ -79,7 +79,7 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 		oIn.readUTF(); // read proj, discard it
 		oIn.readUTF(); // read datum, discard it
 		
-		oIn.skip(24); // skip time, lon, lat, alt, heading (long, int, int, int, int)
+		oIn.skip(28); // skip time, lon, lat, alt, width, heading (long, int, int, int, int, int)
 		oIn.readUTF(); // read label, discard it
 
 		nCount = oIn.readInt();
@@ -120,6 +120,7 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 		double[] dSeg = new double[9]; // used to store the current line/arc
 		int nPrevX = Mercator.lonToCm(Geo.fromIntDeg(oCtrl.m_nLon));
 		int nPrevY = Mercator.latToCm(Geo.fromIntDeg(oCtrl.m_nLat));
+		int nPrevW = oCtrl.m_nWidth;
 		
 		int[] nTile = new int[2];
 		double[] dPixel = new double[2];
@@ -131,12 +132,14 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 			TrafCtrlPt oTemp = oCtrl.get(nIndex);
 			int nX = oTemp.m_nX + nPrevX;
 			int nY = oTemp.m_nY + nPrevY;
+			int nW = oTemp.m_nW + nPrevW;
 			dPts = Arrays.add(dPts, nX / 100.0, nY / 100.0); // convert mercator cm to mercator meters
-			double dW = oTemp.m_nW /100.0;
+			double dW = nW /100.0;
 			dTotalWidth += dW;
 			dPts = Arrays.add(dPts, dW);
 			nPrevX = nX;
 			nPrevY = nY;
+			nPrevW = nW;
 		}
 		m_dAverageWidth = dTotalWidth / nNumPts;
 		double dLastTangent = 0;

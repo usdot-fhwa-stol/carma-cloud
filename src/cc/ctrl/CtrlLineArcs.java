@@ -38,7 +38,11 @@ public class CtrlLineArcs implements Comparable<CtrlLineArcs>
 		m_lLaneSectionId = XodrUtil.getLaneSectionId(nRoadId, nSectionId, nLaneIndex);
 		m_nLaneType = nLaneType;
 		
-		double[] dCenter = Geo.combineLineArcs(dCenterLine, dTol);
+		double[] dCenter;
+		if (nRoadId == -100)
+			dCenter = dCenterLine;
+		else
+			dCenter = Geo.combineLineArcs(dCenterLine, dTol);
 		m_dLineArcs = Arrays.newDoubleArray(Arrays.size(dCenter));
 		for (int i = 1; i < 5; i += 2) // add bounding box
 		{
