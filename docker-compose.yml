@@ -61,7 +61,7 @@ services:
       - "traefik.docker.network=traefik_backend"
       - "traefik.http.routers.carma-cloud.entrypoints=web"
       - "traefik.http.routers.carma-cloud.entrypoints=web-secured"
-      - "traefik.http.routers.carma-cloud.service=carmacloud"
+      - "traefik.http.routers.carma-cloud.service=carma-cloud"
       - "traefik.http.routers.carma-cloud.rule=Host(`${DNS_NAME}`)"
       - "traefik.http.routers.carma-cloud.tls=true"
       - "traefik.http.routers.carma-cloud.tls.domains[0].main=${DNS_NAME}"
