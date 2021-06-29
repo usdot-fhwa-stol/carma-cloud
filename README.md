@@ -1,7 +1,7 @@
-# CARMAcloud
+# CARMA Cloud
 
 ## Documentation
-CARMAcloud provides some of the infrastructure components for CARMA. It enables users to define geofences, rules of practice, replay storms to test weather-related rules of practice, as well as monitor CARMA-enabled vehicles and the messages and controls exchanged with them.
+CARMA Cloud provides some of the infrastructure components for CARMA. It enables users to define geofences, rules of practice, replay storms to test weather-related rules of practice, as well as monitor CARMA-enabled vehicles and the messages and controls exchanged with them.
 
 ## Deployment
 
@@ -17,6 +17,8 @@ Clone this repository onto the Linux server using git. Copy the `.env.example` f
 | CARMA_ADMIN_PASSWORD | This is the password for the administrative user.                                    |
 | MAPBOX_ACCESS_TOKEN  | This is the API token for Mapbox.                                                    |
 | IMPLEMENTER_EMAIL    | This is your email address, used in the process of getting Letsencrypt certificates. |
+
+Once the `.env` file is populated, run `sudo docker-compose up -d`. You can monitor your logs with `sudo docker-compose logs -f`
 
 ## Errors
 
