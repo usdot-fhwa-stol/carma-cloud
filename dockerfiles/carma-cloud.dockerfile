@@ -4,7 +4,6 @@ ENV TOMCAT_MAJOR_VERSION=9
 ENV TOMCAT_VERSION=${TOMCAT_MAJOR_VERSION}.0.48
 ENV TOMCAT_PREFIX=apache-tomcat-${TOMCAT_VERSION}
 ENV TOMCAT_URL=https://mirrors.ocf.berkeley.edu/apache/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_VERSION}/bin/${TOMCAT_PREFIX}.tar.gz
-# ENV TOMCAT_URL=http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-${TOMCAT_MAJOR_VERSION}/v${TOMCAT_VERSION}/bin/${TOMCAT_PREFIX}.tar.gz
 
 WORKDIR /build
 # Install packages

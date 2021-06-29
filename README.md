@@ -18,7 +18,9 @@ Clone this repository onto the Linux server using git. Copy the `.env.example` f
 | MAPBOX_ACCESS_TOKEN  | This is the API token for Mapbox.                                                    |
 | IMPLEMENTER_EMAIL    | This is your email address, used in the process of getting Letsencrypt certificates. |
 
+## Errors
 
+The most likely error you'll encouter will occur when a new patch release for Tomcat happens. This may cause the build to fail. To quickly align to the correct version, adjust the `TOMCAT_VERSION` environment variable in the carma-cloud service dockerfile at `dockerfiles/carma-cloud.dockerfile`
 
 ## Contribution
 Welcome to the CARMA contributing guide. Please read this guide to learn about our development process, how to propose pull requests and improvements, and how to build and test your changes to this project. [CARMA Contributing Guide](Contributing.md) 
