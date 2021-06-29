@@ -1,0 +1,10 @@
+git 
+pkg-config 
+sqlite3 
+libsqlite3-dev
+wget
+openjdk-11-jdk
+gettext
+libapr1-dev 
+libssl-dev
+sudo

@@ -1,0 +1,77 @@
+version: '2'
+services:
+  reverse_proxy:
+    container_name: reverse_proxy
+    image: traefik:v2.4
+    command:
+      # - --api.insecure=true # <== Enabling insecure api, NOT RECOMMENDED FOR PRODUCTION
+      # - --api.dashboard=true # <== Enabling the dashboard to view services, middlewares, routers, etc...
+      # - --api.debug=true # <== Enabling additional endpoints for debugging and profiling
+      ## Log Settings (options: ERROR, DEBUG, PANIC, FATAL, WARN, INFO) - https://docs.traefik.io/observability/logs/ ##
+      - --log.level=INFO # <== Setting the level of the logs from traefik
+      ## Provider Settings - https://docs.traefik.io/providers/docker/#provider-configuration ##
+      - --providers.docker=true # <== Enabling docker as the provider for traefik
+      - --providers.docker.exposedbydefault=false # <== Don't expose every container to traefik, only expose enabled ones
+      - --providers.docker.network=traefik_backend # <== Operate on the docker network named traefik_backend
+      ## Entrypoints Settings - https://docs.traefik.io/routing/entrypoints/#configuration ##
+      - --entrypoints.web.address=:80 # <== Defining an entrypoint for port :80 named web
+      - --entrypoints.web-secured.address=:443 # <== Defining an entrypoint for https on port :443 named web-secured
+      - --certificatesresolvers.myresolver.acme.email=${IMPLEMENTER_EMAIL}
+      - --certificatesresolvers.myresolver.acme.storage=/etc/traefik/tls/acme.json
+      - --certificatesresolvers.myresolver.acme.httpchallenge=true
+      - --certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web
+      # - --certificatesresolvers.myresolver.acme.tlschallenge=true
+      - --accesslog=true
+      ## - --certificatesresolvers.myresolver.acme.dnschallenge.resolvers=1.1.1.1:53,8.8.8.8:53
+    ports:
+      # The HTTP port
+      - "80:80"
+      # The Web UI (enabled by --api.insecure=true)
+      # - "8080:8080"
+      - "443:443"
+    environment: 
+      - XDG_CONFIG_HOME=/var/traefik_conf
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik-conf:/var/traefik_conf
+      - traefik-tls:/etc/traefik/tls/
+    networks:
+      - "traefik_backend"
+
+  carma-cloud:
+    container_name: carma-cloud
+    build:
+      context: ./
+      dockerfile: dockerfiles/carma-cloud.dockerfile
+    restart: always
+    environment:
+      - CARMA_ADMIN_USER=${CARMA_ADMIN_USER}
+      - CARMA_ADMIN_PASSWORD=${CARMA_ADMIN_PASSWORD}
+      - MAPBOX_ACCESS_TOKEN=${MAPBOX_ACCESS_TOKEN}
+      - IMPLEMENTER_EMAIL=${IMPLEMENTER_EMAIL}
+      - DNS_NAME=${DNS_NAME}
+    volumes:
+      - "carma-cloud-logs:/opt/tomcat/logs/"
+    networks:
+       - "traefik_backend"
+    expose:
+      - "8080"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_backend"
+      - "traefik.http.routers.carma-cloud.entrypoints=web"
+      - "traefik.http.routers.carma-cloud.entrypoints=web-secured"
+      - "traefik.http.routers.carma-cloud.service=carmacloud"
+      - "traefik.http.routers.carma-cloud.rule=Host(`${DNS_NAME}`)"
+      - "traefik.http.routers.carma-cloud.tls=true"
+      - "traefik.http.routers.carma-cloud.tls.domains[0].main=${DNS_NAME}"
+      - "traefik.http.routers.carma-cloud.tls.certresolver=myresolver"
+
+volumes:
+  carma-cloud-logs:
+  traefik-conf:
+  traefik-tls:
+
+networks:
+  traefik_backend:
+    name: traefik_backend
