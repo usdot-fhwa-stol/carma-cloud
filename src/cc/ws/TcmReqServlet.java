@@ -15,7 +15,6 @@ import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
 import cc.util.Geo;
-import cc.util.SimpleHull;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -29,9 +28,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.servlet.ServletException;
@@ -84,7 +85,10 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 			else
 				oReqParser = new TcmReqParser2();
 			
-			TcmReq oTcmReq = oReqParser.parseRequest(new ByteArrayInputStream(sReq.toString().getBytes(StandardCharsets.UTF_8)));;
+			TcmReq oTcmReq = oReqParser.parseRequest(new ByteArrayInputStream(sReq.toString().getBytes(StandardCharsets.UTF_8)));
+			SimpleDateFormat oSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+			oSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+			System.out.println(String.format("%s - TCR %s received", oSdf.format(System.currentTimeMillis()), oTcmReq.m_sReqId));
 			ArrayList<TrafCtrl> oResCtrls = new ArrayList();
 			ArrayList<TrafCtrl> oCtrls = new ArrayList();
 			ArrayList<TileIds> oTiles = new ArrayList();
@@ -112,7 +116,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 					if (dY > dTcMercBounds[3])
 						dTcMercBounds[3] = dY;
 				}
-				new SimpleHull().getConvexHull(true, 0, dCorners);
+				Geo.untwist(dCorners);
 				for (int n = 0; n < dCorners.length; n += 2) 
 					System.out.print(String.format("[%2.7f,%2.7f],", Mercator.xToLon(dCorners[n]), Mercator.yToLat(dCorners[n + 1])));
 				System.out.println();
@@ -224,6 +228,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 					}
 				}
 			}
+			System.out.println(String.format("%s - TCR %s has %d controls for response", oSdf.format(System.currentTimeMillis()), oTcmReq.m_sReqId, oResCtrls.size()));
 		}
 		catch (Exception oEx)
 		{

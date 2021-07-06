@@ -65,21 +65,21 @@ public class ProcClosed extends ProcCtrl
 				TrafCtrl oCtrl = null;
 				if (sType.compareTo("roadWorks") == 0)
 				{
-					oCtrl = new TrafCtrl("closed", "notopen", 0, oCLA.m_dLineArcs, "", true);
+					oCtrl = new TrafCtrl("closed", "notopen", 0, oCLA.m_dLineArcs, "", true, CC);
 				}
 				else if (sType.contains("special1"))
 				{
-					oCtrl = new TrafCtrl("closed", sType.contains("1") ? "taperright" : "taperleft", 0, oCLA.m_dLineArcs, "", true); 
+					oCtrl = new TrafCtrl("closed", sType.contains("1") ? "taperright" : "taperleft", 0, oCLA.m_dLineArcs, "", true, CC); 
 				}
 				else if (sType.contains("special2"))
 				{
-					oCtrl = new TrafCtrl("closed", sType.contains("2") ? "openright" : "openleft", 0, oCLA.m_dLineArcs, "", true);
+					oCtrl = new TrafCtrl("closed", sType.contains("2") ? "openright" : "openleft", 0, oCLA.m_dLineArcs, "", true, CC);
 				}
 
 				if (oCtrl == null)
 					continue;
 				oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, nTiles);

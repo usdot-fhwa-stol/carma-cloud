@@ -1051,6 +1051,36 @@ public abstract class Geo
 		return dPoly;
 	}
 	
+	/**
+	 * 
+	 * @param dPoints Array of length 10 which is a closed polygon [x0, y0, x1, y1, x2, y2, x3, y3, x0, y0 
+	 */
+	public static void untwist(double[] dPoints)
+	{
+		double[] dInter = new double[2];
+		MathUtil.getIntersection(dPoints[0], dPoints[1], dPoints[2], dPoints[3], dPoints[4], dPoints[5], dPoints[6], dPoints[7], dInter); // check edge 0-1 and edge 2-3 for intersection
+		if (Double.isFinite(dInter[0]))
+		{
+			dInter[0] = dPoints[2]; // store swap point
+			dInter[1] = dPoints[3];
+			dPoints[2] = dPoints[4]; // swap points 1 and 2
+			dPoints[3] = dPoints[5];
+			dPoints[4] = dInter[0];
+			dPoints[5] = dInter[1];
+			return;
+		}
+		
+		MathUtil.getIntersection(dPoints[0], dPoints[1], dPoints[6], dPoints[7], dPoints[2], dPoints[3], dPoints[4], dPoints[5], dInter); // check edge 0-3 and edge 1-2 for intersection
+		if (Double.isFinite(dInter[0]))
+		{
+			dInter[0] = dPoints[4]; // store swap point
+			dInter[1] = dPoints[5];
+			dPoints[4] = dPoints[6]; // swap points 2 and 3
+			dPoints[5] = dPoints[7];
+			dPoints[6] = dInter[0];
+			dPoints[7] = dInter[1];
+		}
+	}
 	
 	public static void main(String[] sArgs)
 	   throws Exception

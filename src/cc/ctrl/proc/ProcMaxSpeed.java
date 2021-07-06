@@ -90,11 +90,11 @@ public class ProcMaxSpeed extends ProcCtrl
 			oSearch.m_nId = oCLA.m_nLaneId;
 			int nIndex = Collections.binarySearch(m_oSpds, oSearch);
 			int nSpeed = nIndex >= 0 ? m_oSpds.get(nIndex).m_nSpd : DEFAULTSPD;
-			TrafCtrl oCtrl = new TrafCtrl("maxspeed", nSpeed, 0, oCLA.m_dLineArcs, "", true);
+			TrafCtrl oCtrl = new TrafCtrl("maxspeed", nSpeed, 0, oCLA.m_dLineArcs, "", true, CC);
 			String sRoadId = Integer.toString(XodrUtil.getRoadId(oCLA.m_nLaneId));
 			if (oCLA.m_nLaneType != nShoulder && !m_oJunctions.containsKey(sRoadId))
 				oCtrls.add(oCtrl);
-			oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+			oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 			updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 		}
 		renderTiledData(oCtrls, oTiles);

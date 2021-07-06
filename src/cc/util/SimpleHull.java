@@ -1,5 +1,6 @@
 package cc.util;
 
+import cc.geosrv.Mercator;
 import java.awt.geom.Point2D;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -30,11 +31,20 @@ public class SimpleHull implements Comparator<Point2D.Double>
 		getConvexHull(oPts); // adjust points for convex hull
 
 		nPos = nOffset; // copy reordered points back to array
+		for (int nIndex = 0; nIndex < nSize; nIndex++) // keep counter-clockwise order
+		{
+			Point2D.Double oPt = oPts[nIndex];
+			System.out.append(String.format("[%2.7f,%2.7f],", Mercator.xToLon(oPt.x), Mercator.yToLat(oPt.y)));
+//			dPts[nPos++] = oPt.x;
+//			dPts[nPos++] = oPt.y;
+		}
+		System.out.println();
 		if (bClockwise)
 		{
-			while (--nSize > 0) // reverse default counter-clockwise order
+			while (nSize-- > 0) // reverse default counter-clockwise order
 			{
 				Point2D.Double oPt = oPts[nSize];
+				System.out.append(String.format("[%2.7f,%2.7f],", Mercator.xToLon(oPt.x), Mercator.yToLat(oPt.y)));
 				dPts[nPos++] = oPt.x;
 				dPts[nPos++] = oPt.y;
 			}
@@ -44,10 +54,12 @@ public class SimpleHull implements Comparator<Point2D.Double>
 			for (int nIndex = 0; nIndex < nSize; nIndex++) // keep counter-clockwise order
 			{
 				Point2D.Double oPt = oPts[nIndex];
+				System.out.append(String.format("[%2.7f,%2.7f],", Mercator.xToLon(oPt.x), Mercator.yToLat(oPt.y)));
 				dPts[nPos++] = oPt.x;
 				dPts[nPos++] = oPt.y;
 			}
 		}
+		System.out.println();
 	}
 
 

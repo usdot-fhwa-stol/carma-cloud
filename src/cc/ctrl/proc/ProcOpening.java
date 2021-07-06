@@ -64,9 +64,9 @@ public class ProcOpening extends ProcCtrl
 				if (!sType.contains("special2"))
 					continue;
 				
-				TrafCtrl oCtrl = new TrafCtrl("opening", sType.contains("2") ? "right" : "left", 0, oCLA.m_dLineArcs, "", true); 
+				TrafCtrl oCtrl = new TrafCtrl("opening", sType.contains("2") ? "right" : "left", 0, oCLA.m_dLineArcs, "", true, CC); 
 				oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, oTiles);

@@ -132,9 +132,9 @@ public class ProcSignal extends ProcCtrl
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
 				oRng.nextBytes(yBytes);
-				TrafCtrl oCtrl = new TrafCtrl("signal", yBytes, 0, oCLA.m_dLineArcs); 
+				TrafCtrl oCtrl = new TrafCtrl("signal", yBytes, 0, oCLA.m_dLineArcs, CC); 
 				oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, oTiles);

@@ -39,6 +39,8 @@ public abstract class ProcCtrl
 	public static String g_sTdFileFormat;
 	public static String g_sGeolanesDir;
 	public static int g_nDefaultZoom = Integer.MIN_VALUE;
+	public static final byte CC = 0;
+	public static final byte RSM = 1;
 	protected static final double WIDTHTH = 1.5;
 	protected static final double LENLOWTH = 75.0;
 	protected static final double STOPLINEENDOFFSET = 0.6;

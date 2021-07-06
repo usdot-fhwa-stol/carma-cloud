@@ -24,7 +24,7 @@ public class CtrlLineArcs implements Comparable<CtrlLineArcs>
 	public int m_nLaneId;
 	public long m_lLaneSectionId;
 	public int m_nLaneType;
-	public double[] m_dLineArcs; // point are in decimal degree geo coords
+	public double[] m_dLineArcs;
 	public static Comparator<CtrlLineArcs> CMPBYLANE = (CtrlLineArcs o1, CtrlLineArcs o2) -> Integer.compare(o1.m_nLaneId, o2.m_nLaneId);
 	public static Comparator<CtrlLineArcs> CMPBYLANESECTION = (CtrlLineArcs o1, CtrlLineArcs o2) -> Long.compare(o1.m_lLaneSectionId, o2.m_lLaneSectionId);
 	public static final int CON_TEND_OSTART = 1;

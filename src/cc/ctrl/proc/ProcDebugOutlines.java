@@ -60,9 +60,9 @@ public class ProcDebugOutlines extends ProcCtrl
 			ArrayList<int[]> oTiles = new ArrayList();
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("debug", "", 0, oCLA.m_dLineArcs, "", false); 
+				TrafCtrl oCtrl = new TrafCtrl("debug", "", 0, oCLA.m_dLineArcs, "", false, CC); 
 				oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, oTiles);

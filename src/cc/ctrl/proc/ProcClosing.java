@@ -64,9 +64,9 @@ public class ProcClosing extends ProcCtrl
 				if (!sType.contains("special1"))
 					continue;
 				
-				TrafCtrl oCtrl = new TrafCtrl("closing", sType.contains("1") ? "right" : "left", 0, oCLA.m_dLineArcs, "", true); 
+				TrafCtrl oCtrl = new TrafCtrl("closing", sType.contains("1") ? "right" : "left", 0, oCLA.m_dLineArcs, "", true, CC); 
 				oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, oTiles);

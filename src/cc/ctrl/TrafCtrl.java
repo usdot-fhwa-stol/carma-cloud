@@ -76,13 +76,13 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 	
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, TrafCtrl oCtrl, String sLabel, boolean bReg)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, TrafCtrl oCtrl, String sLabel, boolean bReg, byte ySrc)
 	{
-		this(sControlType, nControlValue, lTime, 0, oCtrl, sLabel, bReg);
+		this(sControlType, nControlValue, lTime, 0, oCtrl, sLabel, bReg, ySrc);
 	}
 	
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, TrafCtrl oCtrl, String sLabel, boolean bReg)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, TrafCtrl oCtrl, String sLabel, boolean bReg, byte ySrc)
 	{
 		this();
 		m_nControlType = TrafCtrlEnums.getCtrl(sControlType);
@@ -100,16 +100,16 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		for (TrafCtrlPt oPt : oCtrl)
 			add(new TrafCtrlPt(oPt.m_nX, oPt.m_nY, oPt.m_nZ, oPt.m_nW));
 		
-		generateId();
+		generateId(ySrc);
 	}
 	
 	
-	public TrafCtrl(String sControlType, String sControlValue, long lTime, TrafCtrl oCtrl, String sLabel, boolean bReg)
+	public TrafCtrl(String sControlType, String sControlValue, long lTime, TrafCtrl oCtrl, String sLabel, boolean bReg, byte ySrc)
 	{
-		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, oCtrl, sLabel, bReg);
+		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, oCtrl, sLabel, bReg, ySrc);
 	}
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, double[] dLineArcs, String sLabel, boolean bReg)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, double[] dLineArcs, String sLabel, boolean bReg, byte ySrc)
 	{
 		this(sControlType, lTime, dLineArcs);
 		m_sLabel = sLabel;
@@ -120,22 +120,22 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		else
 			m_yControlValue = MathUtil.intToBytes(nControlValue, new byte[4]);
 		
-		generateId();
+		generateId(ySrc);
 	}
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, double[] dLineArcs, String sLabel, boolean bReg)
+	public TrafCtrl(String sControlType, int nControlValue, long lTime, double[] dLineArcs, String sLabel, boolean bReg, byte ySrc)
 	{
-		this(sControlType, nControlValue, lTime, 0, dLineArcs, sLabel, bReg);
+		this(sControlType, nControlValue, lTime, 0, dLineArcs, sLabel, bReg, ySrc);
 	}
 	
 	
-	public TrafCtrl(String sControlType, byte[] yControlValue, long lTime, double[] dLineArcs)
+	public TrafCtrl(String sControlType, byte[] yControlValue, long lTime, double[] dLineArcs, byte ySrc)
 	{
 		this(sControlType, lTime, dLineArcs);
 		m_yControlValue = new byte[yControlValue.length];
 		System.arraycopy(yControlValue, 0, m_yControlValue, 0, m_yControlValue.length);
 		
-		generateId();
+		generateId(ySrc);
 	}
 	
 	
@@ -170,9 +170,9 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 	
 	
-	public TrafCtrl(String sControlType, String sControlValue, long lTime, double[] dLineArcs, String sLabel, boolean bReg)
+	public TrafCtrl(String sControlType, String sControlValue, long lTime, double[] dLineArcs, String sLabel, boolean bReg, byte ySrc)
 	{
-		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, dLineArcs, sLabel, bReg);
+		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, dLineArcs, sLabel, bReg, ySrc);
 	}
 	
 	
@@ -236,7 +236,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 
 
-	private void generateId()
+	private void generateId(byte ySrc)
 	{
 		if (m_yId != null)
 			return;
@@ -292,8 +292,11 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 					oAbsorb.writeInt(oPt.m_nZ);
 			}
 
+			byte[] yId = new byte[15];
+			oSqueeze.read(yId);
 			m_yId = new byte[16];
-			oSqueeze.read(m_yId);
+			m_yId[0] = ySrc;
+			System.arraycopy(yId, 0, m_yId, 1, yId.length);
 		}
 		catch (Exception oEx)
 		{
@@ -301,10 +304,10 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 
 	
-	public void write(String sPath, double dExplodeStep, int nZoom)
+	public void write(String sPath, double dExplodeStep, int nZoom, byte ySrc)
 		throws Exception
 	{
-		generateId(); // need id to build file path
+		generateId(ySrc); // need id to build file path
 		StringBuilder sBuf = new StringBuilder(sPath);
 		if (sPath.endsWith("/"))
 			sBuf.setLength(sBuf.length() - 1); // remove trailing path separator

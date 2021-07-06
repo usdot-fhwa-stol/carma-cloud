@@ -77,10 +77,10 @@ public class ProcDirection extends ProcCtrl
 			int nShoulder = XodrUtil.getLaneType("shoulder");
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("direction", "forward", 0, oCLA.m_dLineArcs, "", true);
+				TrafCtrl oCtrl = new TrafCtrl("direction", "forward", 0, oCLA.m_dLineArcs, "", true, CC);
 				if (oCLA.m_nLaneType != nShoulder)
 					oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, nTiles);

@@ -124,13 +124,13 @@ public class ProcLatPerm extends ProcCtrl
 				sRoadMark = RoadMark.getType(nOuterMarkType);
 				sLaneType = XodrUtil.getLaneType(nOuterRoadType);
 				nCtrlVal |= (getOuterLatPerm(sRoadMark, sLaneType, bSameOuterDir) & 0xff);
-				TrafCtrl oCtrl = new TrafCtrl("latperm", nCtrlVal, 0, oCLA.m_dLineArcs, "", true);
+				TrafCtrl oCtrl = new TrafCtrl("latperm", nCtrlVal, 0, oCLA.m_dLineArcs, "", true, CC);
 				if (oCLA.m_nLaneType != nShoulder)
 				{
 					oCtrls.add(oCtrl);
 					m_nColors = Arrays.add(m_nColors, nInnerColor, nOuterColor);
 				}
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, oTiles, m_nColors);

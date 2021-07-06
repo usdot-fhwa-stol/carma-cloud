@@ -47,6 +47,7 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 	public double m_dAverageWidth = 0.0;
 	public double[] m_dDebugNT;
 	public double[] m_dDebugPT;
+	public boolean[] m_bDow = new boolean[7];
 	
 	
 	public CtrlGeo(DataInputStream oIn, int nZoom)

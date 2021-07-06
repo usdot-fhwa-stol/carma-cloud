@@ -79,9 +79,9 @@ public class ProcPavement extends ProcCtrl
 			ArrayList<int[]> oTiles = new ArrayList();
 			for (CtrlLineArcs oCLA : oLineArcs)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("pavement", oCLA.m_nLaneType, 0, oCLA.m_dLineArcs, "", true);
+				TrafCtrl oCtrl = new TrafCtrl("pavement", oCLA.m_nLaneType, 0, oCLA.m_dLineArcs, "", true, CC);
 				oCtrls.add(oCtrl);
-				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom);
+				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, CC);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			renderTiledData(oCtrls, oTiles);

@@ -493,8 +493,8 @@ public class CtrlTiles extends HttpServlet
 				dCenter = Arrays.add(dCenter, dW);
 			}
 			CtrlLineArcs oCla = new CtrlLineArcs(-1, -1, -1, -1, XodrUtil.getLaneType("driving"), dCenter, 0.1);
-			TrafCtrl oCtrl = new TrafCtrl(TrafCtrlEnums.CTRLS[nType][0], nControlValue, lNow, lNow, oCla.m_dLineArcs, sLabel, bReg);
-			oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+			TrafCtrl oCtrl = new TrafCtrl(TrafCtrlEnums.CTRLS[nType][0], nControlValue, lNow, lNow, oCla.m_dLineArcs, sLabel, bReg, ProcCtrl.CC);
+			oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 			ArrayList<TrafCtrl> oCtrls = new ArrayList();
 			oCtrls.add(oCtrl);
 			ProcCtrl.renderCtrls(sType, oCtrls, oCtrl.m_oFullGeo.m_oTiles);
@@ -585,7 +585,7 @@ public class CtrlTiles extends HttpServlet
 			if (MathUtil.bytesToInt(oOriginalCtrl.m_yControlValue) == nControlValue && bReg == oOriginalCtrl.m_bRegulatory) // value and regulatory are the same so only the label has changed
 			{
 				oOriginalCtrl.m_sLabel = sLabel;
-				oOriginalCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oOriginalCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				oCtrlToWrite = oOriginalCtrl;
 			}
 			else
@@ -594,9 +594,9 @@ public class CtrlTiles extends HttpServlet
 				{
 					oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
 				}
-				TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, lNow, lNow, oOriginalCtrl, sLabel, bReg);
+				TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, lNow, lNow, oOriginalCtrl, sLabel, bReg, ProcCtrl.CC);
 				oCtrlToWrite = oNewCtrl;
-				oNewCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oNewCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				ArrayList<TrafCtrl> oCtrls = new ArrayList(1);
 				oCtrls.add(oNewCtrl);
 				ProcCtrl.renderCtrls(sType, oCtrls, oOriginalCtrl.m_oFullGeo.m_oTiles);
@@ -810,9 +810,9 @@ public class CtrlTiles extends HttpServlet
 			System.out.println("new line arces: " + oNewClas.size());
 			for (CtrlLineArcs oCla : oNewClas)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("debug", "", 0, oCla.m_dLineArcs, "", false); 
+				TrafCtrl oCtrl = new TrafCtrl("debug", "", 0, oCla.m_dLineArcs, "", false, ProcCtrl.CC); 
 				oCtrls.add(oCtrl);
-				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			ProcDebug.renderTiledData(oCtrls, nTiles);
@@ -821,9 +821,9 @@ public class CtrlTiles extends HttpServlet
 			oCtrls.clear();
 			for (CtrlLineArcs oCla : oNewClas)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("direction", "forward", 0, oCla.m_dLineArcs, "", true);
+				TrafCtrl oCtrl = new TrafCtrl("direction", "forward", 0, oCla.m_dLineArcs, "", true, ProcCtrl.CC);
 				System.out.println(Text.toHexString(oCtrl.m_yId));
-				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
 				oCtrls.add(oCtrl);
 			}
@@ -833,9 +833,9 @@ public class CtrlTiles extends HttpServlet
 			oCtrls.clear();
 			for (CtrlLineArcs oCla : oNewClas)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("maxspeed", 70, 0, oCla.m_dLineArcs, "", true);
+				TrafCtrl oCtrl = new TrafCtrl("maxspeed", 70, 0, oCla.m_dLineArcs, "", true, ProcCtrl.CC);
 				System.out.println(Text.toHexString(oCtrl.m_yId));
-				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
 				oCtrls.add(oCtrl);
 			}
@@ -866,9 +866,9 @@ public class CtrlTiles extends HttpServlet
 					nColors = Arrays.add(nColors, 5, 4);
 				}
 				
-				TrafCtrl oCtrl = new TrafCtrl("latperm", nVal, 0, oCla.m_dLineArcs, "", true);
+				TrafCtrl oCtrl = new TrafCtrl("latperm", nVal, 0, oCla.m_dLineArcs, "", true, ProcCtrl.CC);
 				System.out.println(Text.toHexString(oCtrl.m_yId));
-				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
 				oCtrls.add(oCtrl);
 			}
@@ -888,9 +888,9 @@ public class CtrlTiles extends HttpServlet
 			oCtrls.clear();
 			for (CtrlLineArcs oCla : oPvmt)
 			{
-				TrafCtrl oCtrl = new TrafCtrl("pavement", oCla.m_nLaneType, 0, oCla.m_dLineArcs, "", true);
+				TrafCtrl oCtrl = new TrafCtrl("pavement", oCla.m_nLaneType, 0, oCla.m_dLineArcs, "", true, ProcCtrl.CC);
 				System.out.println(Text.toHexString(oCtrl.m_yId));
-				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom);
+				oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				ProcCtrl.updateTiles(nTiles, oCtrl.m_oFullGeo.m_oTiles);
 				oCtrls.add(oCtrl);
 			}
