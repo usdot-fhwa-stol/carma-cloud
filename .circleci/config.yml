@@ -21,4 +21,4 @@ jobs:
       - run: mv cc/osmbin tomcat/webapps/carmacloud/
       - run: rm -f sources.txt && rm -rf cc
       - run: echo "JAVA_HOME=/usr/local/openjdk-11" > tomcat/bin/setenv.sh
-      - run: sudo -u root mv tomcat/*/opt/
+      - run: sudo -u root mv tomcat/* /opt/
