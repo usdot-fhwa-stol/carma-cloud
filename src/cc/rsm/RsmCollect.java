@@ -7,6 +7,7 @@ package cc.rsm;
 
 import cc.util.CsvReader;
 import cc.util.FileUtil;
+import cc.util.Text;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -24,6 +25,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  *
@@ -31,6 +35,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class RsmCollect extends TimerTask
 {
+	protected static final Logger LOGGER = LogManager.getRootLogger();
+
 	private String m_sToken = "";
 	private String m_sUser;
 	private String m_sPw;
@@ -42,9 +48,8 @@ public class RsmCollect extends TimerTask
 	private final int ENDTAG = 1;
 	private final int VALUES = 2;
 	private final AtomicBoolean m_bRunning = new AtomicBoolean();
-	
-	
-	
+
+
 	public RsmCollect(String sUser, String sPw, String sBaseUrl, String sOutputFile)
 	{
 		m_sUser = sUser;
@@ -53,19 +58,25 @@ public class RsmCollect extends TimerTask
 		m_sOutputFile = sOutputFile;
 		m_bRunning.set(false);
 	}
-	
+
+
 	@Override
 	public void run()
 	{
-		System.out.println("Collecting rsm");
 		if (!m_bRunning.compareAndSet(false, true))
 		{
-			System.out.println(String.format("%d\tDid not run. Already running", System.currentTimeMillis()));
+			LOGGER.debug("Collecting rsm did not run. Already running");
 			return;
 		}
-		if (!xmlList(false))
-			getToken();
-		
+
+		if (!getToken())
+		{
+			m_bRunning.set(false);
+			return;
+		}
+
+		int nAdded = 0;
+		int nRemoved = 0;
 		if (xmlList(true))
 		{
 			int nIndex = m_oCurrentRsms.size();
@@ -73,31 +84,46 @@ public class RsmCollect extends TimerTask
 			{
 				RsmRecord oRec = m_oCurrentRsms.get(nIndex);
 				if (oRec.m_bNew)
+				{
 					xmlFile(oRec.m_sFile);
+					++nAdded;
+				}
 				else if (!oRec.m_bCurrent)
 				{
 					m_oCurrentRsms.remove(nIndex);
 					oRec.cleanup();
+					++nRemoved;
 				}
 			}
 		}
 		m_bRunning.set(false);
+
+		StringBuilder sMsg = new StringBuilder("RSM ");
+		sMsg.append(nAdded);
+		sMsg.append(" added ");
+		sMsg.append(nRemoved);
+		sMsg.append(" removed ");
+		sMsg.append(m_oCurrentRsms.size());
+		sMsg.append(" total");
+		LOGGER.debug(sMsg);
 	}
-	
+
+
 	public void writeCurrent()
 		throws IOException
 	{
-		int nLimit = m_oCurrentRsms.size();
 		try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(Paths.get(m_sOutputFile), FileUtil.WRITE), "UTF-8")))
 		{
-			for (int nIndex = 0; nIndex < nLimit; nLimit++)
+			int nLimit = m_oCurrentRsms.size();
+			for (int nIndex = 0; nIndex < nLimit; nIndex++)
 			{
 				RsmRecord oRec = m_oCurrentRsms.get(nIndex);
 				oOut.append(oRec.m_sId).append(',').append(oRec.m_sFile).append('\n');
 			}
 		}
 	}
-	
+
+
 	public void readCurrent()
 		throws IOException
 	{
@@ -113,7 +139,8 @@ public class RsmCollect extends TimerTask
 		}
 		Collections.sort(m_oCurrentRsms);
 	}
-	
+
+
 	public static void main(String[] sArgs)
 		throws Exception
 	{
@@ -129,8 +156,8 @@ public class RsmCollect extends TimerTask
 			}
 		}
 	}
-	
-	
+
+
 	public boolean getToken()
 	{
 		try
@@ -143,8 +170,8 @@ public class RsmCollect extends TimerTask
 			oConn.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 			StringBuilder sReq = new StringBuilder();
 			sReq.append("grant_type=&");
-			sReq.append("username=").append(URLEncoder.encode(m_sUser, StandardCharsets.UTF_8)).append('&');
-			sReq.append("password=").append(URLEncoder.encode(m_sPw, StandardCharsets.UTF_8)).append('&');
+			sReq.append("username=").append(URLEncoder.encode(m_sUser, "UTF-8")).append('&');
+			sReq.append("password=").append(URLEncoder.encode(m_sPw, "UTF-8")).append('&');
 			sReq.append("scope=&client_secret=");
 			byte[] yOut = sReq.toString().getBytes(StandardCharsets.UTF_8);
 			oConn.setFixedLengthStreamingMode(yOut.length);
@@ -171,8 +198,8 @@ public class RsmCollect extends TimerTask
 			return false;
 		}
 	}
-	
-	
+
+
 	public boolean xmlList(boolean bLog)
 	{
 		try
@@ -216,7 +243,8 @@ public class RsmCollect extends TimerTask
 			return false;
 		}
 	}
-	
+
+
 	public boolean xmlFile(String sFile)
 	{
 		try
@@ -248,7 +276,7 @@ public class RsmCollect extends TimerTask
 				nStart = sBuf.indexOf("\"data\":\"", nStart) + "\"data\":\"".length();
 				nEnd = sBuf.indexOf("</RoadsideSafetyMessage>", nStart) + "</RoadsideSafetyMessage>".length();
 				int nState = ENDTAG;
-				System.out.println(sFilename);
+
 				StringBuilder sXml = new StringBuilder();
 				for (int nIndex = nStart; nIndex < nEnd; nIndex++)
 				{
@@ -304,6 +332,10 @@ public class RsmCollect extends TimerTask
 //					oOut.append(sXml);
 //				}
 				new RsmParser().parseRequest(new ByteArrayInputStream(sXml.toString().getBytes(StandardCharsets.UTF_8)));
+				Text.removeCtrlChars(sXml);
+				sXml.insert(0, ' ');
+				sXml.insert(0, sFilename);
+				LOGGER.debug(sXml);
 			}
 			return true;
 		}
@@ -313,29 +345,32 @@ public class RsmCollect extends TimerTask
 			return false;
 		}
 	}
-	
+
+
 	private class RsmRecord implements Comparable<RsmRecord>
 	{
 		String m_sId;
 		String m_sFile;
 		boolean m_bCurrent = true;
 		boolean m_bNew = true;
-		
+
+
 		RsmRecord(String sId, String sFile)
 		{
 			m_sId = sId;
 			m_sFile = sFile;
 		}
 
+
 		@Override
 		public int compareTo(RsmRecord o)
 		{
 			return m_sId.compareTo(o.m_sId);
 		}
-		
+
+
 		public void cleanup()
 		{
-			
 		}
 	}
 }
