@@ -105,11 +105,14 @@ public class ProcClosed extends ProcCtrl
 			oTaperValues.add(TrafCtrlEnums.getCtrlVal("closed", sVal));
 		
 		Collections.sort(oTaperValues);
+		int nNotOpen = TrafCtrlEnums.getCtrlVal("closed", "notopen");
 		int nCtrlIndex = oCtrls.size();
 		while (nCtrlIndex-- > 0)
 		{
 			TrafCtrl oCtrl = oCtrls.get(nCtrlIndex);
 			int nCtrlVal = MathUtil.bytesToInt(oCtrl.m_yControlValue);
+			if (nCtrlVal == nNotOpen) // do not render not open
+				oCtrls.remove(nCtrlIndex);
 			if (Collections.binarySearch(oTaperValues, nCtrlVal) >= 0)
 			{
 				oCtrls.remove(nCtrlIndex);
@@ -249,7 +252,9 @@ public class ProcClosed extends ProcCtrl
 			dLength += Geo.distance(dSeg[0], dSeg[1], dSeg[2], dSeg[3]);
 		}
 		
-		int nStripes = (int)Math.round(dLength / 0.5); // 50 cm
+		int nStripes = (int)Math.ceil(dLength / 0.5); // 50 cm
+		if (nStripes % 2 == 1) // ensure we start and end with a white stripe
+			++nStripes;
 		double dStep = dLength / nStripes;
 		nStripes = 0;
 		double[] dStripe = Arrays.newDoubleArray(4);
@@ -269,8 +274,6 @@ public class ProcClosed extends ProcCtrl
 				dStripe = Arrays.add(dStripe, dSeg2[2], dSeg2[3]);
 				oLayer.add(new TdFeature(dStripe, nColor, oCtrl));
 			}
-			
-			
 		}
 		
 	}
