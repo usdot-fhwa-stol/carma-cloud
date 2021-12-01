@@ -277,7 +277,7 @@ public abstract class Text
 			dVal += nDigit; // add new digit value
 		}
 
-		if (iCharSeq.charAt(nPos++) == '.') // fractional part check
+		if (nPos < nEndPos && iCharSeq.charAt(nPos++) == '.') // fractional part check
 		{
 			double dDiv = 1.0;
 			double dFrac = 0.0;

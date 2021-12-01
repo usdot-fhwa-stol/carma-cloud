@@ -33,6 +33,7 @@ import cc.util.Geo;
 import cc.util.MathUtil;
 import cc.util.Text;
 import cc.util.TileUtil;
+import cc.util.Units;
 import cc.vector_tile.VectorTile;
 import java.awt.geom.Area;
 import java.io.BufferedInputStream;
@@ -95,6 +96,7 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
+			Units.getInstance().init(oConfig.getInitParameter("units"));
 			String sXodrDir = oConfig.getInitParameter("xodrdir");
 			String sLineArcBaseDir = oConfig.getInitParameter("linearcdir");
 			String sTrackFile = oConfig.getInitParameter("trackfile");
@@ -410,10 +412,14 @@ public class CtrlTiles extends HttpServlet
 		sBuf.append("],\"units\":{");
 		for (int nIndex = 0; nIndex < TrafCtrlEnums.UNITS.length; nIndex++)
 		{
-			String sVal = TrafCtrlEnums.UNITS[nIndex];
-			if (sVal != null)
+			String[] sVals = TrafCtrlEnums.UNITS[nIndex];
+			if (sVals.length > 0)
 			{
-				sBuf.append("\"").append(nIndex).append("\":\"").append(sVal).append("\",");
+				sBuf.append("\"").append(nIndex).append("\":[");
+				for (String sVal : sVals)
+					sBuf.append("\"").append(sVal).append("\",");
+				sBuf.setLength(sBuf.length() - 1);
+				sBuf.append("],");
 			}
 		}
 		sBuf.setLength(sBuf.length() - 1);
@@ -433,6 +439,7 @@ public class CtrlTiles extends HttpServlet
 		{
 			long lNow = System.currentTimeMillis() - 10;
 			int nType = Integer.parseInt(oReq.getParameter("type"));
+			String[] sUnits = TrafCtrlEnums.UNITS[nType];
 			String sType = TrafCtrlEnums.CTRLS[nType][0];
 			int nControlValue;
 			String sLabel = oReq.getParameter("label");
@@ -447,7 +454,9 @@ public class CtrlTiles extends HttpServlet
 				bReg = true;
 			String sVal = oReq.getParameter("value");
 			if (sVal != null)
+			{
 				nControlValue = Integer.parseInt(sVal);
+			}
 			else
 			{
 				sVal = oReq.getParameter("value1");
@@ -465,6 +474,11 @@ public class CtrlTiles extends HttpServlet
 					else
 						nControlValue = Integer.parseInt(sVal);
 				}
+			}
+			if (sUnits.length > 0)
+			{
+				double dVal = Units.getInstance().convert(sUnits[1], sUnits[0], nControlValue);
+				nControlValue = (int)Math.round(dVal);
 			}
 			String sId = oReq.getParameter("id");
 			int nStartIndex = Integer.parseInt(oReq.getParameter("s")) * 4 + 1; // add one since we use the growable arrays with the insertion index at position 0
@@ -548,6 +562,7 @@ public class CtrlTiles extends HttpServlet
 		{
 			long lNow = System.currentTimeMillis();
 			int nType = Integer.parseInt(oReq.getParameter("type"));
+			String[] sUnits = TrafCtrlEnums.UNITS[nType];
 			String sType = TrafCtrlEnums.CTRLS[nType][0];
 			int nControlValue;
 			String sVal = oReq.getParameter("value");
@@ -573,7 +588,11 @@ public class CtrlTiles extends HttpServlet
 				else
 					nControlValue = Integer.parseInt(sVal);
 			}
-			
+			if (sUnits.length > 0)
+			{
+				double dVal = Units.getInstance().convert(sUnits[1], sUnits[0], nControlValue);
+				nControlValue = (int)Math.round(dVal);
+			}
 			String sId = oReq.getParameter("id");
 			String sFile = g_sCtrlDir + sId + ".bin";
 			TrafCtrl oOriginalCtrl;

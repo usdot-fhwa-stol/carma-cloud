@@ -12,7 +12,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Calendar;
+import java.util.Enumeration;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.TimeZone;
 import java.util.Timer;
 import javax.servlet.ServletConfig;
@@ -37,6 +39,21 @@ public class RsmServlet extends HttpServlet
 		String sPw = oConfig.getInitParameter("pw");
 		String sBaseUrl = oConfig.getInitParameter("url");
 		String sFile = oConfig.getInitParameter("file");
+		HashMap<String, double[]> oAdjustmentMap = new HashMap();
+		Enumeration<String> oParas = oConfig.getInitParameterNames();
+		while (oParas.hasMoreElements())
+		{
+			String sPara = oParas.nextElement();
+			if (sPara.startsWith("rsm-"))
+			{
+				String[] sVals = oConfig.getInitParameter(sPara).split(",");
+				String sName = sPara.substring("rsm-".length());
+				oAdjustmentMap.put(sName, new double[]{Double.parseDouble(sVals[0]), Double.parseDouble(sVals[1])});
+			}
+		}
+		String[] sVals = oConfig.getInitParameter("defaultoffsets").split(",");
+		oAdjustmentMap.put("default", new double[]{Double.parseDouble(sVals[0]), Double.parseDouble(sVals[1])});
+
 		m_sRsmFile = sFile;
 		
 		int nPeriod = Integer.parseInt(oConfig.getInitParameter("period")); // unit is minutes
@@ -46,7 +63,7 @@ public class RsmServlet extends HttpServlet
 		}
 		
 		m_oTimer = new Timer();
-		m_oCollector = new RsmCollect(sUser, sPw, sBaseUrl, sFile);
+		m_oCollector = new RsmCollect(sUser, sPw, sBaseUrl, sFile, oAdjustmentMap);
 		try
 		{
 			Files.createDirectories(Paths.get(sFile).getParent());

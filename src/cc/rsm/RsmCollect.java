@@ -5,12 +5,17 @@
  */
 package cc.rsm;
 
+import cc.ctrl.CtrlGeo;
+import cc.ctrl.TrafCtrl;
+import cc.ctrl.proc.ProcCtrl;
 import cc.util.CsvReader;
 import cc.util.FileUtil;
+import cc.util.Geo;
 import cc.util.Text;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -23,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
@@ -48,14 +55,16 @@ public class RsmCollect extends TimerTask
 	private final int ENDTAG = 1;
 	private final int VALUES = 2;
 	private final AtomicBoolean m_bRunning = new AtomicBoolean();
+	private HashMap<String, double[]> m_oLonLatAdjustments;
 
 
-	public RsmCollect(String sUser, String sPw, String sBaseUrl, String sOutputFile)
+	public RsmCollect(String sUser, String sPw, String sBaseUrl, String sOutputFile, HashMap<String, double[]> oLonLatAdjustments)
 	{
 		m_sUser = sUser;
 		m_sPw = sPw;
 		m_sBaseUrl = sBaseUrl;
 		m_sOutputFile = sOutputFile;
+		m_oLonLatAdjustments = oLonLatAdjustments;
 		m_bRunning.set(false);
 	}
 
@@ -85,7 +94,7 @@ public class RsmCollect extends TimerTask
 				RsmRecord oRec = m_oCurrentRsms.get(nIndex);
 				if (oRec.m_bNew)
 				{
-					xmlFile(oRec.m_sFile);
+					xmlFile(oRec);
 					++nAdded;
 				}
 				else if (!oRec.m_bCurrent)
@@ -141,21 +150,21 @@ public class RsmCollect extends TimerTask
 	}
 
 
-	public static void main(String[] sArgs)
-		throws Exception
-	{
-		RsmCollect oCollect = new RsmCollect("aaron.cherney@synesis-partners.com", "8f98b962-9b6a-4ecf-bcf8-48a83c80074f", "https://wzdc-rest-api.azurewebsites.net", "C:/Users/aaron.cherney/Documents/cc/rsms");
-		oCollect.getToken();
-		oCollect.xmlList(true);
-		for (RsmRecord oRec : oCollect.m_oCurrentRsms)
-		{
-			if (oRec.m_bNew)
-			{
-				System.out.println(oRec.m_sFile);
-				oCollect.xmlFile(oRec.m_sFile);
-			}
-		}
-	}
+//	public static void main(String[] sArgs)
+//		throws Exception
+//	{
+//		RsmCollect oCollect = new RsmCollect("aaron.cherney@synesis-partners.com", "8f98b962-9b6a-4ecf-bcf8-48a83c80074f", "https://wzdc-rest-api.azurewebsites.net", "C:/Users/aaron.cherney/Documents/cc/rsms");
+//		oCollect.getToken();
+//		oCollect.xmlList(true);
+//		for (RsmRecord oRec : oCollect.m_oCurrentRsms)
+//		{
+//			if (oRec.m_bNew)
+//			{
+//				System.out.println(oRec.m_sFile);
+//				oCollect.xmlFile(oRec.m_sFile);
+//			}
+//		}
+//	}
 
 
 	public boolean getToken()
@@ -245,11 +254,11 @@ public class RsmCollect extends TimerTask
 	}
 
 
-	public boolean xmlFile(String sFile)
+	public boolean xmlFile(RsmRecord oRec)
 	{
 		try
 		{
-			URL oUrl = new URL(m_sBaseUrl + RSMXML + "/" + sFile);
+			URL oUrl = new URL(m_sBaseUrl + RSMXML + "/" + oRec.m_sFile);
 			HttpURLConnection oConn = (HttpURLConnection)oUrl.openConnection();
 			oConn.setRequestMethod("GET");
 			oConn.addRequestProperty("accept", "application/json");
@@ -331,7 +340,20 @@ public class RsmCollect extends TimerTask
 //				{
 //					oOut.append(sXml);
 //				}
-				new RsmParser().parseRequest(new ByteArrayInputStream(sXml.toString().getBytes(StandardCharsets.UTF_8)));
+				double[] dAdjusts = m_oLonLatAdjustments.get("default");
+				int[] nAdjusts = new int[] {Geo.toIntDeg(dAdjusts[0]), Geo.toIntDeg(dAdjusts[1])};
+				for (Map.Entry<String, double[]> oEntry : m_oLonLatAdjustments.entrySet())
+				{
+					if (sFilename.startsWith(oEntry.getKey()))
+					{
+						dAdjusts = oEntry.getValue();
+						nAdjusts = new int[]{Geo.toIntDeg(dAdjusts[0]), Geo.toIntDeg(dAdjusts[1])};
+						break;
+					}
+				}
+				ArrayList<TrafCtrl> oCtrls = new RsmParser(nAdjusts).parseRequest(new ByteArrayInputStream(sXml.toString().getBytes(StandardCharsets.UTF_8)));
+				for (TrafCtrl oCtrl : oCtrls)
+					oRec.m_yIds.add(oCtrl.m_yId);
 				Text.removeCtrlChars(sXml);
 				sXml.insert(0, ' ');
 				sXml.insert(0, sFilename);
@@ -353,6 +375,8 @@ public class RsmCollect extends TimerTask
 		String m_sFile;
 		boolean m_bCurrent = true;
 		boolean m_bNew = true;
+		ArrayList<byte[]> m_yIds = new ArrayList();
+		
 
 
 		RsmRecord(String sId, String sFile)
@@ -371,6 +395,36 @@ public class RsmCollect extends TimerTask
 
 		public void cleanup()
 		{
+			for (byte[] yId : m_yIds)
+			{
+				try
+				{
+					long lNow = System.currentTimeMillis() - 10;
+					String sId = TrafCtrl.getId(yId);
+					String sFile = ProcCtrl.g_sTrafCtrlDir + sId + ".bin";
+					TrafCtrl oCtrl;
+					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+					{
+						oCtrl = new TrafCtrl(oIn, false);
+					}
+					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+					{
+						oCtrl.m_oFullGeo = new CtrlGeo(oIn, true, ProcCtrl.g_nDefaultZoom);
+					}
+					synchronized (this)
+					{
+						for (int[] nTile : oCtrl.m_oFullGeo.m_oTiles)
+						{
+							String sIndex = String.format(ProcCtrl.g_sTdFileFormat, nTile[0], ProcCtrl.g_nDefaultZoom, nTile[0], nTile[1]) + ".ndx";
+							ProcCtrl.updateIndex(sIndex, oCtrl.m_yId, lNow);
+						}
+					}
+				}
+				catch (Exception oEx)
+				{
+					LOGGER.error("Error removing TrafCtrls for RSM file: " + m_sFile);
+				}
+			}
 		}
 	}
 }

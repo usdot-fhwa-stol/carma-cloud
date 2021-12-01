@@ -8,6 +8,7 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlGeo;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
+import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrJunctionParser;
 import cc.geosrv.xodr.XodrUtil;
@@ -16,6 +17,7 @@ import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.MathUtil;
 import cc.util.TileUtil;
+import cc.util.Units;
 import java.awt.geom.AffineTransform;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -90,6 +92,8 @@ public class ProcMaxSpeed extends ProcCtrl
 			oSearch.m_nId = oCLA.m_nLaneId;
 			int nIndex = Collections.binarySearch(m_oSpds, oSearch);
 			int nSpeed = nIndex >= 0 ? m_oSpds.get(nIndex).m_nSpd : DEFAULTSPD;
+			String[] sUnits = TrafCtrlEnums.UNITS[TrafCtrlEnums.getCtrl("maxspeed")];
+			nSpeed = (int)Math.round(Units.getInstance().convert(sUnits[1], sUnits[0], nSpeed));
 			TrafCtrl oCtrl = new TrafCtrl("maxspeed", nSpeed, 0, oCLA.m_dLineArcs, "", true, CC);
 			String sRoadId = Integer.toString(XodrUtil.getRoadId(oCLA.m_nLaneId));
 			if (oCLA.m_nLaneType != nShoulder && !m_oJunctions.containsKey(sRoadId))

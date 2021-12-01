@@ -105,14 +105,14 @@ public class ProcClosed extends ProcCtrl
 			oTaperValues.add(TrafCtrlEnums.getCtrlVal("closed", sVal));
 		
 		Collections.sort(oTaperValues);
-		int nNotOpen = TrafCtrlEnums.getCtrlVal("closed", "notopen");
+		int nOpen = TrafCtrlEnums.getCtrlVal("closed", "open");
 		int nCtrlIndex = oCtrls.size();
 		while (nCtrlIndex-- > 0)
 		{
 			TrafCtrl oCtrl = oCtrls.get(nCtrlIndex);
 			int nCtrlVal = MathUtil.bytesToInt(oCtrl.m_yControlValue);
-			if (nCtrlVal == nNotOpen) // do not render not open
-				oCtrls.remove(nCtrlIndex);
+			if (nCtrlVal == nOpen) // do not render not open
+				continue;
 			if (Collections.binarySearch(oTaperValues, nCtrlVal) >= 0)
 			{
 				oCtrls.remove(nCtrlIndex);
@@ -253,7 +253,7 @@ public class ProcClosed extends ProcCtrl
 		}
 		
 		int nStripes = (int)Math.ceil(dLength / 0.5); // 50 cm
-		if (nStripes % 2 == 1) // ensure we start and end with a white stripe
+		if (nStripes % 2 == 0) // ensure we start and end with a white stripe
 			++nStripes;
 		double dStep = dLength / nStripes;
 		nStripes = 0;

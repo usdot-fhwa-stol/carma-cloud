@@ -67,7 +67,7 @@ public class ValidateXodrTiles extends HttpServlet
 			double dCombineTol = Double.parseDouble(oConfig.getInitParameter("combinetol"));
 			m_sTdFileFormat = oConfig.getInitParameter("tileddataformat");
 			m_nZoom = Integer.parseInt(oConfig.getInitParameter("zoom"));
-			ProcCtrl.setStaticVariables(dExplodeStep, sCtrlDir, m_sTdFileFormat, m_nZoom);
+//			ProcCtrl.setStaticVariables(dExplodeStep, sCtrlDir, m_sTdFileFormat, m_nZoom);
 			ArrayList<ProcCtrl> oProcesses = new ArrayList();
 			oProcesses.add(new ProcDirection("/direction", sXodrDir));
 			oProcesses.add(new ProcPavement("/pavement", sLineArcBaseDir, sXodrDir));
