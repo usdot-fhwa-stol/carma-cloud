@@ -166,7 +166,7 @@ TrafficControlDetail ::= CHOICE
 	maxvehaxles INTEGER (2..15), -- number of axles
 	minvehocc INTEGER (1..15), -- vehicle passenger count
 	maxplatoonsize INTEGER (1..63), -- vehicle count
-	minhplatoonhdwy INTEGER (0..2047), -- tenths of meters
+	minplatoonhdwy INTEGER (0..2047), -- tenths of meters
 	...
 }
 
