@@ -1,5 +1,6 @@
 package cc.ws;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 
 
@@ -8,7 +9,7 @@ public class Session implements Comparable<String>, Comparator<Session>
 	protected long m_lUpdate;
 	protected String m_sToken;
 	protected User m_oUser;
-
+	ArrayList<byte[]> oLoadedIds = new ArrayList();
 
 	protected Session()
 	{

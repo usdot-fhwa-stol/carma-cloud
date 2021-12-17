@@ -27,9 +27,8 @@ public class UserMgr extends HttpServlet
 		}
 		catch (Exception oEx)
 		{
-		}	
+		}
 	}
-	
 	public UserMgr()
 	{
 	}
@@ -94,7 +93,8 @@ public class UserMgr extends HttpServlet
 			}
 		}
 		sBuf.append("}\n");
-
+		
+		oRep.setContentType("text/plain");
 		try (ServletOutputStream oOut = oRep.getOutputStream())
 		{
 			for (int nIndex = 0; nIndex < sBuf.length(); nIndex++)
@@ -139,6 +139,7 @@ public class UserMgr extends HttpServlet
 		}
 		catch (Exception oEx)
 		{
+			oEx.printStackTrace();
 		}
 	}
 }

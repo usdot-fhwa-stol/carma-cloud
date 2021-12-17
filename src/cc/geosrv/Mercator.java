@@ -1,5 +1,10 @@
 package cc.geosrv;
 
+import cc.util.Geo;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.Comparator;
+
 /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
@@ -13,6 +18,12 @@ package cc.geosrv;
 public class Mercator 
 {
 	private static final int[] POW = new int[24];
+	static
+	{
+		for (int nIndex = 0; nIndex < POW.length; nIndex++)
+			POW[nIndex] = (int)Math.pow(2.0, nIndex);
+	}
+	
 	private final double[] RES = new double[24];
 	private static final double R_MAJOR = 6378137.0;
 	private static final double R_MINOR = 6356752.3142;
@@ -28,32 +39,43 @@ public class Mercator
 	public static final double MIN_LAT = -MAX_LAT;
 	public static final double MAX_LON = 180;
 	public static final double MIN_LON = -MAX_LON;
+	private static BigDecimal ONEHUNDRED = new BigDecimal(100.0);
+	
+	private static Mercator INSTANCE = new Mercator();
 	
 	int m_nTileSize;
 	double m_dInitRes;
+	public static Comparator<int[]> TILECOMP = (int[] o1, int[] o2) -> 
+	{
+		int nReturn = o1[0] - o2[0];
+		if (nReturn == 0)
+			nReturn = o1[1] - o2[1];
+		
+		return nReturn;
+	};
 
 	
-	static
-	{
-		for (int nIndex = 0; nIndex < POW.length; nIndex++)
-			POW[nIndex] = (int)Math.pow(2.0, nIndex);
-	}
-	
-	
-	public Mercator()
+	private Mercator()
 	{
 		this(256);
 	}
 	
 	
-	public Mercator(int nTileSize)
+	private Mercator(int nTileSize)
 	{
 		m_nTileSize = nTileSize;
 		m_dInitRes = 2.0 * ORIGIN_SHIFT / m_nTileSize;
 		for (int nIndex = 0; nIndex < RES.length; nIndex++)
 			RES[nIndex] = m_dInitRes / POW[nIndex];
 	}
+
 	
+	public static Mercator getInstance()
+	{
+		if (INSTANCE == null)
+			INSTANCE = new Mercator();
+		return INSTANCE;
+	}
 	
 	public static int getExtent(int nZoom)
 	{
@@ -72,6 +94,25 @@ public class Mercator
 		return Math.log(Math.tan((90.0 + dLat) * PI_OVER_360)) * R_MAJOR;
 	}
 	
+	
+	public static int lonToCm(double dLon)
+	{
+		return (int)(lonToMeters(dLon) * 100 + 0.5);
+	}
+	
+	
+	public static int latToCm(double dLat)
+	{
+		return (int)(latToMeters(dLat) * 100 + 0.5);
+	}
+	
+	
+	public static int mToCm(double dM)
+	{
+		BigDecimal dBd = new BigDecimal(Double.toString(dM));
+		dBd = dBd.setScale(2, RoundingMode.HALF_UP);
+		return (int)dBd.multiply(ONEHUNDRED).doubleValue();
+	}
 	
 	public static double xToLon(double dX)
 	{
@@ -131,6 +172,15 @@ public class Mercator
 		dBounds[1] = dMeters[1];
 	}
 	
+	
+	public void tileBoundsCm(double dXt, double dYt, int nZoom, int[] nCms)
+	{
+		double[] dBounds = new double[4];
+		tileBounds(dXt, dYt, nZoom, dBounds);
+		for (int nIndex = 0; nIndex < nCms.length; nIndex++)
+			nCms[nIndex] = (int)(dBounds[nIndex] * 100 + 0.5);
+	}
+	
 	public void lonLatBounds(double dXt, double dYt, int nZoom, double[] dBounds)
 	{
 		double[] dMeterBounds = new double[4];
@@ -155,12 +205,17 @@ public class Mercator
 	}
 	
 	
-	public void metersToTile(double dXm, double dYm, int nZoom, int[] nTiles)
+	public void metersToTile(double dXm, double dYm, int nZoom, int[] nTiles, double[] dPixels)
 	{
-		double[] dPixels = new double[2];
 		metersToPixels(dXm, dYm, nZoom, dPixels);
 		pixelsToTile(dPixels[0], dPixels[1], nTiles);
 		nTiles[1] = POW[nZoom] - nTiles[1] - 1;
+	}
+	
+	
+	public void metersToTile(double dXm, double dYm, int nZoom, int[] nTiles)
+	{
+		metersToTile(dXm, dYm, nZoom, nTiles, new double[2]);
 	}
 	
 	
@@ -210,5 +265,28 @@ public class Mercator
 		}
 		
 		return Math.toDegrees(phi);
+	}
+	
+	public static void main(String[] sArgs)
+	{
+		double dX1 = Mercator.lonToMeters(-77.21813410520554);
+		double dY1 = Mercator.latToMeters(38.912404525183945);
+		double dX2 = Mercator.lonToMeters(-77.21815925091505);
+		double dY2 = Mercator.latToMeters(38.91181284515318);
+		
+		double[] dPixels = new double[2];
+		double[] dBounds = new double[4];
+		INSTANCE.tileBounds(74843, 100268, 18, dBounds);
+		INSTANCE.metersToPixels(dBounds[0], dBounds[1], 18, dPixels);
+		double dPx1 = dPixels[0];
+		double dPy1 = dPixels[1];
+		INSTANCE.metersToPixels(dBounds[2], dBounds[3], 18, dPixels);
+		double dPx2 = dPixels[0];
+		double dPy2 = dPixels[1];
+		System.out.println(dPx2 - dPx1);
+		System.out.println(dPy2 - dPy1);
+		System.out.println(dBounds[2] - dBounds[0]);
+		System.out.println((dBounds[3] - dBounds[1]) / 512);
+		System.out.println(Geo.distance(dX1, dY1, dX2, dY2));
 	}
 }

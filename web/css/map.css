@@ -1,0 +1,106 @@
+#edit-content
+{
+	width: 96%;
+	margin: 2%;
+	height: 76%;
+	position: relative;
+}
+
+.dlg-buttons
+{
+	width: 96%;
+	height: 16%;
+	margin: 2%;
+	position: absolute;
+	bottom: 0;
+	left: 0;
+}
+
+.dlg-buttons button
+{
+	margin-left: 12.5%;
+	margin-right: 12.5%;
+	width: 25%;
+	position: relative;
+	top: 50%;
+	-moz-transform: translateY(-50%);
+	-webkit-transform: translateY(-50%);
+	transform: translateY(-50%);
+	text-align: center;
+	border: 1px solid #000;
+}
+
+table
+{
+	margin: 2%;
+	width: 96%;
+	position: relative;
+}
+
+table td
+{
+	white-space: nowrap;
+}
+
+table td:not(:first-child)
+{
+	padding-left: 25px;
+}
+
+table td:last-child
+{
+	width: 100%;
+}
+
+table input,select
+{
+	padding-right: 10px;
+	border: 1px solid #aaaaaa;
+	width: 90%;
+	background-color: #fff;
+}
+
+table input[type=checkbox]
+{
+	width: auto;
+}
+
+.overlay
+{
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: none;
+	background-color: graytext;
+	z-index: 100;
+	opacity: 0.8;
+}
+
+.centered-element
+{
+	position: relative;
+	width: 50%;
+	top: 50%;
+	left: 50%;
+	-moz-transform: translateX(-50%) translateY(-50%);
+	-webkit-transform: translateX(-50%) translateY(-50%);
+	transform: translateX(-50%) translateY(-50%);
+	text-align: center;
+}
+
+#dlgLayers ul
+{
+	list-style-type: none;
+}
+
+#edit-layers,#delete-layers
+{
+	display: none;
+}
+
+#dlgEdit,#dlgDelete
+{
+	overflow: hidden;
+}

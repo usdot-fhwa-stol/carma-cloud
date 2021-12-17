@@ -2,6 +2,7 @@ package cc.util;
 
 import java.nio.ByteBuffer;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.UUID;
 
 
@@ -82,6 +83,8 @@ public abstract class Text
 	public static final Base64.Encoder B64ENC = Base64.getUrlEncoder().withoutPadding();
 	
 	private static final ByteBuffer UUID_BUFFER = ByteBuffer.allocate(16);
+	
+	public static final Comparator<CharSequence> CHAR_SEQ_COMP = (CharSequence o1, CharSequence o2) -> compare(o1, o2);
 
 
     /**
@@ -93,6 +96,22 @@ public abstract class Text
     private Text()
 		{
     }
+
+
+		/**
+		 * Removes control characters from the buffer.
+		 *
+		 * @param sBuffer the string to remove control characters from.
+		 */
+		public static void removeCtrlChars(StringBuilder sBuffer)
+		{
+			int nLen = sBuffer.length();
+			while (nLen-- > 0)
+			{
+				if (Character.isISOControl(sBuffer.charAt(nLen)))
+					sBuffer.deleteCharAt(nLen);
+			}
+		}
 
 
     /**
@@ -258,7 +277,7 @@ public abstract class Text
 			dVal += nDigit; // add new digit value
 		}
 
-		if (iCharSeq.charAt(nPos++) == '.') // fractional part check
+		if (nPos < nEndPos && iCharSeq.charAt(nPos++) == '.') // fractional part check
 		{
 			double dDiv = 1.0;
 			double dFrac = 0.0;

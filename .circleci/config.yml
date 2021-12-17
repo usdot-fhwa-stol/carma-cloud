@@ -5,17 +5,20 @@ jobs:
       - image: circleci/openjdk:11-jdk-stretch # OpenJDK on Debian 9 Stretch Docker container
     working_directory: /tmp
     steps:
-      - run: git clone https://github.com/usdot-fhwa-stol/carma-cloud.git
-      - run: sudo -u root apt-get update && sudo -u root apt-get install pkg-config sqlite3 libsqlite3-dev
-      - run: wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj
-      - run: cd /tmp/proj && ./configure && make && sudo -u root make install
-      - run: cd /tmp/cc/src/cc/geosrv && gcc -c -std=c11 -fPIC -Wall -I /usr/local/openjdk-11/include/ -I /usr/local/openjdk-11/include/linux/ -I /tmp/proj/src/ cs2cswrapper.c && gcc -shared -lproj cs2cswrapper.o -o libcs2cswrapper.so && sudo -u root mv *.so /usr/lib
-      - run: cd /tmp && wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.26/bin/apache-tomcat-9.0.26.tar.gz && tar -xzf apache-tomcat-9.0.26.tar.gz && mv apache-tomcat-9.0.26 tomcat
+      - run: git clone https://github.com/usdot-fhwa-stol/carma-cloud.git cc
+      - run: wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat
+      - run: mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
       - run: find ./cc/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-      - run: javac -cp tomcat/lib/servlet-api.jar:cc/lib/commons-compress-1.18.jar:cc/lib/javax.json.jar:cc/lib/protobuf-javalite-3.8.0-rc-1.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
+      - run: javac -cp tomcat/lib/servlet-api.jar:cc/lib/commons-compress-1.18.jar:cc/lib/javax.json.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
       - run: sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
-      - run: sudo -u root ls -lrt /usr
-      - run: sudo -u root cat /etc/hosts
+      - run: echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
+      - run: mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
+      - run: touch tomcat/webapps/carmacloud/event.csv
+      - run: mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
+      - run: mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
       - run: java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
+      - run: gunzip carma-cloud/osmbin/*.gz
+      - run: mv carma-cloud/osmbin tomcat/webapps/carmacloud/
+      - run: rm -f sources.txt && rm -rf carma-cloud
       - run: echo "JAVA_HOME=/usr/local/openjdk-11" > tomcat/bin/setenv.sh
       - run: sudo -u root mv tomcat /opt/

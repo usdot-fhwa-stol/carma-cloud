@@ -1,0 +1,205 @@
+CARMA-CLOUD DEFINITIONS AUTOMATIC TAGS ::= 
+BEGIN
+
+
+Id64b ::= OCTET STRING (SIZE(8)) -- 8-byte binary value that can be used for shorter unique ids
+
+
+Id128b ::= OCTET STRING (SIZE(16)) -- 16-byte binary value typicially used for unique ids
+
+
+EpochMins ::= INTEGER (0..153722867280912) -- minutes since epoch January 1, 1970 00:00 UTC
+
+
+Longitude ::= INTEGER (-1799999999..1800000001)-- geographic longitude expressed in 1/10th microdegrees, 1800000001 represents null
+
+
+Latitude ::= INTEGER (-900000000..900000001) -- geographic latitude expressed in 1/10th microdegrees, 900000001 represents null
+
+
+Elevation ::= INTEGER (0..65535) -- offset by 4096, -4096 represents unknown, -409.5 to 6143.9 meters relative to referemce datum
+
+
+TrafficControlMessage ::= CHOICE
+{
+	reserved NULL, -- skip version zero
+	tcmV01 TrafficControlMessageV01, -- traffic control message version 1
+	...
+}
+
+
+TrafficControlMessageV01 ::= SEQUENCE
+{
+	reqid Id64b, -- ephemeral identifier of originating request
+	reqseq INTEGER (0..255), -- sequential counter for originating request
+	msgtot INTEGER (0..65535), -- total expected traffic control message responses
+	msgnum INTEGER (0..65535), -- message index for each response out of total responses
+	id Id128b, -- unique traffic control id
+	updated EpochMins, 
+	package [0] TrafficControlPackage OPTIONAL, -- related traffic control ids
+	params [1] TrafficControlParams OPTIONAL, 
+	geometry [2] TrafficControlGeometry OPTIONAL
+}
+
+
+TrafficControlPackage ::= SEQUENCE
+{
+	label IA5String (SIZE(1..63)) OPTIONAL, -- label such as incident, workzone, etc.
+	tcids SEQUENCE (SIZE(1..63)) OF Id128b -- related traffic control ids
+}
+
+
+TrafficControlParams ::= SEQUENCE
+{
+	vclasses SEQUENCE (SIZE(1..255)) OF TrafficControlVehClass,
+	schedule TrafficControlSchedule,
+	regulatory BOOLEAN,
+	detail TrafficControlDetail
+}
+
+
+TrafficControlVehClass ::= ENUMERATED
+{
+	any, 
+	pedestrian,
+	bicycle,
+	micromobile,
+	motorcycle,
+	passenger-car,
+	light-truck-van,
+	bus,
+	two-axle-six-tire-single-unit-truck,
+	three-axle-single-unit-truck,
+	four-or-more-axle-single-unit-truck,
+	four-or-fewer-axle-single-trailer-truck,
+	five-axle-single-trailer-truck,
+	six-or-more-axle-single-trailer-truck,
+	five-or-fewer-axle-multi-trailer-truck,
+	six-axle-multi-trailer-truck,
+	seven-or-more-axle-multi-trailer-truck,
+	rail,
+	unclassified, 
+	...
+}
+
+
+TrafficControlSchedule ::= SEQUENCE
+{
+	start EpochMins, -- start time required, even if it's the epoch value zero
+	end [0] EpochMins OPTIONAL, -- default to max value 153722867280912
+	dow [1] DayOfWeek OPTIONAL, 
+	between [2] SEQUENCE (SIZE(1..63)) OF DailySchedule OPTIONAL, 
+	repeat [3] RepeatParams OPTIONAL
+}
+
+
+DayOfWeek ::= BIT STRING
+{
+	sun (6), 
+	mon (5), 
+	tue (4), 
+	wed (3), 
+	thu (2), 
+	fri (1), 
+	sat (0)
+}
+
+
+DailySchedule ::= SEQUENCE
+{
+	begin INTEGER (0..1439), -- minutes relative to midnight local time
+	duration INTEGER (0..1439) -- the number of active minutes, up to one day
+}
+
+
+RepeatParams ::= SEQUENCE
+{
+	offset INTEGER (0..1439), -- shift repetition start relative to midnight local time
+	period INTEGER (0..1439), -- minutes between successive time spans
+	span INTEGER (0..1439) -- number of minutes schedule is active, must be less than the period
+}
+
+
+TrafficControlGeometry ::= SEQUENCE
+{
+	proj IA5String (SIZE(0..63)),
+	datum IA5String (SIZE(0..63)),
+	reftime EpochMins,
+	reflon Longitude,
+	reflat Latitude,
+	refelv Elevation, -- decimeter offset -4096 from reference datum
+	refwidth INTEGER (0..32767) -- default reference lane width in units of cm
+	heading INTEGER (0..3599), -- initial path heading clockwise from north in tenths of degrees
+	nodes SEQUENCE (SIZE(1..255)) OF PathNode
+}
+
+
+PathNode ::= SEQUENCE
+{
+	x INTEGER (-32768..32767), -- units of cm
+	y INTEGER (-32768..32767), -- units of cm
+	z [0] INTEGER (-32768..32767) OPTIONAL, -- units of decimeters
+	width [1] INTEGER (-128..127) OPTIONAL -- units of cm
+}
+
+
+TrafficControlDetail ::= CHOICE
+{
+	signal OCTET STRING SIZE(0..63),
+	stop NULL,
+	yield NULL,
+	notowing NULL,
+	restricted NULL,
+	closed ENUMERATED {open, closed, taperleft, taperright, openleft, openright},
+	chains ENUMERATED {no, permitted, required},
+	direction ENUMERATED {forward, reverse},
+	lataffinity ENUMERATED {left, right},
+	latperm SEQUENCE (SIZE(2)) OF ENUMERATED {none, permitted, passing-only, emergency-only},
+	parking ENUMERATED {no, parallel, angled},
+	minspeed INTEGER (0..1023), -- tenths of m/s
+	maxspeed INTEGER (0..1023), -- tenths of m/s
+	minhdwy INTEGER (0..2047), -- tenths of meters
+	maxvehmass INTEGER (0..65535), -- kg
+	maxvehheight INTEGER (0..127), -- tenths of meters
+	maxvehwidth INTEGER (0..127), -- tenths of meters
+	maxvehlength INTEGER (0..1023), -- tenths of meters
+	maxvehaxles INTEGER (2..15), -- number of axles
+	minvehocc INTEGER (1..15), -- vehicle passenger count
+	maxplatoonsize INTEGER (1..63), -- vehicle count
+	minplatoonhdwy INTEGER (0..2047), -- tenths of meters
+	...
+}
+
+
+TrafficControlRequest ::= CHOICE
+{
+	reserved NULL, -- skip version zero
+	tcrV01 TrafficControlRequestV01, -- traffic control request version 1
+	...
+}
+
+
+TrafficControlRequestV01 ::= SEQUENCE
+{
+	reqid Id64b, -- randomly generated ephemeral request identifier
+	reqseq INTEGER (0..255), -- sequential counter used to differentiate traffic control requests
+	scale INTEGER (-3..3), -- vertex offset units 10^n meters
+	bounds SEQUENCE (SIZE(1..63)) OF TrafficControlBounds
+}
+
+
+TrafficControlBounds ::= SEQUENCE
+{
+	oldest EpochMins, -- timestamp of oldest traffic control message within bounds
+	reflon Longitude, -- initial vertex reference longitude
+	reflat Latitude, -- initial vertex reference latitude
+	offsets SEQUENCE (SIZE(3)) OF OffsetPoint -- relative vertex positions in scaled meters
+}
+
+
+OffsetPoint ::= SEQUENCE
+{
+	deltax INTEGER (-32768..32767), -- relative horizontal vertex position in scaled meters
+	deltay INTEGER (-32768..32767) -- relative vertical vertex position in scaled meters
+}
+END

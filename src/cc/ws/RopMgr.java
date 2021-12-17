@@ -100,24 +100,32 @@ public class RopMgr extends Handler implements Runnable
 				sSearch[0] = Text.getUUID();
 
 			StringBuilder sBuffer = new StringBuilder(oReq.getParameter("data"));
+			int nBufferIndex = sBuffer.length();
+			while (nBufferIndex-- > 0)
+			{
+				char cChar = sBuffer.charAt(nBufferIndex);
+				if (cChar == '\t' || cChar == '\n')
+					sBuffer.deleteCharAt(nBufferIndex);
+			}
 			if (sBuffer.indexOf("\"status\"") < 0) // add default status of unused to json
 			{
 				Text.removeWhitespace(sBuffer);
-				sBuffer.insert(sBuffer.length() - 2, ",\"status\":\"U\"");
+				sBuffer.insert(sBuffer.lastIndexOf("}"), ",\"status\":\"U\"");
 			}
 
 			int nIndex = Collections.binarySearch(m_oRops, sSearch, STR_ARR_COMP);
 			if (nIndex < 0)
 			{
 				nIndex = ~nIndex;
-				m_oRops.add(nIndex, new String[]{sSearch[0], oSess.m_oUser.m_sUser, null, sBuffer.toString()}); // create new array 
+				m_oRops.add(nIndex, new String[]{sSearch[0], oSess.m_oUser.m_sUser, null, null}); // create new array 
 			}
 			sRop = m_oRops.get(nIndex);
 			synchronized (ISO8601Sdf)
 			{
 				sRop[2] = ISO8601Sdf.format(System.currentTimeMillis());
 			}
-
+			sRop[3] = sBuffer.toString();
+			
 			if (sRop[3].contains("\"status\":\"D\"")) // remove from list if the status is deleted
 				m_oRops.remove(nIndex);
 
@@ -134,6 +142,39 @@ public class RopMgr extends Handler implements Runnable
 		}
 		oOut.write("{");
 		writeJson(oOut, sRop[0], sRop[sRop.length - 1]); // id:data
+		oOut.write("}");
+	}
+	
+	
+	protected void doDetails(Session oSess, HttpServletRequest oReq, PrintWriter oOut)
+	   throws IOException
+	{
+		String sRopIds = oReq.getParameter("rops");
+		if (sRopIds == null || m_oRops.isEmpty())
+		{
+			oOut.write("{}");
+			return;
+		}
+		
+		String[] sIds = sRopIds.split(",");
+		oOut.write("{");
+		String[] sSearch = new String[1];
+		int nCount = 0;
+		synchronized (m_oRops)
+		{
+			for (String sId : sIds)
+			{
+				sSearch[0] = sId;
+				int nIndex = Collections.binarySearch(m_oRops, sSearch, STR_ARR_COMP);
+				if (nIndex < 0)
+					continue;
+				
+				String[] sRop = m_oRops.get(nIndex);
+				if (nCount++ > 0)
+					oOut.write(",");
+				writeJson(oOut, sRop[0], sRop[sRop.length - 1]);
+			}
+		}
 		oOut.write("}");
 	}
 }
