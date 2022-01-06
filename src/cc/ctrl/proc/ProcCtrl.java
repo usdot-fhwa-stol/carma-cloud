@@ -5,6 +5,7 @@
  */
 package cc.ctrl.proc;
 
+import cc.ctrl.CtrlGeo;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.CtrlLineArcs;
 import cc.geosrv.Mercator;
@@ -12,6 +13,7 @@ import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Text;
 import cc.util.TileUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -34,6 +36,7 @@ import java.util.Iterator;
  */
 public abstract class ProcCtrl
 {
+	public static final Object INDEXLOCK = new Object();
 	public static double g_dExplodeStep;
 	public static String g_sTrafCtrlDir;
 	public static String g_sTdFileFormat;
@@ -41,6 +44,7 @@ public abstract class ProcCtrl
 	public static int g_nDefaultZoom = Integer.MIN_VALUE;
 	public static final byte CC = 0;
 	public static final byte RSM = 1;
+	public static final byte IHP2 = 2;
 	protected static final double WIDTHTH = 1.5;
 	protected static final double LENLOWTH = 75.0;
 	protected static final double STOPLINEENDOFFSET = 0.6;
@@ -391,7 +395,57 @@ public abstract class ProcCtrl
 //				break; 
 //			case "minvehocc":
 //				break;
+			case "minplatoonhdwy":
+			{
+				ProcMinPlatoonHdwy.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+			case "maxplatoonsize":
+			{
+				ProcMaxPlatoonSize.renderTiledData(oCtrls, nTiles);
+				break;
+			}
 		}
+	}
+	
+	
+	public static boolean deleteControl(String sId)
+		throws Exception
+	{
+		String sFile = g_sTrafCtrlDir + sId + ".bin";
+		TrafCtrl oOriginalCtrl;
+		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+		{
+			oOriginalCtrl = new TrafCtrl(oIn, false);
+		}
+		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+		{
+			oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nDefaultZoom);
+		}
+		
+		return deleteControl(oOriginalCtrl);
+	}
+	
+	
+	public static boolean deleteControl(TrafCtrl oCtrl)
+	{
+		synchronized (INDEXLOCK)
+		{
+			try
+			{
+				for (int[] nTile : oCtrl.m_oFullGeo.m_oTiles)
+				{
+					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nDefaultZoom, nTile[0], nTile[1]) + ".ndx";
+					ProcCtrl.updateIndex(sIndex, oCtrl.m_yId, System.currentTimeMillis() - 10);
+				}
+			}
+			catch (Exception oEx)
+			{
+				oEx.printStackTrace();
+				return false;
+			}
+		}
+		return true;
 	}
 }
 

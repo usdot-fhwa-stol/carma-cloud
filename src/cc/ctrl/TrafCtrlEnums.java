@@ -30,7 +30,9 @@ public abstract class TrafCtrlEnums
 		{"maxaxles"}, 
 		{"minvehocc"},
 		{"pavement"},
-		{"debug"}
+		{"debug"},
+		{"maxplatoonsize"},
+		{"minplatoonhdwy"}
 	};
 	
 	
@@ -58,6 +60,8 @@ public abstract class TrafCtrlEnums
 		new String[0], //minvehocc
 		new String[0], //pavement
 		new String[0], //debug"
+		new String[0], //maxplatoonsize
+		new String[]{"dm", "ft", "m"}
 	};
 
 	public static final char[] DAYCHARS = new char[]

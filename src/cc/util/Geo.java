@@ -265,6 +265,27 @@ public abstract class Geo
 	}
 	
 	
+	public static boolean isInsidePolygon(double[] dPoly, double dX, double dY, int nStart)
+	{
+		int nCount = 0;
+		double[] dSeg = new double[4];
+		Iterator<double[]> oIt = Arrays.iterator(dPoly, dSeg, nStart, 2);
+		while (oIt.hasNext())
+		{
+			oIt.next();
+			double dX1 = dSeg[0];
+			double dY1 = dSeg[1];
+			double dX2 = dSeg[2];
+			double dY2 = dSeg[3];
+			if ((dY1 < dY && dY2 >= dY || dY2 < dY && dY1 >= dY)
+			   && (dX1 <= dX || dX2 <= dX)
+			   && (dX1 + (dY - dY1) / (dY2 - dY1) * (dX2 - dX1) < dX))
+				++nCount;
+		}
+		return (nCount & 1) != 0;
+	}
+	
+	
 	
 	public static double polylineDist(double[] dPolyline, int nStart, int nStep)
 	{
