@@ -18,6 +18,8 @@ public abstract class Geo
 	public final static double EARTH_FLATTENING = EARTH_MINOR_RADIUS / EARTH_MAJOR_RADIUS;
 	public final static double CIRCLE_TOL = 0.001;
 	public final static double M_TOL = 1.0E-10;
+	public static final double EARTH_RADIUS_KM = 6371;
+	public static final double PIOVER180 = Math.PI / 180;
 
 	private Geo()
 	{
@@ -1207,6 +1209,20 @@ public abstract class Geo
 		return new Area(oPath);
 	}
 	
-	
+	/**
+	 * Adapted from the Haversine formula
+	 * @param dLat1
+	 * @param dLon1
+	 * @param dLat2
+	 * @param dLon2
+	 * @return 
+	 */
+	public static double distanceFromLatLon(double dLat1, double dLon1, double dLat2, double dLon2)
+	{
+		double dLat = (dLat2 - dLat1) * PIOVER180;
+		double dLon = (dLon2 - dLon1) * PIOVER180;
+		double dA = Math.sin(dLat / 2) * Math.sin(dLat /2) + Math.cos(dLat1 * PIOVER180) * Math.cos(dLat2 * PIOVER180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+		return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(dA));
+	}
 	
 }

@@ -29,8 +29,7 @@ public class Bounds extends ArrayList<Detector>
 	public int m_nConsecutiveTimes = 0;
 	public double m_d85th;
 	public double m_d15th;
-	public int m_nLanes;
-	public double m_dLength;
+	public double m_dLength = 0;
 	public int m_nMaxSpeed;
 	public double m_dTarDensity;
 	public double m_dTarCtrlSpeed;
@@ -44,9 +43,7 @@ public class Bounds extends ArrayList<Detector>
 	{
 		double[] dGeo = Arrays.newDoubleArray();
 		double[] dBb = new double[]{Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
-		m_nLanes = oIn.parseInt(0);
-		m_dLength = oIn.parseDouble(1);
-		for (int nIndex = 2; nIndex < nCols;)
+		for (int nIndex = 0; nIndex < nCols;)
 		{
 			double dX = Mercator.lonToMeters(oIn.parseDouble(nIndex++));
 			double dY = Mercator.latToMeters(oIn.parseDouble(nIndex++));
@@ -71,10 +68,22 @@ public class Bounds extends ArrayList<Detector>
 		nCols = oIn.readLine();
 		m_dCenterLine = Arrays.newDoubleArray(nCols);
 		m_dCenterLine = Arrays.add(m_dCenterLine, m_dBb);
-		for (int nIndex = 0; nIndex < nCols;)
+		int nIndex = 0;
+		double dPrevLon = oIn.parseDouble(nIndex++);
+		double dPrevLat = oIn.parseDouble(nIndex++);
+		m_dCenterLine = Arrays.add(m_dCenterLine, Mercator.lonToMeters(dPrevLon), Mercator.latToMeters(dPrevLat));
+		m_dCenterLine = Arrays.add(m_dCenterLine, oIn.parseDouble(nIndex++));
+		for (; nIndex < nCols;)
 		{
-			m_dCenterLine = Arrays.add(m_dCenterLine, Mercator.lonToMeters(oIn.parseDouble(nIndex++)), Mercator.latToMeters(oIn.parseDouble(nIndex++)));
+			double dLon = oIn.parseDouble(nIndex++);
+			double dLat = oIn.parseDouble(nIndex++);
+			
+			m_dCenterLine = Arrays.add(m_dCenterLine, Mercator.lonToMeters(dLon), Mercator.latToMeters(dLat));
 			m_dCenterLine = Arrays.add(m_dCenterLine, oIn.parseDouble(nIndex++));
+			
+			m_dLength += Geo.distanceFromLatLon(dPrevLat, dPrevLon, dLat, dLon);
+			dPrevLon = dLon;
+			dPrevLat = dLat;
 		}
 	}
 	
