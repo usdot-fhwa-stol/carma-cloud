@@ -282,7 +282,7 @@ public class IHPResponse
 				}
 				catch (Exception oEx)
 				{
-
+					oEx.printStackTrace();
 				}
 			}
 		}

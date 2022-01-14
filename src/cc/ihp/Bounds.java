@@ -20,8 +20,8 @@ import java.util.ArrayList;
  */
 public class Bounds extends ArrayList<Detector>
 {
-	public double[] m_dGeo;
 	public double[] m_dCenterLine;
+	public double[] m_dGeo;
 	public double[] m_dBb;
 	public double[] m_dSpeeds;
 	public int m_nVolume;
@@ -65,26 +65,19 @@ public class Bounds extends ArrayList<Detector>
 		
 		m_dGeo = dGeo;
 		m_dBb = dBb;
-		nCols = oIn.readLine();
-		m_dCenterLine = Arrays.newDoubleArray(nCols);
-		m_dCenterLine = Arrays.add(m_dCenterLine, m_dBb);
-		int nIndex = 0;
-		double dPrevLon = oIn.parseDouble(nIndex++);
-		double dPrevLat = oIn.parseDouble(nIndex++);
-		m_dCenterLine = Arrays.add(m_dCenterLine, Mercator.lonToMeters(dPrevLon), Mercator.latToMeters(dPrevLat));
-		m_dCenterLine = Arrays.add(m_dCenterLine, oIn.parseDouble(nIndex++));
-		for (; nIndex < nCols;)
-		{
-			double dLon = oIn.parseDouble(nIndex++);
-			double dLat = oIn.parseDouble(nIndex++);
-			
-			m_dCenterLine = Arrays.add(m_dCenterLine, Mercator.lonToMeters(dLon), Mercator.latToMeters(dLat));
-			m_dCenterLine = Arrays.add(m_dCenterLine, oIn.parseDouble(nIndex++));
-			
-			m_dLength += Geo.distanceFromLatLon(dPrevLat, dPrevLon, dLat, dLon);
-			dPrevLon = dLon;
-			dPrevLat = dLat;
-		}
+		
+		double[] dCenterLine = Arrays.newDoubleArray(10);
+		double dStartX = (m_dGeo[1] + m_dGeo[7]) / 2;
+		double dStartY = (m_dGeo[2] + m_dGeo[8]) / 2;
+		double dStartW = Geo.distance(m_dGeo[1], m_dGeo[2], m_dGeo[7], m_dGeo[8]);
+		double dEndX = (m_dGeo[3] + m_dGeo[5]) / 2;
+		double dEndY = (m_dGeo[4] + m_dGeo[6]) / 2;
+		double dEndW = Geo.distance(m_dGeo[3], m_dGeo[4], m_dGeo[5], m_dGeo[6]);
+		double dMidX = (dStartX + dEndX) / 2;
+		double dMidY = (dStartY + dEndY) / 2;
+		double dMidW = (dStartW + dEndW) / 2;
+		dCenterLine = Arrays.add(dCenterLine, new double[]{dStartX, dStartY, dStartW, dMidX, dMidY, dMidW, dEndX, dEndY, dEndW});
+		m_dCenterLine = dCenterLine;
 	}
 	
 	
