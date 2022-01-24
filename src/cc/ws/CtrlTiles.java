@@ -86,7 +86,9 @@ public class CtrlTiles extends HttpServlet
 		18, //{"maxaxles"}, 
 		18, //{"minvehocc"},
 		17, //{"pavement"},
-		17  //{"debug"}
+		17,  //{"debug"}
+		18, // maxplatoonsize
+		18 // minplatoonhdwy
 	};
 	
 	
@@ -526,26 +528,10 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			long lNow = System.currentTimeMillis() - 10;
 			String sId = oReq.getParameter("id");
-			String sFile = g_sCtrlDir + sId + ".bin";
-			TrafCtrl oOriginalCtrl;
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-			{
-				oOriginalCtrl = new TrafCtrl(oIn, false);
-			}
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-			{
-				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
-			}
-			synchronized (this)
-			{
-				for (int[] nTile : oOriginalCtrl.m_oFullGeo.m_oTiles)
-				{
-					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
-					ProcCtrl.updateIndex(sIndex, oOriginalCtrl.m_yId, lNow);
-				}
-			}
+			if (!ProcCtrl.deleteControl(sId))
+				oRes.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			
 		}
 		catch (Exception oEx)
 		{

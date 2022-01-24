@@ -49,7 +49,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	public int m_nLat;
 	int m_nAlt;
 	int m_nHeading;
-	int m_nWidth;
+	public int m_nWidth;
 	public String m_sLabel;
 	public CtrlGeo m_oFullGeo = null;
 	public static Comparator<byte[]> ID_COMP = (byte[] y1, byte[] y2) -> 

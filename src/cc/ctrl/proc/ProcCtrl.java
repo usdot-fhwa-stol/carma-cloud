@@ -5,6 +5,7 @@
  */
 package cc.ctrl.proc;
 
+import cc.ctrl.CtrlGeo;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.CtrlLineArcs;
 import cc.geosrv.Mercator;
@@ -12,6 +13,8 @@ import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.MathUtil;
+import cc.util.Text;
 import cc.util.TileUtil;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -34,6 +37,7 @@ import java.util.Iterator;
  */
 public abstract class ProcCtrl
 {
+	public static final Object INDEXLOCK = new Object();
 	public static double g_dExplodeStep;
 	public static String g_sTrafCtrlDir;
 	public static String g_sTdFileFormat;
@@ -41,6 +45,7 @@ public abstract class ProcCtrl
 	public static int g_nDefaultZoom = Integer.MIN_VALUE;
 	public static final byte CC = 0;
 	public static final byte RSM = 1;
+	public static final byte IHP2 = 2;
 	protected static final double WIDTHTH = 1.5;
 	protected static final double LENLOWTH = 75.0;
 	protected static final double STOPLINEENDOFFSET = 0.6;
@@ -391,7 +396,128 @@ public abstract class ProcCtrl
 //				break; 
 //			case "minvehocc":
 //				break;
+			case "minplatoonhdwy":
+			{
+				ProcMinPlatoonHdwy.renderTiledData(oCtrls, nTiles);
+				break;
+			}
+			case "maxplatoonsize":
+			{
+				ProcMaxPlatoonSize.renderTiledData(oCtrls, nTiles);
+				break;
+			}
 		}
+	}
+	
+	
+	public static boolean deleteControl(String sId)
+		throws Exception
+	{
+		String sFile = g_sTrafCtrlDir + sId + ".bin";
+		TrafCtrl oOriginalCtrl;
+		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+		{
+			oOriginalCtrl = new TrafCtrl(oIn, false);
+		}
+		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+		{
+			oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nDefaultZoom);
+		}
+		
+		return deleteControl(oOriginalCtrl);
+	}
+	
+	
+	public static boolean deleteControl(TrafCtrl oCtrl)
+	{
+		synchronized (INDEXLOCK)
+		{
+			try
+			{
+				for (int[] nTile : oCtrl.m_oFullGeo.m_oTiles)
+				{
+					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nDefaultZoom, nTile[0], nTile[1]) + ".ndx";
+					ProcCtrl.updateIndex(sIndex, oCtrl.m_yId, System.currentTimeMillis() - 10);
+				}
+			}
+			catch (Exception oEx)
+			{
+				oEx.printStackTrace();
+				return false;
+			}
+		}
+		return true;
+	}
+	
+	
+	public static ArrayList<TrafCtrl> getCurrentControls(int nCtrlType, double dMinLon, double dMinLat, double dMaxLon, double dMaxLat, boolean bLoadFullGeo)
+	{
+		ArrayList<TrafCtrl> oCtrls = new ArrayList();
+		try
+		{
+			long lNow = System.currentTimeMillis();
+			Mercator oM = Mercator.getInstance();
+			int[] nTiles = new int[2];
+			oM.lonLatToTile(dMinLon, dMaxLat, g_nDefaultZoom, nTiles);
+			int nStartX = nTiles[0];
+			int nStartY = nTiles[1];
+			oM.lonLatToTile(dMaxLon, dMinLat, g_nDefaultZoom, nTiles);
+			ArrayList<byte[]> oIds = new ArrayList();
+			byte[] yIdBuf = new byte[16];
+			for (int nX = nStartX; nX <= nTiles[0]; nX++)
+			{
+				for (int nY = nStartY; nY <= nTiles[1]; nY++)
+				{
+					Path oIndexFile = Paths.get(String.format(g_sTdFileFormat, nX, g_nDefaultZoom, nX, nY) + ".ndx");
+					try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile))))
+					{
+						while (oIn.available() > 0)
+						{
+							int nType = oIn.readInt();
+							oIn.read(yIdBuf);
+							long lStart = oIn.readLong();
+							long lEnd = oIn.readLong();
+							if (nCtrlType == nType || nCtrlType == Integer.MIN_VALUE && (lStart >= lNow || lEnd > lNow))
+							{
+								byte[] yId = new byte[16];
+								System.arraycopy(yIdBuf, 0, yId, 0, 16);
+								int nIndex = Collections.binarySearch(oIds, yId, TrafCtrl.ID_COMP);
+								if (nIndex < 0)
+									oIds.add(~nIndex, yId);
+							}
+						}
+					}
+				}
+			}
+
+			StringBuilder sIdBuf = new StringBuilder();
+			for (byte[] yId : oIds)
+			{
+				TrafCtrl.getId(yId, sIdBuf);
+				TrafCtrl oCtrl;
+				Path oPath = Paths.get(g_sTrafCtrlDir + sIdBuf.toString() + ".bin");
+				try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
+				{
+					oCtrl = new TrafCtrl(oCtrlIn, false);
+				}
+				if (oCtrl.m_yId[0] != ProcCtrl.CC)
+					continue;
+				
+				if (bLoadFullGeo)
+				{
+					try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
+					{
+						oCtrl.m_oFullGeo = new CtrlGeo(oCtrlIn, false, g_nDefaultZoom);
+					}
+				}
+				oCtrls.add(oCtrl);
+			}
+		}
+		catch (Exception oEx)
+		{
+			oEx.printStackTrace();
+		}
+		return oCtrls;
 	}
 }
 
