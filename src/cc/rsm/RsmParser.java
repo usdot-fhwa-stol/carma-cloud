@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.SimpleTimeZone;
 import java.util.TimeZone;
@@ -73,11 +74,13 @@ public class RsmParser extends DefaultHandler2
 	private int m_nSpeedLimit = Integer.MIN_VALUE;
 	private String m_sSpeedLimitType;
 	
-	public RsmParser()
+	private int[] m_nLonLatAdjustment;
+	public RsmParser(int[] nAdjusts)
 	{
 		super();
 		m_oStartDate = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
 		m_oEndDate = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		m_nLonLatAdjustment = nAdjusts;
 	}
 	
 	@Override
@@ -324,8 +327,16 @@ public class RsmParser extends DefaultHandler2
 		{
 			if (m_bRszRegion)
 			{
-				if (sQname.compareTo("lat") == 0 || sQname.compareTo("long") == 0)
-					m_nRszPaths[m_nRszPathIndex] = Arrays.add(m_nRszPaths[m_nRszPathIndex], Integer.parseInt(m_sBuf.toString()));
+				if (sQname.compareTo("lat") == 0)
+				{
+					int nLat = Integer.parseInt(m_sBuf.toString()) + m_nLonLatAdjustment[1];
+					m_nRszPaths[m_nRszPathIndex] = Arrays.add(m_nRszPaths[m_nRszPathIndex], nLat);
+				}
+				else if (sQname.compareTo("long") == 0)
+				{
+					int nLon = Integer.parseInt(m_sBuf.toString()) + m_nLonLatAdjustment[0];
+					m_nRszPaths[m_nRszPathIndex] = Arrays.add(m_nRszPaths[m_nRszPathIndex], nLon);
+				}
 				else if (sQname.compareTo("pathWidth") == 0)
 					m_nRszPathWidths[m_nRszPathIndex] = Integer.parseInt(m_sBuf.toString());
 			}
@@ -366,8 +377,16 @@ public class RsmParser extends DefaultHandler2
 		{
 			if (m_bClosureRegion)
 			{
-				if (sQname.compareTo("lat") == 0 || sQname.compareTo("long") == 0)
-					m_nLaneClosurePaths[m_nLaneClosurePathIndex] = Arrays.add(m_nLaneClosurePaths[m_nLaneClosurePathIndex], Integer.parseInt(m_sBuf.toString()));
+				if (sQname.compareTo("lat") == 0)
+				{
+					int nLat = Integer.parseInt(m_sBuf.toString()) + m_nLonLatAdjustment[1];
+					m_nLaneClosurePaths[m_nLaneClosurePathIndex] = Arrays.add(m_nLaneClosurePaths[m_nLaneClosurePathIndex], nLat);
+				}
+				else if (sQname.compareTo("long") == 0)
+				{
+					int nLon = Integer.parseInt(m_sBuf.toString()) + m_nLonLatAdjustment[1];
+					m_nLaneClosurePaths[m_nLaneClosurePathIndex] = Arrays.add(m_nLaneClosurePaths[m_nLaneClosurePathIndex], nLon);
+				}					
 				else if (sQname.compareTo("pathWidth") == 0)
 					m_nLaneClosurePathWidths[m_nLaneClosurePathIndex] = Integer.parseInt(m_sBuf.toString());
 			}
@@ -393,6 +412,7 @@ public class RsmParser extends DefaultHandler2
 		iXmlReader.setContentHandler(this);
 		iXmlReader.parse(new InputSource(oIn));
 		
+		ArrayList<TrafCtrl> oReturn = new ArrayList();
 		Proj oProj = new Proj("epsg:4326", "epsg:3785"); // convert geo coordinates to spherical mercator
 		double[] dPoint = new double[2];
 		ArrayList<TrafCtrl> oCtrls = new ArrayList(m_oCtrls.size());
@@ -436,6 +456,7 @@ public class RsmParser extends DefaultHandler2
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 			}
 			ProcMaxSpeed.renderTiledData(oCtrls, oTiles);
+			oReturn.addAll(oCtrls);
 		}
 		oCtrls.clear();
 		oTiles.clear();
@@ -479,13 +500,14 @@ public class RsmParser extends DefaultHandler2
 			updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
 		}
 		ProcClosed.renderTiledData(oCtrls, oTiles);
-		return oCtrls;
+		oReturn.addAll(oCtrls);
+		return oReturn;
 	}
 	
 	
-	public static void main(String[] sArgs)
-		throws Exception
-	{
-		new RsmParser().parseRequest(new BufferedInputStream(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/cc/rsms/rsm-xml--accuracy-test-1--prairie-center-cir--1-of-3.xml"))));
-	}
+//	public static void main(String[] sArgs)
+//		throws Exception
+//	{
+//		new RsmParser().parseRequest(new BufferedInputStream(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/cc/rsms/rsm-xml--accuracy-test-1--prairie-center-cir--1-of-3.xml"))));
+//	}
 }

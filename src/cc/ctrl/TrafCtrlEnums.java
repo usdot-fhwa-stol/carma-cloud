@@ -34,30 +34,30 @@ public abstract class TrafCtrlEnums
 	};
 	
 	
-	public static final String[] UNITS = new String[]
+	public static final String[][] UNITS = new String[][]
 	{
-		null, // signal
-		null, // stop 
-		null, // yield 
-		null, //notowing 
-		null, //restricted 
-		null, //closed", "open", "closed", "taperleft", "taperright", "openleft", "openright 
-		null, //chains", "no", "permitted", "required 
-		null, //direction", "forward", "reverse 
-		null, //lataffinity", "left", "right 
-		null, //latperm", "none", "permitted", "passing-only", "emergency-only 
-		null, //parking", "no", "parallel", "angled 
-		"mph", //minspeed 
-		"mph", //maxspeed 
-		"sec", //minhdwy 
-		"kg", //maxvehmass 
-		"ft", //maxvehheight 
-		"ft", //maxvehwidth 
-		"ft", //maxvehlength 
-		null, //maxaxles 
-		null, //minvehocc
-		null, //pavement
-		null, //debug"
+		new String[0], // signal
+		new String[0], // stop 
+		new String[0], // yield 
+		new String[0], //notowing 
+		new String[0], //restricted 
+		new String[0], //closed", "open", "closed", "taperleft", "taperright", "openleft", "openright 
+		new String[0], //chains", "no", "permitted", "required 
+		new String[0], //direction", "forward", "reverse 
+		new String[0], //lataffinity", "left", "right 
+		new String[0], //latperm", "none", "permitted", "passing-only", "emergency-only 
+		new String[0], //parking", "no", "parallel", "angled 
+		new String[]{"dm/s", "mph", "kph"}, //minspeed 
+		new String[]{"dm/s", "mph", "kph"}, //maxspeed 
+		new String[]{"sec", "sec", "sec"}, //minhdwy 
+		new String[]{"kg", "lb", "kg"}, //maxvehmass 
+		new String[]{"dm", "ft", "m"}, //maxvehheight 
+		new String[]{"dm", "ft", "m"}, //maxvehwidth 
+		new String[]{"dm", "ft", "m"}, //maxvehlength 
+		new String[0], //maxaxles 
+		new String[0], //minvehocc
+		new String[0], //pavement
+		new String[0], //debug"
 	};
 
 	public static final char[] DAYCHARS = new char[]

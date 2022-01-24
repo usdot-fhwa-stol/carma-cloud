@@ -98,6 +98,22 @@ public abstract class Text
     }
 
 
+		/**
+		 * Removes control characters from the buffer.
+		 *
+		 * @param sBuffer the string to remove control characters from.
+		 */
+		public static void removeCtrlChars(StringBuilder sBuffer)
+		{
+			int nLen = sBuffer.length();
+			while (nLen-- > 0)
+			{
+				if (Character.isISOControl(sBuffer.charAt(nLen)))
+					sBuffer.deleteCharAt(nLen);
+			}
+		}
+
+
     /**
      * Removes whitespace from the provided string builder.
      *
@@ -261,7 +277,7 @@ public abstract class Text
 			dVal += nDigit; // add new digit value
 		}
 
-		if (iCharSeq.charAt(nPos++) == '.') // fractional part check
+		if (nPos < nEndPos && iCharSeq.charAt(nPos++) == '.') // fractional part check
 		{
 			double dDiv = 1.0;
 			double dFrac = 0.0;

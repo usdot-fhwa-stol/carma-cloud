@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 
 /**
  *
@@ -94,7 +95,7 @@ public class ProcClosed extends ProcCtrl
 	public static void renderTiledData(ArrayList<TrafCtrl> oCtrls, ArrayList<int[]> nTiles) throws IOException
 	{
 		String[] sEmpty = new String[0];
-		TdLayer oLayer = new TdLayer("closed-poly", sEmpty, sEmpty, TdLayer.POLYGON);
+		TdLayer oLayer = new TdLayer("closed-stripes", new String[]{"color"}, new String[]{"white", "orange"}, TdLayer.LINESTRING);
 		TdLayer oLayerOutline  = new TdLayer("closed-outline", sEmpty, sEmpty, TdLayer.LINESTRING);
 		int[] nTags = new int[0];
 		ArrayList<TrafCtrl> oTaperCtrls = new ArrayList();
@@ -104,17 +105,22 @@ public class ProcClosed extends ProcCtrl
 			oTaperValues.add(TrafCtrlEnums.getCtrlVal("closed", sVal));
 		
 		Collections.sort(oTaperValues);
+		int nOpen = TrafCtrlEnums.getCtrlVal("closed", "open");
 		int nCtrlIndex = oCtrls.size();
 		while (nCtrlIndex-- > 0)
 		{
 			TrafCtrl oCtrl = oCtrls.get(nCtrlIndex);
 			int nCtrlVal = MathUtil.bytesToInt(oCtrl.m_yControlValue);
+			if (nCtrlVal == nOpen) // do not render not open
+				continue;
 			if (Collections.binarySearch(oTaperValues, nCtrlVal) >= 0)
 			{
 				oCtrls.remove(nCtrlIndex);
 				oTaperCtrls.add(oCtrl);
 				String sCtrlVal = TrafCtrlEnums.CTRLS[oCtrl.m_nControlType][nCtrlVal];
-				int nPoints = (int)(oCtrl.m_oFullGeo.m_dLength / 0.2) + 1;
+//				int nPoints = (int)(oCtrl.m_oFullGeo.m_dLength / 0.2) + 1;
+				double[] dC = oCtrl.m_oFullGeo.m_dC;
+				int nPoints = Arrays.size(dC) / 2;
 				double dPercent = 1.0 / nPoints;
 				int nCount = nPoints;
 				int nIncrease = -1;
@@ -124,22 +130,22 @@ public class ProcClosed extends ProcCtrl
 					nIncrease = 1;
 				}
 				
-				double[] dC = oCtrl.m_oFullGeo.m_dC;
+				
 				boolean bRight = sCtrlVal.contains(("right"));
 				double[] dStraight = bRight ? oCtrl.m_oFullGeo.m_dNT : oCtrl.m_oFullGeo.m_dPT;
 				int nLimit = Arrays.size(dC) - 2;
 				double dDist = 0.0;
 				double[] dTaper = Arrays.newDoubleArray(nPoints * 2);
-				dTaper = Arrays.add(dTaper, dStraight[1], dStraight[2]);
+//				dTaper = Arrays.add(dTaper, dStraight[1], dStraight[2]);
 				for (int nIndex = 1; nIndex < nLimit; nIndex += 2)
 				{
 					double dX1 = dC[nIndex];
 					double dY1 = dC[nIndex + 1];
 					double dX2 = dC[nIndex + 2];
 					double dY2 = dC[nIndex + 3];
-					dDist += Geo.distance(dX1, dY1, dX2, dY2);
-					if (dDist >= 0.2)
-					{
+//					dDist += Geo.distance(dX1, dY1, dX2, dY2);
+//					if (dDist >= 0.2)
+//					{
 						dDist = 0.0;
 						double dX3 = dStraight[nIndex];
 						double dY3 = dStraight[nIndex + 1];
@@ -147,7 +153,7 @@ public class ProcClosed extends ProcCtrl
 						nCount += nIncrease;
 						double dOffset = Geo.distance(dX3, dY3, dX1, dY1) * 2 * dPercent * nCount;
 						dTaper = Arrays.add(dTaper, dX3 + Math.cos(dHeading) * dOffset, dY3 + Math.sin(dHeading) * dOffset);
-					}
+//					}
 				}
 				if (bRight)
 				{
@@ -195,8 +201,9 @@ public class ProcClosed extends ProcCtrl
 					{
 						dClippedPoly = Geo.reverseOrder(dClippedPoly);
 					}
-
-					oLayer.add(new TdFeature(dClippedPoly, nTags, oCtrl));
+					
+//					oLayer.add(new TdFeature(dClippedPoly, nTags, oCtrl));
+					renderLines(dPT, dNT, oCtrl, oLayer);
 					dClippedPoly = Arrays.add(dClippedPoly, dClippedPoly[1], dClippedPoly[2]);
 					oLayerOutline.add(new TdFeature(dClippedPoly, nTags, oCtrl));
 				}
@@ -210,9 +217,12 @@ public class ProcClosed extends ProcCtrl
 					continue;
 				}
 				
-				double[] dPoly = Geo.createPolygon(dTapers.get(nTaperCnt++), dTapers.get(nTaperCnt++));
+				double[] dE1 = dTapers.get(nTaperCnt++);
+				double[] dE2 = dTapers.get(nTaperCnt++);
+				double[] dPoly = Geo.createPolygon(dE1, dE2);
 
-				oLayer.add(new TdFeature(dPoly, nTags, oCtrl));
+//				oLayer.add(new TdFeature(dPoly, nTags, oCtrl));
+				renderLines(dE1, dE2, oCtrl, oLayer);
 				dPoly = Arrays.add(dPoly, dPoly[1], dPoly[2]);
 				oLayerOutline.add(new TdFeature(dPoly, nTags, oCtrl));
 			}
@@ -230,6 +240,43 @@ public class ProcClosed extends ProcCtrl
 		}
 	}
 
+	
+	private static void renderLines(double[] dE1, double[] dE2, TrafCtrl oCtrl, TdLayer oLayer)
+	{
+		int[] nColor = new int[]{0, 0};
+		double dLength = 0.0;
+		Iterator<double[]> oIt = Arrays.iterator(dE1, new double[4], 1, 2);
+		while (oIt.hasNext())
+		{
+			double[] dSeg = oIt.next();
+			dLength += Geo.distance(dSeg[0], dSeg[1], dSeg[2], dSeg[3]);
+		}
+		
+		int nStripes = (int)Math.ceil(dLength / 0.5); // 50 cm
+		if (nStripes % 2 == 0) // ensure we start and end with a white stripe
+			++nStripes;
+		double dStep = dLength / nStripes;
+		nStripes = 0;
+		double[] dStripe = Arrays.newDoubleArray(4);
+		double dTemp = 0.0;
+		Iterator<double[]> oIt2 = Arrays.iterator(dE2, new double[4], 1, 2);
+		oIt = Arrays.iterator(dE1, new double[4], 1, 2);
+		while (oIt.hasNext())
+		{
+			double[] dSeg1 = oIt.next();
+			double[] dSeg2 = oIt2.next();
+			dTemp += Geo.distance(dSeg1[0], dSeg1[1], dSeg1[2], dSeg1[3]);
+			if ((int)(dTemp / dStep) != nStripes && dTemp < dLength - 0.25)
+			{
+				dStripe[0] = 1;
+				nColor[1] = nStripes++ % 2;
+				dStripe = Arrays.add(dStripe, dSeg1[2], dSeg1[3]);
+				dStripe = Arrays.add(dStripe, dSeg2[2], dSeg2[3]);
+				oLayer.add(new TdFeature(dStripe, nColor, oCtrl));
+			}
+		}
+		
+	}
 
 	@Override
 	public ArrayList<CtrlLineArcs> combine(ArrayList<CtrlLineArcs> oLanes, double dTol)

@@ -12,6 +12,7 @@ import cc.geosrv.Mercator;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Units;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
@@ -188,7 +189,18 @@ public class GeoLanes extends HttpServlet
 				for (String sVal : sVals)
 					sBuf.append("\"").append(sVal).append("\",");
 				sBuf.setLength(sBuf.length() - 1);
-				sBuf.append("]},");
+				sBuf.append("]");
+				if (TrafCtrlEnums.CTRLS[oCtrl.m_nControlType].length == 1)
+				{
+					int nDisplay = Integer.parseInt(sVals.get(1));
+					String[] sUnits = TrafCtrlEnums.UNITS[oCtrl.m_nControlType];
+					if (sUnits.length > 0)
+					{
+						nDisplay = (int)Math.round(Units.getInstance().convert(sUnits[0], sUnits[1], nDisplay));
+					}
+					sBuf.append(",\"display\":").append(nDisplay);
+				}
+				sBuf.append("},");
 			}
 			if (!oIdsToLoad.isEmpty())
 				sBuf.setLength(sBuf.length() - 1);

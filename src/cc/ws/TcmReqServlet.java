@@ -15,6 +15,7 @@ import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Text;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -28,24 +29,27 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 
 /**
  *
  * @author aaron.cherney
  */
 public class TcmReqServlet extends HttpServlet implements Runnable
-{	
+{
+	protected static final Logger LOGGER = LogManager.getRootLogger();
+
 	private final ArrayDeque<StringBuilder> REPLYBUFS = new ArrayDeque();
 	private final ExecutorService THREADPOOL = Executors.newFixedThreadPool(53);
 	private static int[] IGNORE_CTRLS;
@@ -78,17 +82,18 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 				while ((nByte = oIn.read()) >= 0)
 					sReq.append((char)nByte);
 			}
+
 			TcmReqParser oReqParser;
-			
 			if (sReq.indexOf("<tcrV01>") >= 0)
 				oReqParser = new TcmReqParser();
 			else
 				oReqParser = new TcmReqParser2();
-			
+
 			TcmReq oTcmReq = oReqParser.parseRequest(new ByteArrayInputStream(sReq.toString().getBytes(StandardCharsets.UTF_8)));
-			SimpleDateFormat oSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-			oSdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-			System.out.println(String.format("%s - TCR %s received", oSdf.format(System.currentTimeMillis()), oTcmReq.m_sReqId));
+			Text.removeCtrlChars(sReq); // pack chars into one line
+			sReq.insert(0, "TCR ");
+			LOGGER.debug(sReq);
+
 			ArrayList<TrafCtrl> oResCtrls = new ArrayList();
 			ArrayList<TrafCtrl> oCtrls = new ArrayList();
 			ArrayList<TileIds> oTiles = new ArrayList();
@@ -228,7 +233,6 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 					}
 				}
 			}
-			System.out.println(String.format("%s - TCR %s has %d controls for response", oSdf.format(System.currentTimeMillis()), oTcmReq.m_sReqId, oResCtrls.size()));
 		}
 		catch (Exception oEx)
 		{
@@ -263,9 +267,11 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 			{
 				oOut.append(sBuf);
 			}
-			System.out.println(oHttpClient.getResponseCode()); // amateur logging
-
-			
+			Text.removeCtrlChars(sBuf); // pack chars into one line
+			sBuf.insert(0, ' '); // build log msg in reverse order
+			sBuf.insert(0, oHttpClient.getResponseCode());
+			sBuf.insert(0, "TCM ");
+			LOGGER.debug(sBuf);
 			oHttpClient.disconnect();
 		}
 		catch (Exception oEx)
@@ -273,27 +279,32 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 			oEx.printStackTrace();
 		}
 	}
-	
-	
+
+
 	private class TileIds extends ArrayList<byte[]> implements Comparable<TileIds>
 	{
 		int m_nX;
 		int m_nY;
 
+
 		TileIds()
 		{
 		}
-		
+
+
 		TileIds(int nX, int nY)
 		{
 			setIndices(nX, nY);
 		}
-		
+
+
 		void setIndices(int nX, int nY)
 		{
 			m_nX = nX;
 			m_nY = nY;
 		}
+
+
 		@Override
 		public int compareTo(TileIds o)
 		{
