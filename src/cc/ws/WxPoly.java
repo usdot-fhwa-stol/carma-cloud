@@ -5,13 +5,16 @@
  */
 package cc.ws;
 
+import cc.ctrl.CtrlGeo;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
 import cc.ctrl.proc.ProcCtrl;
 import cc.ctrl.proc.ProcMaxSpeed;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
+import cc.util.Geo;
 import cc.util.MathUtil;
+import cc.util.Units;
 import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.nio.file.Files;
@@ -49,6 +52,8 @@ public class WxPoly extends HttpServlet
 				while ((nByte = oIn.read()) >= 0)
 					sBuf.append((char)nByte);
 			}
+			Units oUnits = Units.getInstance();
+			String[] sUnits = TrafCtrlEnums.UNITS[TrafCtrlEnums.getCtrl("maxspeed")];
 			String sLatLonId = sBuf.toString();
 			if (m_oCurrentIds.containsKey(sLatLonId))
 			{
@@ -66,6 +71,8 @@ public class WxPoly extends HttpServlet
 				String[] sOrds = sLatLonId.split(",");
 				for (int nIndex = 0; nIndex < dPolyBB.length; nIndex++)
 					dPolyBB[nIndex] = Double.parseDouble(sOrds[nIndex]);
+				
+				double[] dMercBB = new double[]{Mercator.lonToMeters(dPolyBB[0]), Mercator.latToMeters(dPolyBB[1]), Mercator.lonToMeters(dPolyBB[2]), Mercator.latToMeters(dPolyBB[3])};
 
 				int[] nTiles = new int[2];
 				Mercator.getInstance().lonLatToTile(dPolyBB[0], dPolyBB[3], CtrlTiles.g_nZoom, nTiles); // determine the correct tiles for the default zoom level
@@ -128,14 +135,23 @@ public class WxPoly extends HttpServlet
 				{
 					String sId = TrafCtrl.getId(yId);
 					TrafCtrl oCtrl;
-					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(CtrlTiles.g_sCtrlDir + sId + ".bin"))))
+					Path oFile = Paths.get(CtrlTiles.g_sCtrlDir + sId + ".bin");
+					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(oFile)))
 					{
 						oCtrl = new TrafCtrl(oIn, false);
 					}
-					int nSpeed = MathUtil.bytesToInt(oCtrl.m_yControlValue);
-//							if (nSpeed <= 25)
-//								continue;
-					TrafCtrl oSpdLimit = new TrafCtrl("maxspeed", nSpeed - 10, lNow, oCtrl, "weather", false, ProcCtrl.CC);
+					if (!oCtrl.m_bRegulatory)
+						continue;
+					
+					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(oFile)))
+					{
+						oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);
+					}
+					if (!Geo.boundingBoxesIntersect(dMercBB, oCtrl.m_oFullGeo.m_dBB))
+						continue;
+					int nSpeedMph = (int)Math.round(oUnits.convert(sUnits[0], sUnits[1], MathUtil.bytesToInt(oCtrl.m_yControlValue))) - 10;
+					int nNewSpeed = (int)Math.round(oUnits.convert(sUnits[1], sUnits[0], nSpeedMph));
+					TrafCtrl oSpdLimit = new TrafCtrl("maxspeed", nNewSpeed, lNow, oCtrl, "weather", false, ProcCtrl.CC);
 					oSpdLimit.m_lEnd = lNow + 1800000;
 					oSpdLimit.write(CtrlTiles.g_sCtrlDir, ProcCtrl.g_dExplodeStep, CtrlTiles.g_nZoom, ProcCtrl.CC);
 					ProcCtrl.updateTiles(oTiles, oSpdLimit.m_oFullGeo.m_oTiles);

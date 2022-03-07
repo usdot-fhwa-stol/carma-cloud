@@ -342,7 +342,7 @@ public class IHPResponse
 						oAdvisorySeg.m_dAdvisorySpeed = Math.max(Math.min(oAdvisorySeg.m_dAdvisorySpeed, oAdvisorySeg.m_dPreviousAdvisorySpeed + IHP.MAX_DIFF), oAdvisorySeg.m_dPreviousAdvisorySpeed - IHP.MAX_DIFF); // equation 8
 						if (oBounds.m_nConsecutiveTimes > IHP.CONSECUTIVE_TIME_INTERVAL_TRIGGER)
 						{
-							TrafCtrl oSpeed = new TrafCtrl("maxspeed", (int)oAdvisorySeg.m_dAdvisorySpeed, lNow, lNow, oAdvisorySeg.m_dCenterLine, "IHP2 Speed Harmonization", false, ProcCtrl.IHP2);
+							TrafCtrl oSpeed = new TrafCtrl("maxspeed", (int)oAdvisorySeg.m_dAdvisorySpeed, new ArrayList(), lNow, lNow, oAdvisorySeg.m_dCenterLine, "IHP2 Speed Harmonization", false, ProcCtrl.IHP2);
 							oCtrls.add(oSpeed);
 							oBounds.m_oCtrls.add(oSpeed);
 						}
