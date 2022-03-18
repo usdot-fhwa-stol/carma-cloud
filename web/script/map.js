@@ -16,7 +16,7 @@ let oListeners = ['click', 'mousemove'];
 let nMode = 0; // {0: no handlers, 1: travel mode, 2: wxpoly mode, 3: add mode, 4: edit mode, 5: delete mode}
 let nCtrlZoom;
 let aCtrlEnums;
-let aEditLayers = ['direction', 'latperm', 'closed', 'maxspeed', 'minhdwy', 'maxplatoonsize', 'minhlatoonhdwy'];
+let aEditLayers = ['direction', 'latperm', 'closed', 'maxspeed', 'minhdwy', 'maxplatoonsize', 'minplatoonhdwy'];
 let aDeleteLayers = ['direction', 'stop', 'yield', 'latperm', 'closed', 'maxspeed', 'minhdwy', 'maxplatoonsize', 'minplatoonhdwy'];
 let nCtrlType;
 let oCtrlUnits;
@@ -372,17 +372,10 @@ async function initialize()
 	}).promise();
 	let pSourceLayers = $.getJSON('mapbox/sourcelayers.json').promise();
 	let pJumpTo = $.getJSON('mapbox/jumpto.json').promise();
-//	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
-//		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<your access token goes here>'});
 	
 	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
-		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<insert mapbox acces token>'});
+		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<insert mapbox access token>'});
 
-
-
-//	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/streets-v11.json', 'attributionControl': false,
-//			'minZoom': 14, 'maxZoom': 22, 'center': [-76.8552198, 38.7474584], 'zoom': 17});
-//			'minZoom': 14, 'maxZoom': 22, 'center': [-77.20083, 38.9479027-77.149, 38.956], 'zoom': 17});
 
 	oMap.dragRotate.disable(); // disable map rotation using right click + drag
 	oMap.touchZoomRotate.disableRotation(); // disable map rotation using touch rotation gesture
@@ -391,8 +384,6 @@ async function initialize()
 
 	oMap.on('load', async function()
 	{
-//		oMap.addControl(new MapControlIcons([{t:'Set Route', i:'setroute'}, {t:'Travel',i:'travel'}, {t:'Weather Polygon', i:'drawpoly'}]), 'top-right');
-//		oMap.addControl(new MapControlIcons([{t:'Weather Polygon', i:'drawpoly'}, {t:'Tile Boundaries',i:'tilebounds'}]), 'top-right');
 		oMap.addControl(new MapControlIcons([{t:'Weather Polygon', i:'drawpoly'}]), 'top-right');
 		oMap.addControl(new MapControlIcons([{t:'Layer Dialog',i:'layers'}, {t:'Add Control', i:'add'}, {t:'Edit Control',i:'editpath'}, {t:'Delete Control',i:'delete'}]), 'top-right');
 		oMap.addControl(new MapControlIcons([{t:'Jump To',i:'jumpto'}]), 'top-right');
@@ -425,17 +416,6 @@ async function initialize()
 		$('button[title|="Delete Control"]').click(carmaclStartDelete);
 		buildJumpToDialog(await pJumpTo);
 		$('button[title|="Jump To"]').click(toggleJumpTo);
-		
-//		let aCoords = [[38.9548969,-77.1510210].reverse(),
-//[38.9586935,-77.1530997].reverse(),
-//[38.9571595,-77.1493052].reverse(),
-//[38.9586935,-77.1493052].reverse(),
-//[38.9548969,-77.1510210].reverse()];
-		
-//		let aCoords = [[-104.6559414,41.1469701],[-104.6545730,41.1469766],[-104.6531657,41.1470542],[-104.6516786,41.1472137],[-104.6514132,41.1472500],[-104.6509676,41.1473159],[-104.6496329,41.1475712],[-104.6484781,41.1478577],[-104.6481092,41.1479705],[-104.6559426,41.1469377],[-104.6545712,41.1469443],[-104.6531611,41.1470220],[-104.6516713,41.1471818],[-104.6514052,41.1472182],[-104.6509587,41.1472842],[-104.6496211,41.1475401],[-104.6484632,41.1478274],[-104.6480925,41.1479407]];
-//		oMap.addSource('test-line', {'type': 'geojson', 'data': {'type': 'Feature', 'geometry': {'type': 'LineString', 'coordinates': aCoords}}});
-//		oMap.addLayer({'id': 'test-line', 'type': 'line', 'source': 'test-line', 'layout':{'line-cap':'round', 'line-join':'round'}, 'paint':{'line-opacity': ['case', ['boolean', ['get', 'hidden']], 0, ['boolean', ['get', 'include'], false], 1, 0.4], 'line-color': 'black', 'line-gap-width':['case', ['has', 'bridge'], 3, 0], 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 0.0, ['case', ['boolean', ['feature-state', 'hover'], false], 3.0 , ['boolean', ['feature-state', 'detector'], false], 3.0, 1.0], 10.0, ['case', ['boolean', ['feature-state', 'hover'], false], 6.0, ['boolean', ['feature-state', 'detector'], false], 6.0, 4.0], 24.0, ['case', ['boolean', ['feature-state', 'hover'], false], 14.0, ['boolean', ['feature-state', 'detector'], false], 14.0, 12.0]]}});
-//		oMap.addLayer({'id': 'test-point', 'type': 'circle', 'source': 'test-line', 'paint': {'circle-radius': 5, 'circle-color': 'white'}});
 	});
 	setCtrlVars(await pCtrlInfo);
 }
@@ -574,19 +554,21 @@ function addCtrlSources()
 	for (let oLayer of oSrc.layers)
 	{
 		if (oMap.getLayer(oLayer.id) === undefined)
+		{
 			oMap.addLayer(oLayer, 'hl-pt');
+		}
 		let sCheckboxName = oLayer.id;
 		let nIndex = sCheckboxName.indexOf('-');
 		if (nIndex > 0)
+		{
 			sCheckboxName = sCheckboxName.substring(0, nIndex);
+		}
 		aCheckboxes.push(sCheckboxName);
 	}
 	for (let sCheckbox of aCheckboxes.values())
+	{
 		setLayerOpacity(sCheckbox, $('#all-layers input[name="' + sCheckbox + '"]').prop('checked') ? 1.0 : 0.0);
-//	$(':checkbox').each(function(index, element) 
-//	{
-//		setLayerOpacity(element.name, element.checked ? 1.0 : 0.0);
-//	});
+	}
 }
 
 
