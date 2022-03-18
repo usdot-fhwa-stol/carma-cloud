@@ -121,6 +121,19 @@
 
 
 <servlet>
+ <servlet-name>TcmAck</servlet-name>
+ <servlet-class>cc.ws.TcmAckServlet</servlet-class>
+
+ <load-on-startup>1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>TcmAck</servlet-name>
+ <url-pattern>/carmacloud/tcmack/*</url-pattern>
+</servlet-mapping>
+
+
+<servlet>
  <servlet-name>GeoLanes</servlet-name>
  <servlet-class>cc.ws.GeoLanes</servlet-class>
 
