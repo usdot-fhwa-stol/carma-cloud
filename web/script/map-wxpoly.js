@@ -79,7 +79,14 @@ function carmaclEndWx({target, lngLat, point})
 				url: '/api/wxpoly',
 				data: aRing[3][0].toFixed(7) + ',' + aRing[3][1].toFixed(7)+ ',' + aRing[1][0].toFixed(7) + ',' + aRing[1][1].toFixed(7),
 				type: 'POST'
-			}).done(weatherpolySuccess);
+			}).done(weatherpolySuccess).always(function() 
+			{
+				setTimeout(function() 
+				{
+					oMap.setPaintProperty('w-line', 'line-opacity', 0);
+					oMap.setPaintProperty('w-poly', 'fill-opacity', 0);	
+				}, 2000);
+			});
 		}
 	}
 }

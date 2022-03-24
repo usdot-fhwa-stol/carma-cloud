@@ -44,12 +44,14 @@ table td
 
 table td:not(:first-child)
 {
-	padding-left: 25px;
+	padding-left: 10px;
 }
 
-table td:last-child
+table td:nth-child(2)
 {
-	width: 100%;
+	width: 200px;
+	max-width: 200px;
+	overflow: hidden;
 }
 
 table input,select

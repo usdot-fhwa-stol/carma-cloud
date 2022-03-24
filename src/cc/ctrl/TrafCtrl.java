@@ -19,6 +19,7 @@ import cc.util.Text;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.channels.Channels;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
@@ -28,7 +29,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	String m_sVersion = "0.1";
 	public byte[] m_yId;
 	long m_lUpdated;
-	final ArrayList<Integer> m_nVTypes = new ArrayList();
+	public final ArrayList<Integer> m_nVTypes = new ArrayList();
 
 	public long m_lStart; // defaults to max range
 	public long m_lEnd = Long.MAX_VALUE;
@@ -49,7 +50,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	public int m_nLat;
 	int m_nAlt;
 	int m_nHeading;
-	int m_nWidth;
+	public int m_nWidth;
 	public String m_sLabel;
 	public CtrlGeo m_oFullGeo = null;
 	public static Comparator<byte[]> ID_COMP = (byte[] y1, byte[] y2) -> 
@@ -71,18 +72,23 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		super();
 		m_bRegulatory = true;
 		m_sLabel = "";
-		for (int nIndex = 3; nIndex < TrafCtrlEnums.VTYPES.length - 2; nIndex++)
-			m_nVTypes.add(nIndex); // exclude pedestrians, rail, and unknown
+		if (m_nVTypes.isEmpty())
+		{
+			for (int nIndex = 3; nIndex < TrafCtrlEnums.VTYPES.length - 2; nIndex++)
+				m_nVTypes.add(nIndex); // exclude pedestrians, rail, and unknown
+			
+			Collections.sort(m_nVTypes);
+		}
 	}
 	
 	
 	public TrafCtrl(String sControlType, int nControlValue, long lTime, TrafCtrl oCtrl, String sLabel, boolean bReg, byte ySrc)
 	{
-		this(sControlType, nControlValue, lTime, 0, oCtrl, sLabel, bReg, ySrc);
+		this(sControlType, nControlValue, null, lTime, 0, oCtrl, sLabel, bReg, ySrc);
 	}
 	
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, TrafCtrl oCtrl, String sLabel, boolean bReg, byte ySrc)
+	public TrafCtrl(String sControlType, int nControlValue, ArrayList<Integer> nVTypes, long lTime, long lStart, TrafCtrl oCtrl, String sLabel, boolean bReg, byte ySrc)
 	{
 		this();
 		m_nControlType = TrafCtrlEnums.getCtrl(sControlType);
@@ -97,8 +103,18 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		m_nHeading = oCtrl.m_nHeading;
 		m_sLabel = sLabel;
 		m_bRegulatory = bReg;
+		m_nWidth = oCtrl.m_nWidth;
 		for (TrafCtrlPt oPt : oCtrl)
 			add(new TrafCtrlPt(oPt.m_nX, oPt.m_nY, oPt.m_nZ, oPt.m_nW));
+		
+		if (nVTypes != null)
+		{
+			m_nVTypes.clear();
+			Collections.sort(nVTypes);
+			for (Integer nVtype : nVTypes)
+				m_nVTypes.add(nVtype);
+			
+		}
 		
 		generateId(ySrc);
 	}
@@ -109,7 +125,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		this(sControlType, TrafCtrlEnums.getCtrlVal(sControlType, sControlValue), lTime, oCtrl, sLabel, bReg, ySrc);
 	}
 	
-	public TrafCtrl(String sControlType, int nControlValue, long lTime, long lStart, double[] dLineArcs, String sLabel, boolean bReg, byte ySrc)
+	public TrafCtrl(String sControlType, int nControlValue, ArrayList<Integer> nVtypes, long lTime, long lStart, double[] dLineArcs, String sLabel, boolean bReg, byte ySrc)
 	{
 		this(sControlType, lTime, dLineArcs);
 		m_sLabel = sLabel;
@@ -120,12 +136,20 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		else
 			m_yControlValue = MathUtil.intToBytes(nControlValue, new byte[4]);
 		
+		if (nVtypes != null)
+		{
+			m_nVTypes.clear();
+			Collections.sort(nVtypes);
+			for (Integer nVtype : nVtypes)
+				m_nVTypes.add(nVtype);
+		}
+		
 		generateId(ySrc);
 	}
 	
 	public TrafCtrl(String sControlType, int nControlValue, long lTime, double[] dLineArcs, String sLabel, boolean bReg, byte ySrc)
 	{
-		this(sControlType, nControlValue, lTime, 0, dLineArcs, sLabel, bReg, ySrc);
+		this(sControlType, nControlValue, null, lTime, 0, dLineArcs, sLabel, bReg, ySrc);
 	}
 	
 	
@@ -188,6 +212,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		m_nVTypes.ensureCapacity(nCount);
 		while (nCount-- > 0)
 			m_nVTypes.add(oIn.readInt());
+		Collections.sort(m_nVTypes);
 
 		m_lStart = oIn.readLong();
 		m_lEnd = oIn.readLong();
@@ -489,13 +514,13 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 
 		sBuf.append("\t\"proj\":\"").append(m_sProj).append("\",\n");
 		sBuf.append("\t\"datum\":\"").append(m_sDatum).append("\",\n");
-		
+		sBuf.append("\t\"label\":\"").append(m_sLabel).append("\",\n");
 		sBuf.append("\t\"time\":\"").append(oFormat.format(new Date(m_lTime))).append("\",\n");
+		
 		sBuf.append("\t\"lon\":").append(m_nLon).append(",\n");
 		sBuf.append("\t\"lat\":").append(m_nLat).append(",\n");
 		sBuf.append("\t\"alt\":").append(m_nAlt).append(",\n");
 		sBuf.append("\t\"heading\":").append(m_nHeading).append(",\n");
-
 		sBuf.append("\t\"points\":\n\t["); // start point array
 		for (TrafCtrlPt oPt : this) // include path points
 		{
@@ -631,7 +656,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		sBuf.append("\t\t\t<reflon>").append(m_nLon).append("</reflon>\n");
 		sBuf.append("\t\t\t<reflat>").append(m_nLat).append("</reflat>\n");
 		sBuf.append("\t\t\t<refelv>").append(m_nAlt).append("</refelv>\n");
-//		sBuf.append("\t\t\t<refwidth>").append(m_nWidth).append("</refwidth>\n");
+		sBuf.append("\t\t\t<refwidth>").append(m_nWidth).append("</refwidth>\n");
 		sBuf.append("\t\t\t<heading>").append(m_nHeading).append("</heading>\n");
 		sBuf.append("\t\t\t<nodes>\n");
 		int nEnd = Math.min(size(), (nPtsIndex / 256 + 1) * 256);

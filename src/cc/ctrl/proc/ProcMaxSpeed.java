@@ -192,6 +192,8 @@ public class ProcMaxSpeed extends ProcCtrl
 			oChars.put(oEntry.getKey(), dTemp);
 			oCharPts.put(oEntry.getKey(), oEntry.getValue().length / 2);
 		}
+		String[] sUnits = TrafCtrlEnums.UNITS[TrafCtrlEnums.getCtrl("maxspeed")];
+		Units oUnits = Units.getInstance();
 		for (int[] nTile : nTiles)
 		{
 			int nX = nTile[0];
@@ -255,7 +257,7 @@ public class ProcMaxSpeed extends ProcCtrl
 					oAt.translate(dPt[0], dPt[1]);
 					oAt.rotate(dHdg - Mercator.PI_OVER_TWO, 0, 0);
 					oAt.scale(0.45, 0.45);
-					String sVal = Integer.toString(MathUtil.bytesToInt(oCtrl.m_yControlValue));
+					String sVal = Integer.toString((int)Math.round(oUnits.convert(sUnits[0], sUnits[1], MathUtil.bytesToInt(oCtrl.m_yControlValue))));
 					if (sVal.length() == 1) // speed limit zero exception
 						sVal = "0" + sVal;
 					int nNumber = Integer.parseInt(Character.toString(sVal.charAt(0)));

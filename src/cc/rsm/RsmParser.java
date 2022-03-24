@@ -450,7 +450,7 @@ public class RsmParser extends DefaultHandler2
 						dLineArcs = Arrays.add(dLineArcs, dWidth);
 					}
 				}
-				TrafCtrl oCtrl = new TrafCtrl("maxspeed", m_nSpeedLimit, System.currentTimeMillis(), m_oStartDate.getTimeInMillis(), dLineArcs, "rsm", true, ProcCtrl.RSM);
+				TrafCtrl oCtrl = new TrafCtrl("maxspeed", m_nSpeedLimit, null, System.currentTimeMillis(), m_oStartDate.getTimeInMillis(), dLineArcs, "rsm", true, ProcCtrl.RSM);
 				oCtrls.add(oCtrl);
 				oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, ProcCtrl.RSM);
 				updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);
@@ -494,7 +494,7 @@ public class RsmParser extends DefaultHandler2
 					dLineArcs = Arrays.add(dLineArcs, dWidth);
 				}
 			}
-			TrafCtrl oCtrl = new TrafCtrl("closed", TrafCtrlEnums.getCtrlVal("closed", "notopen"), System.currentTimeMillis(), m_oStartDate.getTimeInMillis(), dLineArcs, "rsm", true, ProcCtrl.RSM);
+			TrafCtrl oCtrl = new TrafCtrl("closed", TrafCtrlEnums.getCtrlVal("closed", "notopen"), null, System.currentTimeMillis(), m_oStartDate.getTimeInMillis(), dLineArcs, "rsm", true, ProcCtrl.RSM);
 			oCtrls.add(oCtrl);
 			oCtrl.write(g_sTrafCtrlDir, g_dExplodeStep, g_nDefaultZoom, ProcCtrl.RSM);
 			updateTiles(oTiles, oCtrl.m_oFullGeo.m_oTiles);

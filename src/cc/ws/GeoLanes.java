@@ -183,7 +183,11 @@ public class GeoLanes extends HttpServlet
 				}
 				sBuf.append("],\"label\":\"").append(oCtrl.m_sLabel).append("\"");
 				sBuf.append(",\"reg\":").append(oCtrl.m_bRegulatory);
-				sBuf.append(",\"vals\":[");
+				sBuf.append(",\"vtypes\":[");
+				for (int nVTypeIndex = 0; nVTypeIndex < oCtrl.m_nVTypes.size(); nVTypeIndex++)
+					sBuf.append(oCtrl.m_nVTypes.get(nVTypeIndex)).append(',');
+				sBuf.setLength(sBuf.length() - 1);
+				sBuf.append("],\"vals\":[");
 				ArrayList<String> sVals = new ArrayList(4);
 				TrafCtrlEnums.getCtrlValString(oCtrl.m_nControlType, oCtrl.m_yControlValue, sVals);
 				for (String sVal : sVals)
