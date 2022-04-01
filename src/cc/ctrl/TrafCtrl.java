@@ -652,7 +652,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		
 		sBuf.append("\t\t\t<proj>").append(m_sProj).append("</proj>\n");
 		sBuf.append("\t\t\t<datum>").append(m_sDatum).append("</datum>\n");
-		sBuf.append("\t\t\t<reftime>").append(m_lTime).append("</reftime>\n");
+		sBuf.append("\t\t\t<reftime>").append(m_lTime / 1000 / 60).append("</reftime>\n"); // convert to EpochMins
 		sBuf.append("\t\t\t<reflon>").append(m_nLon).append("</reflon>\n");
 		sBuf.append("\t\t\t<reflat>").append(m_nLat).append("</reflat>\n");
 		sBuf.append("\t\t\t<refelv>").append(m_nAlt).append("</refelv>\n");
