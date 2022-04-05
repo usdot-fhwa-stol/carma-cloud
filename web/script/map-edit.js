@@ -387,6 +387,8 @@ function carmaclHoverExistingLeave(oEvent)
 
 function carmaclClickEdit(oEvent)
 {
+	if (nHoverId === undefined || nHoverId < 0)
+        return;
 	oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
 	oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
 	oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
@@ -401,7 +403,7 @@ function carmaclClickEdit(oEvent)
 	let aCtrlVals = oData.features[nSelectedId].properties.vals;
 	let nDisplayVal = oData.features[nSelectedId].properties.display;
 	let sHtml = '<form id="edit-form"><table>';
-	sHtml += `<tr><td>vehicle types</td><td id="vtype-des">All<td><i class="fa fa-edit clickable"></tr>`;
+	sHtml += `<tr><td>Vehicle types</td><td id="vtype-des">All<td><i class="fa fa-edit clickable"></tr>`;
 	let nType;
 	aOriginalValues = [];
 	sOriginalLabel = oData.features[nSelectedId].properties.label;
@@ -414,7 +416,7 @@ function carmaclClickEdit(oEvent)
 	
 	if (aCtrlEnums[nCtrlType].length === 1) // not an enumerated type
 	{
-		sHtml += `<tr><td>value</td><td><input id="edit-input" name="value" value="${nDisplayVal}"></td><td>${oCtrlUnits[nCtrlType][1] ? '&nbsp;' + oCtrlUnits[nCtrlType][1] : ''}</td></tr>`;
+		sHtml += `<tr><td>Value</td><td><input id="edit-input" name="value" value="${nDisplayVal}"></td><td>${oCtrlUnits[nCtrlType][1] ? '&nbsp;' + oCtrlUnits[nCtrlType][1] : ''}</td></tr>`;
 		nType = 0;
 		aOriginalValues.push(nDisplayVal);
 //		aOriginalValues.push(aCtrlVals[1]);
@@ -530,7 +532,8 @@ function carmaclClickEdit(oEvent)
 	
 	$('#edit-regulatory').on('change', carmaclCheckDirtyReg);
 	$('#edit-save').prop('disabled', true);
-	$('#dlgEdit').dialog('option', 'title', `Edit ${aCtrlEnums[nCtrlType][0]} Control`);
+	let sCtrl = aCtrlEnums[nCtrlType][0];
+	$('#dlgEdit').dialog('option', 'title', `Edit ${sCtrl[0].toUpperCase() + sCtrl.slice(1)} Control`);
 	$('#dlgEdit').dialog('open');
 	document.activeElement.blur();
 }

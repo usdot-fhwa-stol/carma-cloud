@@ -789,7 +789,7 @@ function carmaclEndLanePoly({target, lngLat, point})
 	$('#delete-layers input[type="radio"]').prop('disabled', true);
 	oPopup.remove();
 	let sHtml = '<form id="edit-form"><table>';
-	sHtml += `<tr><td>vehicle types</td><td id="vtype-des">All<td><i class="fa fa-edit clickable"></tr>`;
+	sHtml += `<tr><td>Vehicle types</td><td id="vtype-des">All<td><i class="fa fa-edit clickable"></tr>`;
 	let sType = aCtrlEnums[nCtrlType][0];
 	if (sType === 'yield' || sType === 'stop')
 	{
@@ -797,7 +797,7 @@ function carmaclEndLanePoly({target, lngLat, point})
 	}
 	else if (aCtrlEnums[nCtrlType].length === 1) // not an enumerated type
 	{
-		sHtml += `<tr><td>value</td><td><input id="edit-input" name="value"></td><td>${oCtrlUnits[nCtrlType] && oCtrlUnits[nCtrlType][1] ? oCtrlUnits[nCtrlType][1] : ''}</td></tr>`;
+		sHtml += `<tr><td>Value</td><td><input id="edit-input" name="value"></td><td>${oCtrlUnits[nCtrlType] && oCtrlUnits[nCtrlType][1] ? oCtrlUnits[nCtrlType][1] : ''}</td></tr>`;
 	}
 	else
 	{
@@ -873,7 +873,8 @@ function carmaclEndLanePoly({target, lngLat, point})
 		aValid[0] = true;
 	}
 	aValid[1] = true;
-	$('#dlgEdit').dialog('option', 'title', `Confirm Adding ${aCtrlEnums[nCtrlType][0]} Control`);
+	let sCtrl = aCtrlEnums[nCtrlType][0];
+	$('#dlgEdit').dialog('option', 'title', `Confirm Adding ${sCtrl[0].toUpperCase() + sCtrl.slice(1)} Control`);
 	$('#dlgEdit').dialog('open');
 	document.activeElement.blur();
 	
