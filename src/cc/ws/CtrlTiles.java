@@ -662,7 +662,7 @@ public class CtrlTiles extends HttpServlet
 			sBuf.append(",\"label\":\"").append(oCtrlToWrite.m_sLabel).append("\"");
 			sBuf.append(",\"vtypes\":[");
 			for (int nVTypeIndex = 0; nVTypeIndex < oCtrlToWrite.m_nVTypes.size(); nVTypeIndex++)
-				sBuf.append("\"").append(TrafCtrlEnums.VTYPES[oCtrlToWrite.m_nVTypes.get(nVTypeIndex)]).append("\",");
+				sBuf.append(oCtrlToWrite.m_nVTypes.get(nVTypeIndex)).append(",");
 			sBuf.setLength(sBuf.length() - 1);
 			sBuf.append("],\"reg\":").append(oCtrlToWrite.m_bRegulatory);
 			sBuf.append(",\"vals\":[");
