@@ -6,7 +6,7 @@ jobs:
     working_directory: /tmp
     steps:
       - run: git clone https://github.com/usdot-fhwa-stol/carma-cloud.git cc
-      - run: wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.60/bin/apache-tomcat-9.0.62.tar.gz && tar -xzf apache-tomcat-9.0.62.tar.gz && mv apache-tomcat-9.0.62 tomcat
+      - run: wget http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.62/bin/apache-tomcat-9.0.62.tar.gz && tar -xzf apache-tomcat-9.0.62.tar.gz && mv apache-tomcat-9.0.62 tomcat
       - run: mkdir -p tomcat/webapps/carmacloud/ROOT && mv cc/web/* tomcat/webapps/carmacloud/ROOT/
       - run: find ./cc/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
       - run: javac -cp "tomcat/lib/servlet-api.jar:cc/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
