@@ -16,10 +16,11 @@ let oListeners = ['click', 'mousemove'];
 let nMode = 0; // {0: no handlers, 1: travel mode, 2: wxpoly mode, 3: add mode, 4: edit mode, 5: delete mode}
 let nCtrlZoom;
 let aCtrlEnums;
-let aEditLayers = ['direction', 'latperm', 'closed', 'maxspeed', 'minhdwy'];
-let aDeleteLayers = ['direction', 'stop', 'yield', 'latperm', 'closed', 'maxspeed', 'minhdwy'];
+let aEditLayers = ['direction', 'latperm', 'closed', 'maxspeed', 'minhdwy', 'maxplatoonsize', 'minplatoonhdwy'];
+let aDeleteLayers = ['direction', 'stop', 'yield', 'latperm', 'closed', 'maxspeed', 'minhdwy', 'maxplatoonsize', 'minplatoonhdwy'];
 let nCtrlType;
 let oCtrlUnits;
+let oVTypes;
 let aLabelOpts = ['', 'workzone', 'incident', 'weather', 'other'];
 let nOtherIndex = aLabelOpts.indexOf('other');
 let aValid = [false, false];
@@ -30,6 +31,7 @@ function setCtrlVars(oCtrlInfo)
 	nCtrlZoom = oCtrlInfo.zoom;
 	aCtrlEnums = oCtrlInfo.enums;
 	oCtrlUnits = oCtrlInfo.units;
+	oVTypes = {'types': oCtrlInfo.vtypes, 'groups': oCtrlInfo.vtypegroups};
 }
 
 function pointToPaddedBounds(oPoint, dPad)
@@ -203,7 +205,7 @@ function setLayerOpacity(sLayerName, dOpacity)
 function buildLayerDialog()
 {
 	let oDlg = $('#dlgLayers');
-	oDlg.dialog({autoOpen: false, position: {my: 'right bottom', at: 'right-8 bottom-8', of: '#mapid'}, resizable: false, draggable: false, width: 190});
+	oDlg.dialog({autoOpen: false, position: {my: 'right bottom', at: 'right-8 bottom-8', of: '#mapid'}, resizable: false, draggable: false, width: 230});
 
 	const oNameSet = {};
 	let sHtml = '<ul id="all-layers">';
@@ -257,7 +259,8 @@ function buildLayerDialog()
 function buildEditDialog()
 {
 	let oDlg = $('#dlgEdit');
-	oDlg.dialog({autoOpen: false, position: {my: 'center', at: 'center', of: '#mapid'}, resizable: false, width: 400, height: 300});
+	oDlg.dialog({autoOpen: false, position: {my: 'center', at: 'center', of: '#mapid'}, resizable: false, width: 500, height: 300, dragStart: positionVTypes,
+		drag: positionVTypes, dragStop: positionVTypes, open: positionVTypes, close: function(){$('#dlgVTypes').dialog('close');}});
 	let sHtml = '<div class="overlay" id="dlg-edit-overlay"><p class="centered-element"></p></div><div id="edit-content"></div><div class="dlg-buttons"><button id="edit-cancel" class="w3-button w3-dark-gray">Cancel</button><button id="edit-save" class="w3-button w3-dark-gray" disabled>Save</button></div>';
 	oDlg.html(sHtml);
 }
@@ -272,6 +275,91 @@ function buildDeleteDialog()
 	$('#delete-confirm').on('click', deleteControl);
 }
 
+function buildVTypesDialog()
+{
+	let oDlg = $('#dlgVTypes');
+	oDlg.dialog({autoOpen: false, position: {my: 'left top', at: 'right top', of: '#dlgEdit'}, resizable: false, width:'auto', draggable: false, dialogClass: 'no-title-form'});
+	let sHtml = `<form id="vtype-form"><ul>`;
+	for (let [sKey, aList] of Object.entries(oVTypes.groups))
+	{
+		if (aList.length < 4)
+		{
+			sHtml += `<li class="vtypegroup"><div><input type="checkbox" checked></input>&nbsp;${sKey}</div><ul class="vtypeitems">`;
+			for (let sVtype of aList.values())
+				sHtml += `<li class="vtypeitem"><input type="checkbox" checked name="vtypes" value=${oVTypes.types.findIndex((element) => element === sVtype)}></div></input>&nbsp;${sVtype}</li>`;
+			sHtml += `</ul></li>`;
+		}
+	}
+	sHtml += `</ul>`;
+	sHtml += `<ul>`;
+	for (let [sKey, aList] of Object.entries(oVTypes.groups))
+	{
+		if (aList.length > 4)
+		{
+			sHtml += `<li class="vtypegroup"><div><input type="checkbox" checked></input>&nbsp;${sKey}</div><ul class="vtypeitems">`;
+			for (let sVtype of aList.values())
+				sHtml += `<li class="vtypeitem"><input type="checkbox" checked name="vtypes" value=${oVTypes.types.findIndex((element) => element === sVtype)}></input>&nbsp;${sVtype}</li>`;
+			sHtml += `</ul></li>`;
+		}
+	}
+	sHtml += `</ul></form>`;
+	
+	oDlg.html(sHtml);
+	$('.vtypegroup > div > input[type="checkbox"]').on('click', function()
+	{
+		let bCheck = $(this).is(':checked');
+		$(this).parent().parent().find('.vtypeitem > input[type="checkbox"]').prop('checked', bCheck);
+		textVTypes($(this));
+	});
+	
+	$('.vtypeitem > input[type="checkbox"]').on('click', function()
+	{
+		let bAll = true;
+		$(this).closest('.vtypeitems').find('input[type="checkbox"]').each(function(n, el) {if(!($(el).is(':checked'))) bAll = false;});
+		$(this).closest('.vtypegroup').find('div > input[type="checkbox"]').prop('checked', bAll);
+		textVTypes($(this));
+	});
+}
+
+function positionVTypes()
+{
+	$('#dlgVTypes').dialog('option', 'position', {my: 'left top', at: 'right top', of: '#dlgEdit'});
+}
+
+function textVTypes(oClicked)
+{
+	let nCount = 0;
+	let nTotal = 0;
+	let sSelected = '';
+	$('.vtypeitem > input[type="checkbox"').each(function(n, el)
+	{
+		++nTotal;
+		if ($(el).is(':checked'))
+		{
+			++nCount;
+			sSelected = $(el).parent().text();
+		}
+	});
+	
+	let oDes = $('#vtype-des');
+	if (nCount === nTotal)
+		oDes.text('All');
+	else if (nCount > 1)
+		oDes.text(`${nCount} of ${nTotal}`);
+	else if (nCount === 1)
+		oDes.text(sSelected.trim());
+	else
+	{
+		oClicked.click();
+		let oPopuptext = $('<span class="popuptext show">Must have 1 vehicle type selected</span>');
+		oClicked.parent().addClass('popup').append(oPopuptext);
+		setTimeout(function() 
+		{
+			oClicked.parent().removeClass('popup');
+			oPopuptext.remove();
+		}, 1000);
+	}
+}
 
 async function initialize()
 {
@@ -283,9 +371,12 @@ async function initialize()
 		'data': {'token': sessionStorage.token}
 	}).promise();
 	let pSourceLayers = $.getJSON('mapbox/sourcelayers.json').promise();
-	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
-		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<your access token goes here>'});
+	let pJumpTo = $.getJSON('mapbox/jumpto.json').promise();
 	
+	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
+		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<insert mapbox access token>'});
+
+
 	oMap.dragRotate.disable(); // disable map rotation using right click + drag
 	oMap.touchZoomRotate.disableRotation(); // disable map rotation using touch rotation gesture
 	oMap.addControl(new mapboxgl.NavigationControl({showCompass: false}));
@@ -293,10 +384,9 @@ async function initialize()
 
 	oMap.on('load', async function()
 	{
-//		oMap.addControl(new MapControlIcons([{t:'Set Route', i:'setroute'}, {t:'Travel',i:'travel'}, {t:'Weather Polygon', i:'drawpoly'}]), 'top-right');
-//		oMap.addControl(new MapControlIcons([{t:'Weather Polygon', i:'drawpoly'}, {t:'Tile Boundaries',i:'tilebounds'}]), 'top-right');
 		oMap.addControl(new MapControlIcons([{t:'Weather Polygon', i:'drawpoly'}]), 'top-right');
 		oMap.addControl(new MapControlIcons([{t:'Layer Dialog',i:'layers'}, {t:'Add Control', i:'add'}, {t:'Edit Control',i:'editpath'}, {t:'Delete Control',i:'delete'}]), 'top-right');
+		oMap.addControl(new MapControlIcons([{t:'Jump To',i:'jumpto'}]), 'top-right');
 		oSources = buildSourceMap(await pSourceLayers);
 		for (let oSrc of oSources.values())
 		{
@@ -311,6 +401,7 @@ async function initialize()
 		buildLayerDialog();
 		buildEditDialog();
 		buildDeleteDialog();
+		buildVTypesDialog();
 //		oMap.on('click', carmaclAddPoint);
 //		oMap.on('mousemove', carmaclPopupPos);
 //		oMap.on('mousemove', carmaclDisplayPoint);
@@ -323,8 +414,51 @@ async function initialize()
 		$('button[title|="Add Control"]').click(carmaclStartAdd);
 		$('button[title|="Edit Control"]').click(carmaclStartEdit);
 		$('button[title|="Delete Control"]').click(carmaclStartDelete);
+		buildJumpToDialog(await pJumpTo);
+		$('button[title|="Jump To"]').click(toggleJumpTo);
 	});
 	setCtrlVars(await pCtrlInfo);
+}
+
+
+function toggleJumpTo()
+{
+	let oDialog = $('#dlgJumpTo');
+	if (oDialog.dialog('isOpen'))
+		oDialog.dialog('close');
+	else
+		oDialog.dialog('open');
+}
+function buildJumpToDialog(oJumpToJson)
+{
+	let oDialog = $('#dlgJumpTo');
+	oDialog.dialog({autoOpen: false, position: {my: 'center', at: 'center', of: '#mapid'}, resizable: true, draggable: true, width: 300});
+	let sHtml = '<label for="selJumpTo">Select location</label><select id="selJumpTo">';
+	let nCount = 0;
+	sHtml += `<option value=${nCount++}>`;
+	let aOptions = [];
+	let aJumpToLocs = [''];
+	for (let [sName, aLngLat] of Object.entries(oJumpToJson))
+		aOptions.push([sName, aLngLat]);
+	aOptions.sort(function(o1, o2){return o1[0].localeCompare(o2[0]);});
+	
+	for (let aOption of aOptions.values())
+	{
+		sHtml += `<option value=${nCount++}>${aOption[0]}</option>`;
+		aJumpToLocs.push(aOption[1]);
+	}
+	sHtml += '</select>';
+	oDialog.html(sHtml);
+	$('#selJumpTo').on('change', function()
+	{
+		let nVal = $(this).val();
+		if (nVal != 0)
+		{
+			oMap.jumpTo({center: aJumpToLocs[nVal], zoom: 18});
+			oDialog.dialog('close');
+			$(this).val(0);
+		}
+	});
 }
 
 
@@ -415,16 +549,26 @@ function addCtrlSources()
 	if (oMap.getSource(oSrc.id) === undefined)
 	{
 		oMap.addSource(oSrc.id, oSrc.mapboxSource);
-		for (let oLayer of oSrc.layers)
-		{
-			if (oMap.getLayer(oLayer.id) === undefined)
-				oMap.addLayer(oLayer, 'hl-pt');
-		}
 	}
-	$(':checkbox').each(function(index, element) 
+	let aCheckboxes = [];
+	for (let oLayer of oSrc.layers)
 	{
-		setLayerOpacity(element.name, element.checked ? 1.0 : 0.0);
-	});
+		if (oMap.getLayer(oLayer.id) === undefined)
+		{
+			oMap.addLayer(oLayer, 'hl-pt');
+		}
+		let sCheckboxName = oLayer.id;
+		let nIndex = sCheckboxName.indexOf('-');
+		if (nIndex > 0)
+		{
+			sCheckboxName = sCheckboxName.substring(0, nIndex);
+		}
+		aCheckboxes.push(sCheckboxName);
+	}
+	for (let sCheckbox of aCheckboxes.values())
+	{
+		setLayerOpacity(sCheckbox, $('#all-layers input[name="' + sCheckbox + '"]').prop('checked') ? 1.0 : 0.0);
+	}
 }
 
 
@@ -559,8 +703,6 @@ function updateCurrent(sUrl)
 function createPolyStart(sUrl, oLngLat)
 {
 	setCursor('e-resize');
-	oMap.on('click', carmaclEndLanePoly);
-	oMap.on('mousemove', carmaclUpdateLanePoly);
 	let oLane = oLanes[sUrl];
 	let aC = oLane['c'];
 	let aA = oLane['a'];
@@ -604,6 +746,8 @@ function createPolyStart(sUrl, oLngLat)
 		oSrc.setData(oData);
 		oMap.setPaintProperty('hl-poly', 'fill-opacity', 1);
 	}
+	oMap.on('click', carmaclEndLanePoly);
+	oMap.on('mousemove', carmaclUpdateLanePoly);
 }
 
 
@@ -645,6 +789,7 @@ function carmaclEndLanePoly({target, lngLat, point})
 	$('#delete-layers input[type="radio"]').prop('disabled', true);
 	oPopup.remove();
 	let sHtml = '<form id="edit-form"><table>';
+	sHtml += `<tr><td>Vehicle types</td><td id="vtype-des">All<td><i class="fa fa-edit clickable"></tr>`;
 	let sType = aCtrlEnums[nCtrlType][0];
 	if (sType === 'yield' || sType === 'stop')
 	{
@@ -652,7 +797,7 @@ function carmaclEndLanePoly({target, lngLat, point})
 	}
 	else if (aCtrlEnums[nCtrlType].length === 1) // not an enumerated type
 	{
-		sHtml += `<tr><td>value</td><td><input id="edit-input" name="value">${oCtrlUnits[nCtrlType] ? '&nbsp;' + oCtrlUnits[nCtrlType] : ''}</td></tr>`;
+		sHtml += `<tr><td>Value</td><td><input id="edit-input" name="value"></td><td>${oCtrlUnits[nCtrlType] && oCtrlUnits[nCtrlType][1] ? oCtrlUnits[nCtrlType][1] : ''}</td></tr>`;
 	}
 	else
 	{
@@ -676,18 +821,29 @@ function carmaclEndLanePoly({target, lngLat, point})
 			{
 				sHeading = 'Select control value';
 			}
-			sHtml += `<tr><td>${sHeading}</td><td><select id="${nSelectIndex === 0 ? 'edit-select1' : 'edit-select2'}" name="${nSelectIndex === 0 ? 'value1' : 'value2'}">${sOptions}</select></td></tr>`;
+			sHtml += `<tr><td>${sHeading}</td><td><select id="${nSelectIndex === 0 ? 'edit-select1' : 'edit-select2'}" name="${nSelectIndex === 0 ? 'value1' : 'value2'}">${sOptions}</select></td><td></td></tr>`;
 		}
 	}
 
-	sHtml += `<tr><td><label for="edit-regulatory">Regulatory</label></td><td><input id="edit-regulatory" type="checkbox" name="reg" checked></td></tr>`
+	sHtml += `<tr><td><label for="edit-regulatory">Regulatory</label></td><td><input id="edit-regulatory" type="checkbox" name="reg" checked></td><td></td></tr>`
 	let sOptions = '';
 	for (let nIndex = 0; nIndex < aLabelOpts.length; nIndex++)
 		sOptions += `<option value="${nIndex}">${aLabelOpts[nIndex]}</option>`;
-	sHtml += `<tr><td><label for="edit-label">Label</label></td><td><select id="edit-label">${sOptions}</select></td></tr>`;
-	sHtml += '<tr><td></td><td><input style="display: none;" type="text" id="edit-label-text" name="label" maxlength="63"></td></tr>';
+	sHtml += `<tr><td><label for="edit-label">Label</label></td><td><select id="edit-label">${sOptions}</select></td><td></td></tr>`;
+	sHtml += '<tr><td></td><td><input style="display: none;" type="text" id="edit-label-text" name="label" maxlength="63"></td><td></td></tr>';
 	sHtml += '</table></form>';
 	$('#edit-content').html(sHtml);
+	$('#dlgVTypes input[type="checkbox"]').prop('checked', true); // default to all vtypes
+	$('#dlgVTypes div:contains("no motor") > input[type="checkbox"]').click();
+	$('#dlgVTypes div:contains("other") > input[type="checkbox"]').click();
+	$('#edit-form td i.fa-edit').click(function()
+	{
+		let oVTypes = $('#dlgVTypes');
+		if (oVTypes.dialog('isOpen'))
+			oVTypes.dialog('close');
+		else
+			$('#dlgVTypes').dialog('open');
+	});
 	$('#edit-label').on('change', function() 
 	{
 		let sText = aLabelOpts[this.value];
@@ -717,7 +873,8 @@ function carmaclEndLanePoly({target, lngLat, point})
 		aValid[0] = true;
 	}
 	aValid[1] = true;
-	$('#dlgEdit').dialog('option', 'title', `Confirm Adding ${aCtrlEnums[nCtrlType][0]} Control`);
+	let sCtrl = aCtrlEnums[nCtrlType][0];
+	$('#dlgEdit').dialog('option', 'title', `Confirm Adding ${sCtrl[0].toUpperCase() + sCtrl.slice(1)} Control`);
 	$('#dlgEdit').dialog('open');
 	document.activeElement.blur();
 	
@@ -784,6 +941,9 @@ function addControl()
 	let oData = {'token': sessionStorage.token, 'type': nCtrlType, 'id': sCurLane, 's': oLanes[sCurLane].oCurCLane.s, 'e': oLanes[sCurLane].oCurCLane.e};
 	for (let oKeyVal of $('#edit-form').serializeArray().values())
 		oData[oKeyVal.name] = oKeyVal.value;
+	oData.vtypes = [];
+	for (let oKeyVal of $('#vtype-form').serializeArray().values())
+		oData.vtypes.push(oKeyVal.value);
 	$.ajax(
 	{
 		'url': 'api/ctrl/add',
@@ -1044,4 +1204,4 @@ $(document).on('initPage', initialize);
 
 export {oMap, oPopup, switchListener, setCursor, resetMode, getClosestLineFeature,
 	carmaclPopupPos, addCtrlSources, removeCtrlSources, nMode, setMode, aCtrlEnums,
-	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex};
+	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes};

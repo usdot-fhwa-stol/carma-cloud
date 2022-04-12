@@ -30,7 +30,9 @@ public abstract class TrafCtrlEnums
 		{"maxaxles"}, 
 		{"minvehocc"},
 		{"pavement"},
-		{"debug"}
+		{"debug"},
+		{"maxplatoonsize"},
+		{"minplatoonhdwy"}
 	};
 	
 	
@@ -58,6 +60,8 @@ public abstract class TrafCtrlEnums
 		new String[0], //minvehocc
 		new String[0], //pavement
 		new String[0], //debug"
+		new String[0], //maxplatoonsize
+		new String[]{"dm", "ft", "m"}
 	};
 
 	public static final char[] DAYCHARS = new char[]
@@ -91,6 +95,16 @@ public abstract class TrafCtrlEnums
 		"seven-or-more-axle-multi-trailer-truck", 
 		"rail", 
 		"unclassified"
+	};
+	
+	
+	public static final String[][] VTYPEGROUPS = new String[][]
+	{
+		new String[]{"no motor", "pedestrian", "bicycle"},
+		new String[]{"motor bikes", "micromobile", "motorcycle"},
+		new String[]{"small vehicles", "passenger-car", "light-truck-van"},
+		new String[]{"large vehicles", "bus", "two-axle-six-tire-single-unit-truck", "three-axle-single-unit-truck", "four-or-more-axle-single-unit-truck", "four-or-fewer-axle-single-trailer-truck", "five-axle-single-trailer-truck", "six-or-more-axle-single-trailer-truck", "five-or-fewer-axle-multi-trailer-truck", "six-axle-multi-trailer-truck", "seven-or-more-axle-multi-trailer-truck"},
+		new String[]{"other", "rail", "unclassified"}
 	};
 
 

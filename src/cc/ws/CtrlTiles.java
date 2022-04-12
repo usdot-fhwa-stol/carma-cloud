@@ -37,6 +37,7 @@ import cc.util.Units;
 import cc.vector_tile.VectorTile;
 import java.awt.geom.Area;
 import java.io.BufferedInputStream;
+import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -86,7 +87,9 @@ public class CtrlTiles extends HttpServlet
 		18, //{"maxaxles"}, 
 		18, //{"minvehocc"},
 		17, //{"pavement"},
-		17  //{"debug"}
+		17,  //{"debug"}
+		18, // maxplatoonsize
+		18 // minplatoonhdwy
 	};
 	
 	
@@ -423,7 +426,22 @@ public class CtrlTiles extends HttpServlet
 			}
 		}
 		sBuf.setLength(sBuf.length() - 1);
-		sBuf.append("}}");
+		sBuf.append("},\"vtypegroups\":{");
+		for (int nGroup = 0; nGroup < TrafCtrlEnums.VTYPEGROUPS.length; nGroup++)
+		{
+			String[] sVals = TrafCtrlEnums.VTYPEGROUPS[nGroup];
+			sBuf.append("\"").append(sVals[0]).append("\":[");
+			for (int nIndex = 1; nIndex < sVals.length; nIndex++)
+				sBuf.append("\"").append(sVals[nIndex]).append("\",");
+			sBuf.setLength(sBuf.length() - 1);
+			sBuf.append("],");
+		}
+		sBuf.setLength(sBuf.length() - 1);
+		sBuf.append("},\"vtypes\":[");
+		for (int nIndex = 0; nIndex < TrafCtrlEnums.VTYPES.length; nIndex++)
+			sBuf.append("\"").append(TrafCtrlEnums.VTYPES[nIndex]).append("\",");
+		sBuf.setLength(sBuf.length() - 1);
+		sBuf.append("]}");
 		oRes.setContentType("application/json");
 		try (PrintWriter oOut = oRes.getWriter())
 		{
@@ -439,6 +457,10 @@ public class CtrlTiles extends HttpServlet
 		{
 			long lNow = System.currentTimeMillis() - 10;
 			int nType = Integer.parseInt(oReq.getParameter("type"));
+			String[] sVtypes = oReq.getParameterValues("vtypes[]");
+			ArrayList<Integer> nVtypes = new ArrayList(sVtypes.length);
+			for (String sVtype : sVtypes)
+				nVtypes.add(Integer.parseInt(sVtype));
 			String[] sUnits = TrafCtrlEnums.UNITS[nType];
 			String sType = TrafCtrlEnums.CTRLS[nType][0];
 			int nControlValue;
@@ -507,11 +529,17 @@ public class CtrlTiles extends HttpServlet
 				dCenter = Arrays.add(dCenter, dW);
 			}
 			CtrlLineArcs oCla = new CtrlLineArcs(-1, -1, -1, -1, XodrUtil.getLaneType("driving"), dCenter, 0.1);
-			TrafCtrl oCtrl = new TrafCtrl(TrafCtrlEnums.CTRLS[nType][0], nControlValue, lNow, lNow, oCla.m_dLineArcs, sLabel, bReg, ProcCtrl.CC);
+			TrafCtrl oCtrl = new TrafCtrl(TrafCtrlEnums.CTRLS[nType][0], nControlValue, nVtypes, lNow, lNow, oCla.m_dLineArcs, sLabel, bReg, ProcCtrl.CC);
 			oCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 			ArrayList<TrafCtrl> oCtrls = new ArrayList();
 			oCtrls.add(oCtrl);
 			ProcCtrl.renderCtrls(sType, oCtrls, oCtrl.m_oFullGeo.m_oTiles);
+//			StringBuilder sBuf = new StringBuilder();
+//			try (BufferedWriter oOut = Files.newBufferedWriter(Paths.get("/opt/tomcat/work/carmacloud/sample_tcm.xml")))
+//			{
+//				oCtrl.getXml(sBuf, "cb9353e606e5aafa", 1, 1, 1, "1.0", true, 0);
+//				oOut.append(sBuf);
+//			}
 		}
 		catch (Exception oEx)
 		{
@@ -526,26 +554,10 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			long lNow = System.currentTimeMillis() - 10;
 			String sId = oReq.getParameter("id");
-			String sFile = g_sCtrlDir + sId + ".bin";
-			TrafCtrl oOriginalCtrl;
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-			{
-				oOriginalCtrl = new TrafCtrl(oIn, false);
-			}
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-			{
-				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
-			}
-			synchronized (this)
-			{
-				for (int[] nTile : oOriginalCtrl.m_oFullGeo.m_oTiles)
-				{
-					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
-					ProcCtrl.updateIndex(sIndex, oOriginalCtrl.m_yId, lNow);
-				}
-			}
+			if (!ProcCtrl.deleteControl(sId))
+				oRes.sendError(HttpServletResponse.SC_BAD_REQUEST);
+			
 		}
 		catch (Exception oEx)
 		{
@@ -562,6 +574,10 @@ public class CtrlTiles extends HttpServlet
 		{
 			long lNow = System.currentTimeMillis();
 			int nType = Integer.parseInt(oReq.getParameter("type"));
+			String[] sVtypes = oReq.getParameterValues("vtypes[]");
+			ArrayList<Integer> nVtypes = new ArrayList(sVtypes.length);
+			for (String sVtype : sVtypes)
+				nVtypes.add(Integer.parseInt(sVtype));
 			String[] sUnits = TrafCtrlEnums.UNITS[nType];
 			String sType = TrafCtrlEnums.CTRLS[nType][0];
 			int nControlValue;
@@ -601,7 +617,16 @@ public class CtrlTiles extends HttpServlet
 				oOriginalCtrl = new TrafCtrl(oIn, false);
 			}
 			TrafCtrl oCtrlToWrite;
-			if (MathUtil.bytesToInt(oOriginalCtrl.m_yControlValue) == nControlValue && bReg == oOriginalCtrl.m_bRegulatory) // value and regulatory are the same so only the label has changed
+			Collections.sort(nVtypes);
+			boolean bSameVtypes = oOriginalCtrl.m_nVTypes.size() == nVtypes.size();
+			int nIndex = nVtypes.size();
+			while (nIndex-- > 0 && bSameVtypes)
+			{
+				bSameVtypes = oOriginalCtrl.m_nVTypes.get(nIndex).intValue() == nVtypes.get(nIndex).intValue();
+			}
+			
+			
+			if (MathUtil.bytesToInt(oOriginalCtrl.m_yControlValue) == nControlValue && bReg == oOriginalCtrl.m_bRegulatory && bSameVtypes) // value, regulatory, and vtypes are the same so only the label has changed
 			{
 				oOriginalCtrl.m_sLabel = sLabel;
 				oOriginalCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
@@ -613,7 +638,7 @@ public class CtrlTiles extends HttpServlet
 				{
 					oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
 				}
-				TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, lNow, lNow, oOriginalCtrl, sLabel, bReg, ProcCtrl.CC);
+				TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, nVtypes, lNow, lNow, oOriginalCtrl, sLabel, bReg, ProcCtrl.CC);
 				oCtrlToWrite = oNewCtrl;
 				oNewCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
 				ArrayList<TrafCtrl> oCtrls = new ArrayList(1);
@@ -635,7 +660,11 @@ public class CtrlTiles extends HttpServlet
 			sBuf.append("{");
 			sBuf.append("\"id\":\"").append(TrafCtrl.getId(oCtrlToWrite.m_yId)).append("\"");
 			sBuf.append(",\"label\":\"").append(oCtrlToWrite.m_sLabel).append("\"");
-				sBuf.append(",\"reg\":").append(oCtrlToWrite.m_bRegulatory);
+			sBuf.append(",\"vtypes\":[");
+			for (int nVTypeIndex = 0; nVTypeIndex < oCtrlToWrite.m_nVTypes.size(); nVTypeIndex++)
+				sBuf.append(oCtrlToWrite.m_nVTypes.get(nVTypeIndex)).append(",");
+			sBuf.setLength(sBuf.length() - 1);
+			sBuf.append("],\"reg\":").append(oCtrlToWrite.m_bRegulatory);
 			sBuf.append(",\"vals\":[");
 			ArrayList<String> sVals = new ArrayList(4);
 			TrafCtrlEnums.getCtrlValString(oCtrlToWrite.m_nControlType, oCtrlToWrite.m_yControlValue, sVals);
