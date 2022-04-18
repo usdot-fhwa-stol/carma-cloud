@@ -1,4 +1,4 @@
-import {oMap, oPopup, carmaclPopupPos, aCtrlEnums, nCtrlZoom, setMode, resetMode, nMode, setCursor, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes} from './map.js';
+import {oMap, oPopup, carmaclPopupPos, aCtrlEnums, nCtrlZoom, setMode, resetMode, nMode, setCursor, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes, pointToPaddedBounds} from './map.js';
 import {fromIntDeg, createWholePoly, lon2tile, lat2tile, getPolygonBoundingBox} from './geoutil.js';
 
 let nHoverId;
@@ -66,9 +66,10 @@ function carmaclStartEdit()
 	if (nMode === 4)
 	{
 		resetMode();
-		oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-		oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-		oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+		oMap.off('mousemove', carmaclHover);
+//		oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//		oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+//		oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
 		oMap.off('click', 'existing-ctrls-fill', carmaclClickEdit);
 		$('#edit-layers input[type="radio"]').off('input', carmaclStartLoadCtrls);
 		resetAllLayers();
@@ -110,8 +111,9 @@ function carmaclStartEdit()
 	$('#dlgLayers').dialog('open');
 	oPopup.addTo(oMap);
 	oMap.on('mousemove', carmaclPopupPos);
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
+//	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickEdit);
 	$('#edit-cancel').on('click', closeEditDialog);
 	$('#edit-save').on('click', saveEdit);
@@ -129,9 +131,10 @@ function carmaclStartDelete()
 	if (nMode === 5)
 	{
 		resetMode();
-		oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-		oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-		oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+		oMap.off('mousemove', carmaclHover);
+//		oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//		oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+//		oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
 		oMap.off('click', 'existing-ctrls-fill', carmaclClickDelete);
 		$('#delete-layers input[type="radio"]').off('input', carmaclStartLoadCtrls);
 		resetAllLayers();
@@ -153,8 +156,9 @@ function carmaclStartDelete()
 	$('#dlgLayers').dialog('open');
 	oPopup.addTo(oMap);
 	oMap.on('mousemove', carmaclPopupPos);
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
+//	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickDelete);
 }
 
@@ -164,9 +168,10 @@ function carmaclClickDelete()
 		return;
 	if (!oMap.getFeatureState({'source': 'existing-ctrls-fill', 'id': nHoverId}).on)
 		return;
-	oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-	oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+	oMap.off('mousemove', carmaclHover);
+//	oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//	oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+//	oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
 	oMap.off('click', 'existing-ctrls-fill', carmaclClickDelete);
 	$('#delete-layers input[type="radio"]').prop('disabled', false);
 	oPopup.remove();
@@ -335,6 +340,36 @@ function failLoadCtrls()
 	
 }
 
+
+function carmaclHover(oEvent)
+{
+	let oFeatures = oMap.queryRenderedFeatures(pointToPaddedBounds(oEvent.point, 2), {'layers': ['existing-ctrls-fill']});
+	let nFeatureId = getFeatureId({features: oFeatures});
+	if (!oMap.getFeatureState({source: 'existing-ctrls-fill', id: nFeatureId}).on)
+	{
+		let nHover = nHoverId;
+		nHoverId = undefined;
+		setCursor('');
+		if (nHover >= 0)
+			oEvent.target.setFeatureState({source: 'existing-ctrls-fill', id: nHover}, nMode === 5 ? {delete: false} : {hover: false});
+		return;
+	}
+	setCursor('pointer');
+	let nHover = nHoverId;
+	if (nFeatureId !== nHover)
+	{
+		if (nHover >= 0)
+			oMap.setFeatureState({source: 'existing-ctrls-fill', id: nHover}, nMode === 5 ? {delete: false} : {hover: false});
+		if (nFeatureId >= 0)
+		{
+			nHoverId = nFeatureId;
+			oMap.setFeatureState({source: 'existing-ctrls-fill', id: nFeatureId}, nMode === 5 ? {delete: true} : {hover: true});
+		}
+	}
+}
+
+
+
 function carmaclHoverExistingEnter(oEvent)
 {
 	let nFeatureId = getFeatureId(oEvent);
@@ -389,9 +424,11 @@ function carmaclClickEdit(oEvent)
 {
 	if (nHoverId === undefined || nHoverId < 0)
         return;
-	oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-	oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+	oMap.off('mousemove', carmaclHover);
+
+//	oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//	oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+//	oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
 	oMap.off('click', 'existing-ctrls-fill', carmaclClickEdit);
 	$('#dlgVTypes input[type="checkbox"]').on('click', carmaclCheckDirtyVTypes);
 	oPopup.remove();
@@ -694,8 +731,9 @@ function doneDeleteControl()
 	oSrc.setData(oMapData);
 	refreshVectorTiles();
 	$('#dlg-delete-overlay > p').html('Successfully deleted control.');
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
+//	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickDelete);
 	setTimeout(function()
 	{
@@ -708,8 +746,9 @@ function doneDeleteControl()
 function failDeleteControl()
 {
 	$('#dlg-delete-overlay > p').html('Unsuccessfully deleted control. Try again later.');
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
+//	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickDelete);
 	setTimeout(function()
 	{
@@ -727,8 +766,9 @@ function closeEditDialog()
 	}
 	if (nMode === 4)
 	{
-		oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-		oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+		oMap.on('mousemove', carmaclHover);
+//		oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
+//		oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
 		oMap.on('click', 'existing-ctrls-fill', carmaclClickEdit);
 		$('#dlgVTypes input[type="checkbox"]').off('click', carmaclCheckDirtyVTypes);
 		oPopup.addTo(oMap);

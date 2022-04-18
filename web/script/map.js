@@ -374,7 +374,7 @@ async function initialize()
 	let pJumpTo = $.getJSON('mapbox/jumpto.json').promise();
 	
 	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
-		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<insert mapbox access token>'});
+		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': 'pk.eyJ1Ijoia3J1ZWdlcmIiLCJhIjoiY2tuajlwYWZ5MGI0ZTJ1cGV1bTk5emtsaCJ9.En7O3cNsbmy7Gk555ZjmVQ'});
 
 
 	oMap.dragRotate.disable(); // disable map rotation using right click + drag
@@ -1204,4 +1204,4 @@ $(document).on('initPage', initialize);
 
 export {oMap, oPopup, switchListener, setCursor, resetMode, getClosestLineFeature,
 	carmaclPopupPos, addCtrlSources, removeCtrlSources, nMode, setMode, aCtrlEnums,
-	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes};
+	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes, pointToPaddedBounds};
