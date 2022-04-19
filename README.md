@@ -13,14 +13,14 @@ sudo chmod 755 carma-cloud/*.sh
 sudo carma-cloud/iptables.sh
 wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj
 cd /tmp/proj && ./configure && make && sudo -u root make install
-wget http://apache.mirrors.lucidnetworks.net/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -rf apache-tomcat-9.0.34.tar.gz
+wget http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -rf apache-tomcat-9.0.34.tar.gz
 mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
 mv carma-cloud/end_cc.sh tomcat
 mv carma-cloud/start_cc.sh tomcat
 mkdir -p tomcat/work/carmacloud/xodr
 mkdir -p tomcat/work/carmacloud/validate/xodr
 find ./carma-cloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-javac -cp tomcat/lib/servlet-api.jar:carma-cloud/lib/* -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes --release 8 @sources.txt
+javac -cp "tomcat/lib/servlet-api.jar:cc/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml
 echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
 mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
