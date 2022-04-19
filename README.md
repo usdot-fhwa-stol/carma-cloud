@@ -16,7 +16,7 @@ chmod 755 carma-cloud/*.sh
 carma-cloud/iptables.sh
 wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj
 cd /tmp/proj && ./configure && make && make install && cd /tmp
-wget http://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat
+wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat
 mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
 mv carma-cloud/end_cc.sh tomcat
 mv carma-cloud/start_cc.sh tomcat
