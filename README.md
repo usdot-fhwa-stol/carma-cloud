@@ -31,10 +31,11 @@ mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
 touch tomcat/webapps/carmacloud/event.csv
 mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
 mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
+mv carma-cloud/osmbin/units.csv tomcat/webapps/carmacloud/
 java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
 gunzip carma-cloud/osmbin/*.gz
 mv carma-cloud/osmbin tomcat/webapps/carmacloud/
-rm -f apache-tomcat-9.0.34.tar.gz && rm -f sources.txt && rm -rf carma-cloud && rm -rf proj
+rm -f apache-tomcat-9.0.34.tar.gz && rm -f proj-6.1.1.tar.gz && rm -f sources.txt && rm -rf carma-cloud && rm -rf proj
 mv tomcat /opt/
 groupadd v2xhub
 groupadd tomcat
