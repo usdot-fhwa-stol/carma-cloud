@@ -20,7 +20,7 @@ mv carma-cloud/start_cc.sh tomcat
 mkdir -p tomcat/work/carmacloud/xodr
 mkdir -p tomcat/work/carmacloud/validate/xodr
 find ./carma-cloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-javac -cp "tomcat/lib/servlet-api.jar:cc/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
+javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml
 echo -e '127.0.0.1\tcarmacloud' | sudo -u root tee -a /etc/hosts
 mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
