@@ -1,4 +1,4 @@
-import {oMap, oPopup, resetMode, setCursor, getClosestLineFeature, carmaclPopupPos, setMode, nMode, switchMode} from './map.js';
+import {oMap, oPopup, resetMode, setCursor, getClosestLineFeature, carmaclPopupPos, setMode, nMode, switchMode, MODES} from './map.js';
 import {METERS_PER_PIXEL, headingA, length} from './geoutil.js';
 
 let oVeh = {aCoord: [undefined, undefined], nSpd: 55, aPlan: [], nIndex: undefined, oCurFeature: undefined, oDestFeature: undefined, bPlanning: false, nPanCount: 0};
@@ -7,7 +7,7 @@ let nTimeoutId;
 
 function carmaclStartTravel()
 {
-	if (nMode !== 1)
+	if (nMode !== MODES.travel)
 		return;
 	if (nTimeoutId === undefined)
 	{
@@ -70,9 +70,9 @@ function carmaclStartOrigin()
 //	ptOff('dest-pt');
 	ptOff('veh-pt');
 	ptOff('origin-pt');
-	if (nMode !== 0 && nMode !== 1)
+	if (nMode !== MODES.nohandlers && nMode !== MODES.travel)
 		switchMode();
-	if (nMode === 1)
+	if (nMode === MODES.travel)
 	{
 		resetMode();
 		if (nTimeoutId !== undefined)
@@ -84,7 +84,7 @@ function carmaclStartOrigin()
 		return;
 	}
 	resetMode();
-	setMode(1);
+	setMode(MODES.travel);
 	setCursor('crosshair');
 	oMap.on('click', carmaclSetOrigin);
 	oMap.on('mousemove', carmaclPopupPos);
