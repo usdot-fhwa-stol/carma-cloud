@@ -14,6 +14,7 @@ let bDebug = false;
 let oSources;
 let oListeners = ['click', 'mousemove'];
 let nMode = 0; // {0: no handlers, 1: travel mode, 2: wxpoly mode, 3: add mode, 4: edit mode, 5: delete mode}
+let MODES = {'nohandlers': 0, 'travel': 1, 'wxpoly': 2, 'add': 3, 'edit': 4, 'delete': 5};
 let nCtrlZoom;
 let aCtrlEnums;
 let aEditLayers = ['direction', 'latperm', 'closed', 'maxspeed', 'minhdwy', 'maxplatoonsize', 'minplatoonhdwy'];
@@ -51,14 +52,14 @@ function refreshVectorTiles()
 			{
 				setLayerOpacity(element.name, element.checked ? 1.0 : 0.0);
 			});
-			if (nMode === 4)
+			if (nMode === MODES.edit)
 			{
 				$('#edit-layers :checked').each(function(index, element) 
 				{
 					setLayerOpacity(element.id, 1.0);
 				});
 			}
-			else if (nMode === 5 || nMode === 3)
+			else if (nMode === MODES.delete || nMode === MODES.add)
 			{
 				$('#delete-layers :checked').each(function(index, element) 
 				{
@@ -158,7 +159,7 @@ function toggleLayerDialog()
 	if ($('#dlgEdit').dialog('isOpen') || $('#dlgDelete').dialog('isOpen'))
 		return;
 	let oDlg = $('#dlgLayers');
-	if (nMode !== 0)
+	if (nMode !== MODES.nohandlers)
 	{
 		switchMode();
 		oDlg.dialog('open');
@@ -374,7 +375,7 @@ async function initialize()
 	let pJumpTo = $.getJSON('mapbox/jumpto.json').promise();
 	
 	oMap = new mapboxgl.Map({'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
-		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': '<insert mapbox access token>'});
+		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 18, 'accessToken': 'pk.eyJ1Ijoia3J1ZWdlcmIiLCJhIjoiY2tuajlwYWZ5MGI0ZTJ1cGV1bTk5emtsaCJ9.En7O3cNsbmy7Gk555ZjmVQ'});
 
 
 	oMap.dragRotate.disable(); // disable map rotation using right click + drag
@@ -396,20 +397,13 @@ async function initialize()
 		}
 		oPopup = new mapboxgl.Popup({closeButton: false, closeOnClick: false, anchor: 'bottom', offset: [0, -25]});
 		oPopup.setHTML('').addTo(oMap);
-//		oMap.on('click', carmaclStartLanePoly);
-//		oMap.on('mousemove', carmaclSnapToLane);
+
 		buildLayerDialog();
 		buildEditDialog();
 		buildDeleteDialog();
 		buildVTypesDialog();
-//		oMap.on('click', carmaclAddPoint);
-//		oMap.on('mousemove', carmaclPopupPos);
-//		oMap.on('mousemove', carmaclDisplayPoint);
 		setCursor('pointer');
-//		$('button[title|="Tile Boundaries"]').click(toggleDebug);
 		$('button[title|="Weather Polygon"]').click(carmaclStartWx);
-//		$('button[title|="Set Route"]').click(carmaclStartOrigin);
-//		$('button[title|="Travel"]').click(carmaclStartTravel);
 		$('button[title|="Layer Dialog"]').click(toggleLayerDialog);
 		$('button[title|="Add Control"]').click(carmaclStartAdd);
 		$('button[title|="Edit Control"]').click(carmaclStartEdit);
@@ -485,27 +479,27 @@ function switchMode()
 {
 	switch (nMode)
 	{
-		case 1:
+		case MODES.travel:
 		{
 			carmaclStartOrigin();
 			break;
 		}
-		case 2:
+		case MODES.wxpoly:
 		{
 			carmaclStartWx();
 			break;
 		}
-		case 3:
+		case MODES.add:
 		{
 			carmaclStartAdd();
 			break;
 		}
-		case 4:
+		case MODES.edit:
 		{
 			carmaclStartEdit();
 			break;
 		}
-		case 5:
+		case MODES.delete:
 		{
 			carmaclStartDelete();
 			break;
@@ -515,7 +509,7 @@ function switchMode()
 
 function resetMode()
 {
-	setMode(0);
+	setMode(MODES.nohandlers);
 	resetListeners();
 	setCursor('');
 	oPopup.setHTML('');
@@ -527,19 +521,6 @@ function toggleDebug()
 {
 	bDebug = !bDebug;
 	oMap.showTileBoundaries = bDebug;
-//	if (bDebug)
-//	{
-//		startMode();
-//		oMap.on('mousemove', carmaclSnapToLane);
-//		oMap.on('click', carmaclStartLanePoly);
-//		oMap.setPaintProperty('debug-c', 'line-opacity', 1);
-//		oMap.setPaintProperty('debug-p', 'circle-opacity', 0.5);
-//	}
-//	else
-//	{
-//		oMap.setPaintProperty('debug-c', 'line-opacity', 0);
-//		oMap.setPaintProperty('debug-p', 'circle-opacity', 0);
-//	}
 }
 
 
@@ -590,9 +571,9 @@ function carmaclStartAdd()
 {
 	if ($('#dlgEdit').dialog('isOpen') || $('#dlgDelete').dialog('isOpen'))
 		return;
-	if (nMode !== 0 && nMode !== 3)
+	if (nMode !== MODES.nohandlers && nMode !== MODES.add)
 		switchMode();
-	if (nMode === 3)
+	if (nMode === MODES.add)
 	{
 		resetMode();
 		$('#delete-layers input[type="radio"]').off('click', setType);
@@ -610,7 +591,7 @@ function carmaclStartAdd()
 		return;
 	}
 	resetMode();
-	setMode(3);
+	setMode(MODES.add);
 	$('#all-layers').hide();
 	$('#delete-layers input[type="radio"]').prop('checked', false).on('click', setType);
 	nCtrlType = -1;
@@ -624,7 +605,6 @@ function carmaclStartAdd()
 	captureLayerState();
 	oMap.setPaintProperty('debug-c', 'line-opacity', 1);
 	oMap.setPaintProperty('hl-pt', 'circle-opacity', 0);
-//	oMap.setPaintProperty('debug-p', 'circle-opacity', 0.5);
 	$('#edit-save').on('click', addControl);
 	$('#edit-cancel').on('click', cancelAdd);
 	$('#dlgEdit').siblings('.ui-dialog-titlebar').children('button').on('click', cancelAdd);
@@ -782,8 +762,6 @@ function carmaclStartLanePoly({target, lngLat, point})
 
 function carmaclEndLanePoly({target, lngLat, point})
 {
-//	switchListener('mousemove', carmaclUpdateLanePoly, carmaclSnapToLane);
-//	switchListener('click', carmaclEndLanePoly, carmaclStartLanePoly);
 	oMap.off('mousemove', carmaclUpdateLanePoly);
 	oMap.off('click', carmaclEndLanePoly);
 	$('#delete-layers input[type="radio"]').prop('disabled', true);
@@ -877,30 +855,6 @@ function carmaclEndLanePoly({target, lngLat, point})
 	$('#dlgEdit').dialog('option', 'title', `Confirm Adding ${sCtrl[0].toUpperCase() + sCtrl.slice(1)} Control`);
 	$('#dlgEdit').dialog('open');
 	document.activeElement.blur();
-	
-//	oMap.setPaintProperty('dummy-path-outline', 'line-opacity', 0);
-//	oMap.setPaintProperty('hl-poly', 'fill-opacity', 0);
-//	let oLayer = oMap.getSource('created-lanes');
-//	let sUrl = sCurLane;
-//	let oLane = oLanes[sUrl];
-
-//	if (oLayer !== undefined)
-//	{
-//		let oData = oLayer._data;
-//		oData.features.push({'type': 'Feature', 'properties': {'url': sUrl}, 'geometry': {'type': 'Polygon', 'coordinates': createPoly(oLane['a'], oLane['b'], oLane['oCurCLane']['s'], oLane['oCurCLane']['e'])}});
-//		let sDetail = '';
-//		let aA = oLane['a'];
-//		let aB = oLane['b'];
-//		let nStart = oLane['oCurCLane']['s'];
-//		let nEnd = oLane['oCurCLane']['e'];
-//		for (let nIndex = nStart; nIndex <= nEnd; nIndex++)
-//		{
-//			sDetail += aA[nIndex][0].toFixed(7) + ',' + aA[nIndex][1].toFixed(7) + ',' + aB[nIndex][0].toFixed(7) + ',' + aB[nIndex][1].toFixed(7) + ',';
-//		}
-//		$('#geoDetail').html(sDetail);
-//		oLayer.setData(oData);
-//		oMap.setPaintProperty('lanes', 'fill-opacity', 1);
-//	}
 	setCursor('');
 }
 
@@ -1030,8 +984,6 @@ function carmaclSnapToLane({target, lngLat, point})
 			oData.geometry.coordinates = oFeature.oSnapInfo.aPt;
 			oLayer.setData(oData);
 			oMap.setPaintProperty('hl-pt', 'circle-opacity', 1);
-//			if (bDebug && !Number.isNaN(oData.geometry.coordinates[0]))
-//				oPopup.setLngLat(oData.geometry.coordinates).setHTML('<p>' + oFeature.oMBoxFeature.properties.sponge_id + '<p>').addTo(oMap);
 		}
 		sCurLane = oFeature.oMBoxFeature.properties.sponge_id;
 	}
@@ -1204,4 +1156,4 @@ $(document).on('initPage', initialize);
 
 export {oMap, oPopup, switchListener, setCursor, resetMode, getClosestLineFeature,
 	carmaclPopupPos, addCtrlSources, removeCtrlSources, nMode, setMode, aCtrlEnums,
-	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes};
+	nCtrlZoom, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes, pointToPaddedBounds, MODES};

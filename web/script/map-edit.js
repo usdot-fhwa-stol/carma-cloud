@@ -1,4 +1,4 @@
-import {oMap, oPopup, carmaclPopupPos, aCtrlEnums, nCtrlZoom, setMode, resetMode, nMode, setCursor, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes} from './map.js';
+import {oMap, oPopup, carmaclPopupPos, aCtrlEnums, nCtrlZoom, setMode, resetMode, nMode, setCursor, refreshVectorTiles, switchMode, oCtrlUnits, aLabelOpts, nOtherIndex, oVTypes, pointToPaddedBounds, MODES} from './map.js';
 import {fromIntDeg, createWholePoly, lon2tile, lat2tile, getPolygonBoundingBox} from './geoutil.js';
 
 let nHoverId;
@@ -61,14 +61,12 @@ function carmaclStartEdit()
 {
 	if ($('#dlgEdit').dialog('isOpen') || $('#dlgDelete').dialog('isOpen'))
 		return;
-	if (nMode !== 0 && nMode !== 4)
+	if (nMode !== MODES.nohandlers && nMode !== MODES.edit)
 		switchMode();
-	if (nMode === 4)
+	if (nMode === MODES.edit)
 	{
 		resetMode();
-		oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-		oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-		oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+		oMap.off('mousemove', carmaclHover);
 		oMap.off('click', 'existing-ctrls-fill', carmaclClickEdit);
 		$('#edit-layers input[type="radio"]').off('input', carmaclStartLoadCtrls);
 		resetAllLayers();
@@ -81,26 +79,9 @@ function carmaclStartEdit()
 		return;
 	}
 	resetMode();
-	setMode(4);
+	setMode(MODES.edit);
 	captureLayerState();
 	
-//	if (nChecked === 2)
-//	{
-//		carmaclStartLoadCtrls();
-//	}
-//	else
-//	{
-//		$('#dlgLayers :checkbox').each(function(index, element)
-//		{
-//			if (element.name !== 'pavement')
-//			{
-//				if (element.checked)
-//					$(this).trigger('click');
-//			}
-//		}).on('input', carmaclStartLoadCtrls);
-//		oPopup.setHTML('<p>Select control type to edit</p>').addTo(oMap);
-//		$('#dlgLayers').dialog('open');
-//	}
 	$('#all-layers').hide();
 	$('#edit-layers input[type="radio"]').prop('checked', false).prop('disabled', false).on('input', carmaclStartLoadCtrls);
 	$('#edit-layers').show();
@@ -110,8 +91,7 @@ function carmaclStartEdit()
 	$('#dlgLayers').dialog('open');
 	oPopup.addTo(oMap);
 	oMap.on('mousemove', carmaclPopupPos);
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickEdit);
 	$('#edit-cancel').on('click', closeEditDialog);
 	$('#edit-save').on('click', saveEdit);
@@ -124,14 +104,12 @@ function carmaclStartDelete()
 {	
 	if ($('#dlgEdit').dialog('isOpen') || $('#dlgDelete').dialog('isOpen'))
 		return;
-	if (nMode !== 0 && nMode !== 5)
+	if (nMode !== MODES.nohandlers && nMode !== MODES.delete)
 		switchMode();
-	if (nMode === 5)
+	if (nMode === MODES.delete)
 	{
 		resetMode();
-		oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-		oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-		oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+		oMap.off('mousemove', carmaclHover);
 		oMap.off('click', 'existing-ctrls-fill', carmaclClickDelete);
 		$('#delete-layers input[type="radio"]').off('input', carmaclStartLoadCtrls);
 		resetAllLayers();
@@ -141,7 +119,7 @@ function carmaclStartDelete()
 		return;
 	}
 	resetMode();
-	setMode(5);
+	setMode(MODES.delete);
 	
 	captureLayerState();
 	$('#all-layers').hide();
@@ -153,8 +131,7 @@ function carmaclStartDelete()
 	$('#dlgLayers').dialog('open');
 	oPopup.addTo(oMap);
 	oMap.on('mousemove', carmaclPopupPos);
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickDelete);
 }
 
@@ -164,15 +141,12 @@ function carmaclClickDelete()
 		return;
 	if (!oMap.getFeatureState({'source': 'existing-ctrls-fill', 'id': nHoverId}).on)
 		return;
-	oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-	oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+	oMap.off('mousemove', carmaclHover);
 	oMap.off('click', 'existing-ctrls-fill', carmaclClickDelete);
 	$('#delete-layers input[type="radio"]').prop('disabled', false);
 	oPopup.remove();
 	nSelectedId = nHoverId;
 	nHoverId = undefined;
-//	oMap.setFeatureState({source: 'existing-ctrls-fill', id: nSelectedId}, {selected: true, delete: false});
 	$('#dlgDelete').dialog('open');
 	document.activeElement.blur();
 }
@@ -200,7 +174,7 @@ function carmaclStartLoadCtrls()
 {
 	oPopup.setHTML('<p>Loading controls</p>');
 	setCursor('progress');
-	let sType = $((nMode === 4 ? '#edit-layers ' : '#delete-layers ') + ':checked').prop('id');
+	let sType = $((nMode === MODES.edit ? '#edit-layers ' : '#delete-layers ') + ':checked').prop('id');
 	for (let nIndex = 0; nIndex < aCtrlEnums.length; nIndex++)
 	{
 		if (sType === aCtrlEnums[nIndex][0])
@@ -234,7 +208,7 @@ function resetTileFlag(bBoolean)
 
 function carmaclLoadCtrls()
 {
-	$((nMode === 4 ? '#edit-layers ' : '#delete-layers ') + 'input[type="radio"]').prop('disabled', true);
+	$((nMode === MODES.edit ? '#edit-layers ' : '#delete-layers ') + 'input[type="radio"]').prop('disabled', true);
 	let oBounds = oMap.getBounds();
 	let nMinX = lon2tile(oBounds._sw.lng, nCtrlZoom);
 	let nMaxX = lon2tile(oBounds._ne.lng, nCtrlZoom);
@@ -269,8 +243,8 @@ function carmaclLoadCtrls()
 	if (aLoadQueue.length === 0)
 	{
 		resetTileFlag(false);
-		oPopup.setHTML(`<p>Select control to ${nMode === 4 ? 'edit' : 'delete'}<br>Click "Layer Dialog" to exit mode</p>`);
-		$((nMode === 4 ? '#edit-layers ' : '#delete-layers ') + 'input[type="radio"]').each(function(index, element) 
+		oPopup.setHTML(`<p>Select control to ${nMode === MODES.edit ? 'edit' : 'delete'}<br>Click "Layer Dialog" to exit mode</p>`);
+		$((nMode === MODES.edit ? '#edit-layers ' : '#delete-layers ') + 'input[type="radio"]').each(function(index, element) 
 		{
 			$(this).prop('disabled', false);
 		});
@@ -320,8 +294,8 @@ function doneLoadCtrls(oData)
 	if (aLoadQueue.length === 0)
 	{
 		resetTileFlag(false);
-		oPopup.setHTML(`<p>Select control to ${nMode === 4 ? 'edit' : 'delete'}<br>Click "Layer Dialog" to exit mode</p>`);
-		$((nMode === 4 ? '#edit-layers ' : '#delete-layers ') + 'input[type="radio"]').each(function(index, element) 
+		oPopup.setHTML(`<p>Select control to ${nMode === MODES.edit ? 'edit' : 'delete'}<br>Click "Layer Dialog" to exit mode</p>`);
+		$((nMode === MODES.edit ? '#edit-layers ' : '#delete-layers ') + 'input[type="radio"]').each(function(index, element) 
 		{
 			$(this).prop('disabled', false);
 		});
@@ -335,53 +309,32 @@ function failLoadCtrls()
 	
 }
 
-function carmaclHoverExistingEnter(oEvent)
+
+function carmaclHover(oEvent)
 {
-	let nFeatureId = getFeatureId(oEvent);
+	let oFeatures = oMap.queryRenderedFeatures(pointToPaddedBounds(oEvent.point, 2), {'layers': ['existing-ctrls-fill']});
+	let nFeatureId = getFeatureId({features: oFeatures});
 	if (!oMap.getFeatureState({source: 'existing-ctrls-fill', id: nFeatureId}).on)
+	{
+		let nHover = nHoverId;
+		nHoverId = undefined;
+		setCursor('');
+		if (nHover >= 0)
+			oEvent.target.setFeatureState({source: 'existing-ctrls-fill', id: nHover}, nMode === MODES.delete ? {delete: false} : {hover: false});
 		return;
+	}
 	setCursor('pointer');
 	let nHover = nHoverId;
-	
-	if (nHover >= 0)
-		oMap.setFeatureState({source: 'existing-ctrls-fill', id: nHover}, nMode === 5 ? {delete: false} : {hover: false});
-	if (nFeatureId >= 0)
-	{
-		nHoverId = nFeatureId;
-		oMap.setFeatureState({source: 'existing-ctrls-fill', id: nFeatureId}, nMode === 5 ? {delete: true} : {hover: true});
-	}
-	oMap.on('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
-}
-
-function carmaclHoverExistingMove(oEvent)
-{
-	let nFeatureId = getFeatureId(oEvent);
-	if (!oMap.getFeatureState({source: 'existing-ctrls-fill', id: nFeatureId}).on)
-		return;
-	let nHover = nHoverId;	
-	
 	if (nFeatureId !== nHover)
 	{
 		if (nHover >= 0)
-			oMap.setFeatureState({source: 'existing-ctrls-fill', id: nHover}, nMode === 5 ? {delete: false} : {hover: false});
+			oMap.setFeatureState({source: 'existing-ctrls-fill', id: nHover}, nMode === MODES.delete ? {delete: false} : {hover: false});
 		if (nFeatureId >= 0)
 		{
 			nHoverId = nFeatureId;
-			oMap.setFeatureState({source: 'existing-ctrls-fill', id: nFeatureId}, nMode === 5 ? {delete: true} : {hover: true});
+			oMap.setFeatureState({source: 'existing-ctrls-fill', id: nFeatureId}, nMode === MODES.delete ? {delete: true} : {hover: true});
 		}
 	}
-}
-
-
-function carmaclHoverExistingLeave(oEvent)
-{
-	let nHover = nHoverId;
-	nHoverId = undefined;
-	setCursor('');
-	if (nHover >= 0)
-		oEvent.target.setFeatureState({source: 'existing-ctrls-fill', id: nHover}, nMode === 5 ? {delete: false} : {hover: false});
-	
-	oEvent.target.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
 }
 
 
@@ -389,9 +342,7 @@ function carmaclClickEdit(oEvent)
 {
 	if (nHoverId === undefined || nHoverId < 0)
         return;
-	oMap.off('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.off('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
-	oMap.off('mousemove', 'existing-ctrls-fill', carmaclHoverExistingMove);
+	oMap.off('mousemove', carmaclHover);
 	oMap.off('click', 'existing-ctrls-fill', carmaclClickEdit);
 	$('#dlgVTypes input[type="checkbox"]').on('click', carmaclCheckDirtyVTypes);
 	oPopup.remove();
@@ -419,7 +370,6 @@ function carmaclClickEdit(oEvent)
 		sHtml += `<tr><td>Value</td><td><input id="edit-input" name="value" value="${nDisplayVal}"></td><td>${oCtrlUnits[nCtrlType][1] ? '&nbsp;' + oCtrlUnits[nCtrlType][1] : ''}</td></tr>`;
 		nType = 0;
 		aOriginalValues.push(nDisplayVal);
-//		aOriginalValues.push(aCtrlVals[1]);
 	}
 	else
 	{
@@ -694,8 +644,7 @@ function doneDeleteControl()
 	oSrc.setData(oMapData);
 	refreshVectorTiles();
 	$('#dlg-delete-overlay > p').html('Successfully deleted control.');
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickDelete);
 	setTimeout(function()
 	{
@@ -708,8 +657,7 @@ function doneDeleteControl()
 function failDeleteControl()
 {
 	$('#dlg-delete-overlay > p').html('Unsuccessfully deleted control. Try again later.');
-	oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-	oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+	oMap.on('mousemove', carmaclHover);
 	oMap.on('click', 'existing-ctrls-fill', carmaclClickDelete);
 	setTimeout(function()
 	{
@@ -725,10 +673,9 @@ function closeEditDialog()
 		oMap.setFeatureState({source: 'existing-ctrls-fill', id: nSelectedId}, {selected: false, hover: false});
 		nSelectedId = undefined;
 	}
-	if (nMode === 4)
+	if (nMode === MODES.edit)
 	{
-		oMap.on('mouseenter', 'existing-ctrls-fill', carmaclHoverExistingEnter);
-		oMap.on('mouseleave', 'existing-ctrls-fill', carmaclHoverExistingLeave);
+		oMap.on('mousemove', carmaclHover);
 		oMap.on('click', 'existing-ctrls-fill', carmaclClickEdit);
 		$('#dlgVTypes input[type="checkbox"]').off('click', carmaclCheckDirtyVTypes);
 		oPopup.addTo(oMap);
