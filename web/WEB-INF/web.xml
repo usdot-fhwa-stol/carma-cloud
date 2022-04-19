@@ -97,6 +97,12 @@
   <param-name>combinetol</param-name>
   <param-value>0.1</param-value>
  </init-param>
+ 
+ <init-param>
+  <description>REQUIRED: file path for units</description>
+  <param-name>units</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
+ </init-param>
 
  <load-on-startup>1</load-on-startup>
 </servlet>
