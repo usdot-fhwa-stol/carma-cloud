@@ -55,6 +55,6 @@ jobs:
       - run:
           name: Start Tomcat and Test
           command: |
-            sudo -u tomcat /opt/tomcat/bin/catalina.sh start
+            sudo /opt/tomcat/bin/catalina.sh start
             sleep 10
             wget -O - http://carmacloud:8080
