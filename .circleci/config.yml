@@ -33,4 +33,4 @@ jobs:
       - run: sudo mv tomcat /opt/
       - run: sudo /opt/tomcat/bin/catalina.sh start
       - run: sleep 10
-      - run: if [[ `wget --quiet -O - http://localhost:8080 | grep "CARMAcloud Login" | wc -l` -eq "1" ]]; then touch tomcat-login.txt; fi && cat tomcat-login.txt
+      - run: wget --quiet -O - http://localhost:8080
