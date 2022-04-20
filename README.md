@@ -7,16 +7,15 @@ CARMAcloud provides some of the infrastructure components for CARMA. It enables 
 CARMAcloud can be deployed on a Linux server. Ensure you have a properly configured git client and Java Development Kit before executing the following commands (some paths may have to be updated depending on the version and installation of the JDK):
 ```
 #!/bin/bash
-# this script must be executed using sudo
 # java and javac must be executable from the command line
 cd /tmp
 git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
-apt-get update && apt-get install pkg-config sqlite3 libsqlite3-dev iptables
+sudo apt-get update && sudo apt-get install pkg-config sqlite3 libsqlite3-dev iptables
 chmod 755 carma-cloud/*.sh
-carma-cloud/iptables.sh
-wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj
-cd /tmp/proj && ./configure && make && make install && cd /tmp
-wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat
+sudo carma-cloud/iptables.sh
+wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj && rm -f proj-6.1.1.tar.gz
+cd /tmp/proj && ./configure && make && sudo make install && cd /tmp && rm -rf proj
+wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -f apache-tomcat-9.0.34.tar.gz
 mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
 mv carma-cloud/end_cc.sh tomcat
 mv carma-cloud/start_cc.sh tomcat
@@ -26,7 +25,7 @@ find ./carma-cloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/c
 javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml
 echo -e '127.0.0.1\tcarmacloud' | tee -a /etc/hosts
-mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
+sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
 mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
 touch tomcat/webapps/carmacloud/event.csv
 mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
@@ -35,12 +34,18 @@ mv carma-cloud/osmbin/units.csv tomcat/webapps/carmacloud/
 java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
 gunzip carma-cloud/osmbin/*.gz
 mv carma-cloud/osmbin tomcat/webapps/carmacloud/
-rm -f apache-tomcat-9.0.34.tar.gz && rm -f proj-6.1.1.tar.gz && rm -f sources.txt && rm -rf carma-cloud && rm -rf proj
-mv tomcat /opt/
-groupadd v2xhub
+rm -f sources.txt && rm -rf carma-cloud
 groupadd tomcat
-useradd -g v2xhub -m v2xhub
 useradd -g tomcat -m tomcat
+groupadd v2xhub
+useradd -g v2xhub -m v2xhub
+chmod g+r tomcat/conf/*
+chmod -R o-rwx tomcat/webapps/*
+sudo chmod -R root:tomcat tomcat
+sudo chmod -R tomcat:tomcat tomcat/logs
+sudo chmod -R tomcat:tomcat tomcat/temp
+sudo chmod -R tomcat:tomcat tomcat/work
+sudo mv tomcat /opt/
 ```
 These commands will download the CARMAcloud source code from github, necessary dependencies, and the tomcat webserver. Changes to the tomcat version might be necessary if version 9.0.34 is no longer available on the Apache mirror. You can also download tomcat directly from the tomcat website. Tomcat cannot bind the port 80 when ran as the tomcat user, so iptables is used to redirect port 80 to 8080. Next the java code will be compiled and the .class files will be placed in the correct directory. Tomcat's server.xml file will have the carmacloud host entry inserted in the correct location. Carmacloud will be added to the /etc/hosts file. The java command that runs cc.ws.UserMgr will create the ccadmin user for the system. It is suggested to change to password to something more secure by replacing "admin_testpw" with the desired password in the command. Groups and users for tomcat and v2xhub will be created.
 ## Configuration
