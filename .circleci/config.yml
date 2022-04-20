@@ -6,55 +6,55 @@ jobs:
     working_directory: /tmp
     steps:
       - run:
-      name: Download Apache Tomcat
-      command: |
-        wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz
-        tar -xzf apache-tomcat-9.0.34.tar.gz
-        mv apache-tomcat-9.0.34 tomcat
-        rm -f apache-tomcat-9.0.34.tar.gz
+        name: Download Apache Tomcat
+        command: |
+          wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz
+          tar -xzf apache-tomcat-9.0.34.tar.gz
+          mv apache-tomcat-9.0.34 tomcat
+          rm -f apache-tomcat-9.0.34.tar.gz
       - run:
-      name: Get and Compile carma-cloud Source
-      command: |
-        mkdir -p tomcat/webapps/carmacloud/ROOT
-        mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
-        git clone -b develop https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
-        find ./carma-cloud/src -name "*.java" > sources.txt
-        mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-        javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
-        rm -f sources.txt
+        name: Get and Compile carma-cloud Source
+        command: |
+          mkdir -p tomcat/webapps/carmacloud/ROOT
+          mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
+          git clone -b develop https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
+          find ./carma-cloud/src -name "*.java" > sources.txt
+          mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
+          javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
+          rm -f sources.txt
       - run:
-      name: Configure carma-cloud Webapp
-      command: |
-        sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
-        mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
-        touch tomcat/webapps/carmacloud/event.csv
-        mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
-        mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
-        mv carma-cloud/osmbin/units.csv tomcat/webapps/carmacloud/
-        gunzip carma-cloud/osmbin/*.gz
-        mv carma-cloud/osmbin tomcat/webapps/carmacloud/
-        java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
-        rm -rf carma-cloud
+        name: Configure carma-cloud Webapp
+        command: |
+          sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
+          mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
+          touch tomcat/webapps/carmacloud/event.csv
+          mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
+          mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
+          mv carma-cloud/osmbin/units.csv tomcat/webapps/carmacloud/
+          gunzip carma-cloud/osmbin/*.gz
+          mv carma-cloud/osmbin tomcat/webapps/carmacloud/
+          java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
+          rm -rf carma-cloud
       - run:
-      name: Configure Environment
-      command: |
-        sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
-        echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
-        sudo groupadd tomcat
-        sudo useradd -g tomcat -m tomcat
+        name: Configure Environment
+        command: |
+          sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
+          echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
+          sudo groupadd tomcat
+          sudo useradd -g tomcat -m tomcat
       - run:
-      name: Set Privileges and Deploy
-      command: |
-        chmod g+r tomcat/conf/*
-        chmod -R o-rwx tomcat/webapps/*
-        sudo chown -R root:tomcat tomcat
-        sudo chown -R tomcat:tomcat tomcat/logs
-        sudo chown -R tomcat:tomcat tomcat/temp
-        sudo chown -R tomcat:tomcat tomcat/work
-        sudo mv tomcat /opt/
+        name: Set Privileges and Deploy
+        command: |
+          chmod g+r tomcat/conf/*
+          chmod -R o-rwx tomcat/webapps/*
+          sudo chown -R root:tomcat tomcat
+          sudo chown -R tomcat:tomcat tomcat/logs
+          sudo chown -R tomcat:tomcat tomcat/temp
+          sudo chown -R tomcat:tomcat tomcat/work
+          sudo mv tomcat /opt/
       - run:
-      name: Start Tomcat and Test
-      command: |
-        sudo -u tomcat /opt/tomcat/bin/catalina.sh start
-        sleep 10
-        wget -O - http://carmacloud:8080
+        name: Start Tomcat and Test
+        command: |
+          sudo -u tomcat /opt/tomcat/bin/catalina.sh start
+          sleep 10
+          wget -O - http://carmacloud:8080
