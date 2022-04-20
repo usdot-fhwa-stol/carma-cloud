@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/openjdk:11-jdk-stretch # OpenJDK on Debian 9 Stretch Docker container
+      - image: cimg/openjdk:11-jdk-stretch # OpenJDK on Debian 9 Stretch Docker container
     working_directory: /tmp
     steps:
       - run:
@@ -57,4 +57,4 @@ jobs:
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
             sleep 10
-            wget -O - http://carmacloud:8080
+            if [[ `wget --quiet -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -eq "1" ]]; then >&2 echo "no default webpage"; fi
