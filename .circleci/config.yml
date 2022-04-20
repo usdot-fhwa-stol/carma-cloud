@@ -32,5 +32,4 @@ jobs:
       - run: sudo chown -R tomcat:tomcat tomcat/work
       - run: sudo mv tomcat /opt/
       - run: sudo /opt/tomcat/bin/catalina.sh start
-      - run: sleep 10
-      - run: wget -O - http://localhost:8080
+      - run: sudo ping -c 3 carmacloud
