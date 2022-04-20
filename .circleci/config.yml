@@ -5,18 +5,19 @@ jobs:
       - image: circleci/openjdk:11-jdk-stretch # OpenJDK on Debian 9 Stretch Docker container
     working_directory: /tmp
     steps:
-      - run: git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
+      - run: git clone -b develop https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
       - run: wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat
       - run: mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
       - run: find ./carma-cloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
       - run: javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
       - run: sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
       - run: echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
-      - run: mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
+      - run: sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
       - run: mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
       - run: touch tomcat/webapps/carmacloud/event.csv
       - run: mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
       - run: mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
+      - run: mv carma-cloud/osmbin/units.csv tomcat/webapps/carmacloud/
       - run: java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
       - run: gunzip carma-cloud/osmbin/*.gz
       - run: mv carma-cloud/osmbin tomcat/webapps/carmacloud/
