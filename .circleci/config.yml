@@ -32,5 +32,4 @@ jobs:
       - run: sudo chown -R tomcat:tomcat tomcat/work
       - run: sudo mv tomcat /opt/
       - run: sudo /opt/tomcat/bin/catalina.sh start
-      - run: sleep 5 && if [[ `sudo grep "startup in" /opt/tomcat/logs/catalina.out | wc -l` -eq "1" ]] ; then touch tomcat-started.txt; fi && cat tomcat-started.txt
-      - run: wget --quiet -O - http://carmacloud:8080
+      - run: sleep 5 && sudo grep "startup in" /opt/tomcat/logs/catalina.out
