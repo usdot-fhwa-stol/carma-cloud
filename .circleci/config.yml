@@ -26,9 +26,9 @@ jobs:
       - run: sudo useradd -g tomcat -m tomcat
       - run: chmod g+r tomcat/conf/*
       - run: chmod -R o-rwx tomcat/webapps/*
-      - run: sudo chmod -R root:tomcat tomcat
-      - run: sudo chmod -R tomcat:tomcat tomcat/logs
-      - run: sudo chmod -R tomcat:tomcat tomcat/temp
-      - run: sudo chmod -R tomcat:tomcat tomcat/work
+      - run: sudo chown -R root:tomcat tomcat
+      - run: sudo chown -R tomcat:tomcat tomcat/logs
+      - run: sudo chown -R tomcat:tomcat tomcat/temp
+      - run: sudo chown -R tomcat:tomcat tomcat/work
       - run: sudo mv tomcat /opt/
       - run: sudo -u tomcat /opt/tomcat/bin/catalina.sh start
