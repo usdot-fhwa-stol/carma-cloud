@@ -31,4 +31,4 @@ jobs:
       - run: sudo chown -R tomcat:tomcat tomcat/temp
       - run: sudo chown -R tomcat:tomcat tomcat/work
       - run: sudo mv tomcat /opt/
-      - run: sudo -u tomcat /opt/tomcat/bin/catalina.sh start
+      - run: sudo /opt/tomcat/bin/catalina.sh start
