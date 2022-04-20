@@ -35,10 +35,10 @@ java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.
 gunzip carma-cloud/osmbin/*.gz
 mv carma-cloud/osmbin tomcat/webapps/carmacloud/
 rm -f sources.txt && rm -rf carma-cloud
-groupadd tomcat
-useradd -g tomcat -m tomcat
-groupadd v2xhub
-useradd -g v2xhub -m v2xhub
+sudo groupadd tomcat
+sudo useradd -g tomcat -m tomcat
+sudo groupadd v2xhub
+sudo useradd -g v2xhub -m v2xhub
 chmod g+r tomcat/conf/*
 chmod -R o-rwx tomcat/webapps/*
 sudo chmod -R root:tomcat tomcat
