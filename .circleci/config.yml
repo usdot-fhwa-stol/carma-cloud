@@ -33,4 +33,4 @@ jobs:
       - run: sudo mv tomcat /opt/
       - run: sudo /opt/tomcat/bin/catalina.sh start
       - run: sleep 10
-      - run: wget --quiet -O - http://localhost:8080
+      - run: wget -O - http://localhost:8080
