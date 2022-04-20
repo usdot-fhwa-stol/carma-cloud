@@ -32,4 +32,5 @@ jobs:
       - run: sudo chown -R tomcat:tomcat tomcat/work
       - run: sudo mv tomcat /opt/
       - run: sudo /opt/tomcat/bin/catalina.sh start
-      - run: sleep 5 && sudo grep "startup in" /opt/tomcat/logs/catalina.out
+      - run: sleep 10
+      - run: sudo cat /opt/tomcat/logs/catalina.out
