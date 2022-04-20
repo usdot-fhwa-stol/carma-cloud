@@ -43,7 +43,7 @@
  <init-param>
   <description>REQUIRED: path to user credential file</description>
   <param-name>pwdfile</param-name>
-  <param-value>/opt/tomcat/webapps/user.csv</param-value>
+  <param-value>/opt/tomcat/webapps/carmacloud/user.csv</param-value>
  </init-param>
 
  <load-on-startup>1</load-on-startup>
