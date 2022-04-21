@@ -8,14 +8,76 @@ CARMAcloud can be deployed on a Linux server. Ensure you have a properly configu
 ```
 #!/bin/bash
 # java and javac must be executable from the command line
-cd /tmp
-git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
+
+# update and get required packages
 sudo apt-get update && sudo apt-get install pkg-config sqlite3 libsqlite3-dev iptables
+
+# download, compile, and install proj needed to process XODR files
+cd /tmp
+wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz
+tar -xzf proj-6.1.1.tar.gz
+mv proj-6.1.1 proj
+cd proj
+./configure
+make
+sudo make install
+rm -rf proj
+rm -f proj-6.1.1.tar.gz
+
+# get Apachet Tomcat
+cd /tmp
+wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz
+tar -xzf apache-tomcat-9.0.34.tar.gz
+mv apache-tomcat-9.0.34 tomcat
+rm -rf tomcat/webapps/ROOT
+rm -rf tomcat/webapps/docs
+rm -rf tomcat/webapps/examples
+rm -rf tomcat/webapps/host-manager
+rm -rf tomcat/webapps/manager
+rm -f apache-tomcat-9.0.34.tar.gz
+
+# get source code and compile
+git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
+mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
+find ./carma-cloud/src -name "*.java" > sources.txt
+javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
+rm -f sources.txt
+      - run:
+          name: Configure webapp
+          command: |
+            mv carma-cloud/end_cc.sh tomcat
+            mv carma-cloud/start_cc.sh tomcat
+            mkdir -p tomcat/work/carmacloud/xodr
+            mkdir -p tomcat/work/carmacloud/validate/xodr
+            mv carma-cloud/web/WEB-INF/web.xml tomcat/webapps/carmacloud/ROOT/WEB-INF/
+            mv carma-cloud/web/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/
+            mv -n carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
+            sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
+            mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
+            touch tomcat/webapps/carmacloud/event.csv
+            mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
+            mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
+            mv carma-cloud/osmbin/units.csv tomcat/webapps/carmacloud/
+            gunzip carma-cloud/osmbin/*.gz
+            mv carma-cloud/osmbin tomcat/webapps/carmacloud/
+            java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
 chmod 755 carma-cloud/*.sh
 sudo carma-cloud/iptables.sh
-wget https://download.osgeo.org/proj/proj-6.1.1.tar.gz && tar -xzf proj-6.1.1.tar.gz && mv proj-6.1.1 proj && rm -f proj-6.1.1.tar.gz
-cd /tmp/proj && ./configure && make && sudo make install && cd /tmp && rm -rf proj
-wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -f apache-tomcat-9.0.34.tar.gz
+            rm -rf carma-cloud
+      - run:
+          name: Configure network and set privileges
+          command: |
+            sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
+            echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
+            sudo groupadd tomcat
+            sudo useradd -g tomcat -m tomcat
+            chmod g+r tomcat/conf/*
+            chmod -R o-rwx tomcat/webapps/*
+            sudo chown -R root:tomcat tomcat
+            sudo chown -R tomcat:tomcat tomcat/logs
+            sudo chown -R tomcat:tomcat tomcat/temp
+            sudo chown -R tomcat:tomcat tomcat/work
+            sudo mv tomcat /opt/wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && mv apache-tomcat-9.0.34 tomcat && rm -f apache-tomcat-9.0.34.tar.gz
 mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
 mv carma-cloud/end_cc.sh tomcat
 mv carma-cloud/start_cc.sh tomcat
