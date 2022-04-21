@@ -26,6 +26,7 @@ jobs:
             mv carma-cloud/web/WEB-INF/web.xml tomcat/webapps/carmacloud/ROOT/WEB-INF/
             mv carma-cloud/web/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/
             mv -n carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
+            sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
             mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
             touch tomcat/webapps/carmacloud/event.csv
             mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
@@ -34,7 +35,6 @@ jobs:
             gunzip carma-cloud/osmbin/*.gz
             mv carma-cloud/osmbin tomcat/webapps/carmacloud/
             java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
-            sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
             rm -rf carma-cloud
       - run:
           name: Configure Environment
