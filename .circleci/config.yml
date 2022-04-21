@@ -63,16 +63,10 @@ jobs:
             sudo chown -R tomcat:tomcat tomcat/work
             sudo mv tomcat /opt/
       - run:
-          name: Check Tomcat Startup
+          name: Start Tomcat and Verify Deployment
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
-            sleep 10
+            sleep 5
             if [[ `sudo grep "startup in" /opt/tomcat/logs/catalina.out | wc -l` -ne "1" ]]; then exit 1; fi
-      - run:
-          name: Check Default Webpage
-          command: |
-            if [[ `wget -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 1; fi
-      - run:
-          name: Check Login
-          command: |
-            if [[ `wget -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 1; fi
+            if [[ `wget -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 2; fi
+            if [[ `wget -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 3; fi
