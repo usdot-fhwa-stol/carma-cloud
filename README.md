@@ -76,41 +76,16 @@ sudo chown -R root:tomcat tomcat
 sudo chown -R tomcat:tomcat tomcat/logs
 sudo chown -R tomcat:tomcat tomcat/temp
 sudo chown -R tomcat:tomcat tomcat/work
-sudo mv tomcat /opt/wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz && tar -xzf apache-tomcat-9.0.34.tar.gz && 
-            
-sudo carma-cloud/iptables.sh
-            
-mv apache-tomcat-9.0.34 tomcat && rm -f apache-tomcat-9.0.34.tar.gz
-mkdir -p tomcat/webapps/carmacloud/ROOT && mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
-mv carma-cloud/end_cc.sh tomcat
-mv carma-cloud/start_cc.sh tomcat
-mkdir -p tomcat/work/carmacloud/xodr
-mkdir -p tomcat/work/carmacloud/validate/xodr
-find ./carma-cloud/src -name "*.java" > sources.txt && mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
-javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
-sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml
-echo -e '127.0.0.1\tcarmacloud' | tee -a /etc/hosts
-sudo mv carma-cloud/lib/libcs2cswrapper.so /usr/lib/
-mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
-touch tomcat/webapps/carmacloud/event.csv
-mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
-mv carma-cloud/osmbin/storm.csv tomcat/webapps/carmacloud/
-mv carma-cloud/osmbin/units.csv tomcat/webapps/carmacloud/
-java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
-gunzip carma-cloud/osmbin/*.gz
-mv carma-cloud/osmbin tomcat/webapps/carmacloud/
-rm -f sources.txt && rm -rf carma-cloud
-sudo groupadd tomcat
-sudo useradd -g tomcat -m tomcat
-sudo groupadd v2xhub
-sudo useradd -g v2xhub -m v2xhub
-chmod g+r tomcat/conf/*
-chmod -R o-rwx tomcat/webapps/*
-sudo chown -R root:tomcat tomcat
-sudo chown -R tomcat:tomcat tomcat/logs
-sudo chown -R tomcat:tomcat tomcat/temp
-sudo chown -R tomcat:tomcat tomcat/work
 sudo mv tomcat /opt/
+
+# the iptables script is needed to redirect ports 80 and 443 to 8080 and 8443
+# and is only necessary to execute once when the machine is restarted
+# sudo /opt/tomcat/iptables.sh
+
+# these commands are needed when the v2xhub is using SSH tunneling
+# echo -e '127.0.0.1\ttcmreplyhost' | sudo tee -a /etc/hosts
+# sudo groupadd v2xhub
+# sudo useradd -g v2xhub -m v2xhub
 ```
 These commands will download the CARMAcloud source code from github, necessary dependencies, and the tomcat webserver. Changes to the tomcat version might be necessary if version 9.0.34 is no longer available on the Apache mirror. You can also download tomcat directly from the tomcat website. Tomcat cannot bind the port 80 when ran as the tomcat user, so iptables is used to redirect port 80 to 8080. Next the java code will be compiled and the .class files will be placed in the correct directory. Tomcat's server.xml file will have the carmacloud host entry inserted in the correct location. Carmacloud will be added to the /etc/hosts file. The java command that runs cc.ws.UserMgr will create the ccadmin user for the system. It is suggested to change to password to something more secure by replacing "admin_testpw" with the desired password in the command. Groups and users for tomcat and v2xhub will be created.
 ## Configuration
