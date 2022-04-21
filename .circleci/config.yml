@@ -18,7 +18,7 @@ jobs:
             rm -rf tomcat/webapps/manager
             rm -f apache-tomcat-9.0.34.tar.gz
       - run:
-          name: Get and Compile carma-cloud Source
+          name: Get and compile carma-cloud source
           command: |
             git clone -b develop https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
             mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
@@ -26,7 +26,7 @@ jobs:
             javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
             rm -f sources.txt
       - run:
-          name: Configure carma-cloud Webapp
+          name: Configure carma-cloud webapp
           command: |
             mv carma-cloud/end_cc.sh tomcat
             mv carma-cloud/start_cc.sh tomcat
@@ -46,14 +46,14 @@ jobs:
             java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
             rm -rf carma-cloud
       - run:
-          name: Configure Environment
+          name: Configure network and tomcat user
           command: |
             sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
             echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
             sudo groupadd tomcat
             sudo useradd -g tomcat -m tomcat
       - run:
-          name: Set Privileges and Deploy
+          name: Set file privileges and deploy
           command: |
             chmod g+r tomcat/conf/*
             chmod -R o-rwx tomcat/webapps/*
@@ -63,7 +63,7 @@ jobs:
             sudo chown -R tomcat:tomcat tomcat/work
             sudo mv tomcat /opt/
       - run:
-          name: Start Tomcat and Verify Deployment
+          name: Start Tomcat and verify deployment
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
             sleep 5
