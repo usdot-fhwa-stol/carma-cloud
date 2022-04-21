@@ -67,7 +67,8 @@ jobs:
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
             sleep 5
-            if [[ `sudo grep "startup in" | wc -l` -ne "1" ]]; then exit 1; fi
+            sudo tail -n 200 /opt/tomcat/logs/catalina.out
+            if [[ `sudo grep "startup in" /opt/tomcat/logs/catalina.out | wc -l` -ne "1" ]]; then exit 1; fi
       - run:
           name: Check Default Webpage
           command: |
