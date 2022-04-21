@@ -86,6 +86,9 @@ sudo mv tomcat /opt/
 # echo -e '127.0.0.1\ttcmreplyhost' | sudo tee -a /etc/hosts
 # sudo groupadd v2xhub
 # sudo useradd -g v2xhub -m v2xhub
+
+# start tomcat using /opt/tomcat/start_cc.sh
+# stop tomcat using /opt/tomcat/end_cc.sh
 ```
 These commands will download the CARMAcloud source code from github, necessary dependencies, and the tomcat webserver. Changes to the tomcat version might be necessary if version 9.0.34 is no longer available on the Apache mirror. You can also download tomcat directly from the tomcat website. Tomcat cannot bind the port 80 when ran as the tomcat user, so iptables is used to redirect port 80 to 8080. Next the java code will be compiled and the .class files will be placed in the correct directory. Tomcat's server.xml file will have the carmacloud host entry inserted in the correct location. Carmacloud will be added to the /etc/hosts file. The java command that runs cc.ws.UserMgr will create the ccadmin user for the system. It is suggested to change to password to something more secure by replacing "admin_testpw" with the desired password in the command. Groups and users for tomcat and v2xhub will be created.
 ## Configuration
