@@ -5,6 +5,8 @@ jobs:
       - image: cimg/openjdk:17.0.2
     working_directory: /tmp
     steps:
+      - checkout:
+          path: /tmp/carma-cloud
       - run:
           name: Download Apache Tomcat
           command: |
@@ -18,9 +20,8 @@ jobs:
             rm -rf tomcat/webapps/manager
             rm -f apache-tomcat-9.0.34.tar.gz
       - run:
-          name: Get and compile carma-cloud source
+          name: Compile carma-cloud source
           command: |
-            git clone -b develop https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
             mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
             find ./carma-cloud/src -name "*.java" > sources.txt
             javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
