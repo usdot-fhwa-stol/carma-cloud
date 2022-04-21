@@ -16,8 +16,6 @@ jobs:
           name: Get and Compile carma-cloud Source
           command: |
             git clone -b develop https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud
-            mkdir -p tomcat/webapps/carmacloud/ROOT
-            mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
             mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes
             find ./carma-cloud/src -name "*.java" > sources.txt
             javac -cp "tomcat/lib/servlet-api.jar:carma-cloud/lib/*" -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt
@@ -25,8 +23,8 @@ jobs:
       - run:
           name: Configure carma-cloud Webapp
           command: |
-            mv carma-cloud/web/WEB-INF/web.xml tomcat/webapps/carmacloud/ROOT/WEB-INF/
-            mv carma-cloud/web/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/
+            mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
+            mv tomcat/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/
             mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
             touch tomcat/webapps/carmacloud/event.csv
             mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
@@ -58,6 +56,7 @@ jobs:
           name: Start Tomcat and Verify
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
-            sleep 5
+            sleep 10
             if [[ `wget --quiet -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 1; fi
+            sudo tail -n 1 /opt/tomcat/logs/catalina.out
             if [[ `wget -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 1; fi
