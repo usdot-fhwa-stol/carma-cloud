@@ -11,6 +11,11 @@ jobs:
             wget https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.34/bin/apache-tomcat-9.0.34.tar.gz
             tar -xzf apache-tomcat-9.0.34.tar.gz
             mv apache-tomcat-9.0.34 tomcat
+            rm -rf tomcat/webapps/ROOT
+            rm -rf tomcat/webapps/docs
+            rm -rf tomcat/webapps/examples
+            rm -rf tomcat/webapps/host-manager
+            rm -rf tomcat/webapps/manager
             rm -f apache-tomcat-9.0.34.tar.gz
       - run:
           name: Get and Compile carma-cloud Source
@@ -23,10 +28,10 @@ jobs:
       - run:
           name: Configure carma-cloud Webapp
           command: |
-            mkdir -p tomcat/work/carmacloud/xodr
-            mkdir -p tomcat/work/carmacloud/validate/xodr
             mv carma-cloud/end_cc.sh tomcat
             mv carma-cloud/start_cc.sh tomcat
+            mkdir -p tomcat/work/carmacloud/xodr
+            mkdir -p tomcat/work/carmacloud/validate/xodr
             mv carma-cloud/web/WEB-INF/web.xml tomcat/webapps/carmacloud/ROOT/WEB-INF/
             mv carma-cloud/web/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/
             mv -n carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
@@ -50,11 +55,6 @@ jobs:
       - run:
           name: Set Privileges and Deploy
           command: |
-            rm -rf tomcat/webapps/ROOT
-            rm -rf tomcat/webapps/docs
-            rm -rf tomcat/webapps/examples
-            rm -rf tomcat/webapps/host-manager
-            rm -rf tomcat/webapps/manager
             chmod g+r tomcat/conf/*
             chmod -R o-rwx tomcat/webapps/*
             sudo chown -R root:tomcat tomcat
@@ -66,7 +66,6 @@ jobs:
           name: Start Tomcat and Verify
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
-            sleep 10
-            sudo tail -n 200 /opt/tomcat/logs/catalina.out
+            sleep 5
             if [[ `wget --quiet -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 1; fi
             if [[ `wget --quiet -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 1; fi
