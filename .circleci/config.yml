@@ -23,8 +23,9 @@ jobs:
       - run:
           name: Configure carma-cloud Webapp
           command: |
-            mv carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
-            mv tomcat/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/
+            mv carma-cloud/web/WEB-INF/web.xml tomcat/webapps/carmacloud/ROOT/WEB-INF/
+            mv carma-cloud/web/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/
+            mv -n carma-cloud/web/* tomcat/webapps/carmacloud/ROOT/
             mv carma-cloud/lib tomcat/webapps/carmacloud/ROOT/WEB-INF/
             touch tomcat/webapps/carmacloud/event.csv
             mv carma-cloud/osmbin/rop.csv tomcat/webapps/carmacloud/
