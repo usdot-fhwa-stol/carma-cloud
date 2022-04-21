@@ -58,6 +58,7 @@ jobs:
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
             sleep 10
-            if [[ `wget --quiet -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 1; fi
             sudo tail -n 1 /opt/tomcat/logs/catalina.out
-            if [[ `wget -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 1; fi
+            sudo tail -n 50 /opt/tomcat/logs/carmacloud.log
+            if [[ `wget --quiet -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 1; fi
+            if [[ `wget --quiet -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 1; fi
