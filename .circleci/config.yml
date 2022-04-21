@@ -46,15 +46,12 @@ jobs:
             java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv
             rm -rf carma-cloud
       - run:
-          name: Configure network and tomcat user
+          name: Configure network and set privileges
           command: |
             sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
             echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
             sudo groupadd tomcat
             sudo useradd -g tomcat -m tomcat
-      - run:
-          name: Set file privileges and deploy
-          command: |
             chmod g+r tomcat/conf/*
             chmod -R o-rwx tomcat/webapps/*
             sudo chown -R root:tomcat tomcat
