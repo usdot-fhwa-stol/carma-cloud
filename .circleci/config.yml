@@ -57,4 +57,4 @@ jobs:
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
             sleep 10
-            if [[ `wget --quiet -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -eq "1" ]]; then >&2 echo "no default webpage"; fi
+            if [[ `wget --quiet -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 1; fi
