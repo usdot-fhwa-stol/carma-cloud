@@ -1,7 +1,7 @@
 {
 	"ctrl":
 	{
-		"source": {"type": "vector", "tiles": ["https://carma-cloud.com//api/ctrl/{z}/{x}/{y}"], "minzoom": 17},
+		"source": {"type": "vector", "tiles": ["https://www.carma-cloud.com/api/ctrl/{z}/{x}/{y}"], "minzoom": 17},
 		"layers":
 		[
 			{"type": "fill", "source-layer": "pavement", "paint":{"fill-color": ["match", ["get", "type"], "d", "#666", "s", "#999",  "#666"]}}, 
@@ -39,7 +39,7 @@
 			{"type": "fill", "source-layer": "yield-iw", "paint":{"fill-color": ["rgb", 255, 255, 255]}},
 			{"type": "fill", "source-layer": "yield-sl", "paint":{"fill-color": "#fff"}},
 			{"type": "line", "source-layer": "latperm", "paint":{"line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 22.0, 10.0], "line-color": ["match", ["get", "color"], "standard", ["rgb", 255, 255, 255], "blue", "blue", "green", "green", "red", "red", "white", ["rgb", 255, 255, 255], "yellow", "#FC0", "orange", "orange", "#FFF"]}},
-			{"type": "fill", "source-layer": "closed-poly", "paint":{"fill-pattern": "wz-close"}},
+			{"type": "line", "source-layer": "closed-stripes", "paint":{"line-color": ["match", ["get", "color"], "white", ["rgb", 255, 255, 255], "orange", ["rgb", 255, 127, 39], ["rgb", 255, 255, 255]], "line-width": ["interpolate", ["exponential", 2], ["zoom"], 17.0, 1.0, 22.0, 10.0]}},
 			{"type": "line", "source-layer": "closed-outline", "paint":{"line-color": "#ff7f27", "line-width": 2}},
 			{"type": "fill", "source-layer": "maxspeed", "paint":{"fill-color": ["match", ["get", "color"], "white", ["rgb", 255, 255, 255], "yellow", ["rgb", 255, 201, 14], "#F00"], "fill-outline-color": "#000"}},
 			{"type": "line", "source-layer": "maxspeed-numbers", "paint":{"line-color": "#000", "line-width": ["interpolate", ["exponential", 2], ["zoom"], 19.0, 0.0, 24.0, 5.0]}},
