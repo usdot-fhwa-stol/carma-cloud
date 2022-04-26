@@ -8,6 +8,9 @@
  <welcome-file>login.html</welcome-file>
 </welcome-file-list>
 
+<welcome-file-list>
+ <welcome-file>login.html</welcome-file>
+</welcome-file-list>
 
 <servlet>
  <servlet-name>RegHub</servlet-name>
@@ -99,6 +102,12 @@
   <description>REQUIRED: zoom level used to create tiled data</description>
   <param-name>combinetol</param-name>
   <param-value>0.1</param-value>
+ </init-param>
+ 
+ <init-param>
+  <description>REQUIRED: file path for units</description>
+  <param-name>units</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
  </init-param>
 
  <init-param>
