@@ -1,13 +1,13 @@
 import {oMap, oPopup, setCursor, switchListener, resetMode, switchMode, 
-	carmaclPopupPos, addCtrlSources, removeCtrlSources, setMode, nMode} from './map.js';
+	carmaclPopupPos, addCtrlSources, removeCtrlSources, setMode, nMode, MODES} from './map.js';
 
 function carmaclStartWx()
 {
 	if ($('#dlgEdit').dialog('isOpen') || $('#dlgDelete').dialog('isOpen'))
 		return;
-	if (nMode !== 0 && nMode !== 2)
+	if (nMode !== MODES.nohandlers && nMode !== MODES.wxpoly)
 		switchMode();
-	if (nMode === 2)
+	if (nMode === MODES.wxpoly)
 	{
 		resetMode();
 		oMap.setPaintProperty('w-line', 'line-opacity', 0);
@@ -15,7 +15,7 @@ function carmaclStartWx()
 		return;
 	}
 	resetMode();
-	setMode(2);
+	setMode(MODES.wxpoly);
 	setCursor('crosshair');
 	oMap.on('click', carmaclFirstWx);
 	oMap.on('mousemove', carmaclPopupPos);

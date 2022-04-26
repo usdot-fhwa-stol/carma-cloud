@@ -4,6 +4,9 @@
 
 
 <display-name>CARMAcloud</display-name>
+<welcome-file-list>
+ <welcome-file>login.html</welcome-file>
+</welcome-file-list>
 
 <welcome-file-list>
  <welcome-file>login.html</welcome-file>
@@ -107,6 +110,12 @@
   <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
  </init-param>
 
+ <init-param>
+  <description>REQUIRED: file path for units</description>
+  <param-name>units</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
+ </init-param>
+
  <load-on-startup>1</load-on-startup>
 </servlet>
 
@@ -120,7 +129,13 @@
  <servlet-name>TcmReq</servlet-name>
  <servlet-class>cc.ws.TcmReqServlet</servlet-class>
 
- <load-on-startup>1</load-on-startup>
+ <init-param>
+  <description>OPTIONAL: number of cm desired inbetween each point in xml</description>
+  <param-name>xmldist</param-name>
+  <param-value>1500</param-value>
+ </init-param>
+
+ <load-on-startup>2</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -225,4 +240,53 @@
  <servlet-name>ValidateXodrTiles</servlet-name>
  <url-pattern>/api/vctrl/*</url-pattern>
 </servlet-mapping>
+
+<servlet>
+ <servlet-name>RsmServlet</servlet-name>
+ <servlet-class>cc.ws.RsmServlet</servlet-class>
+
+ <init-param>
+  <param-name>user</param-name>
+  <param-value>bryan</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>pw</param-name>
+  <!--<param-value>3934c64f-4f7a-4ffd-93cd-50009bbe2767</param-value>-->
+  <param-value>0816119b-3ea5-42ba-8a68-559875833aa1</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>url</param-name>
+  <param-value>https://wzdc-published-rest-api.azurewebsites.net</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>period</param-name>
+  <param-value>1</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>file</param-name>
+  <param-value>/opt/tomcat/work/carmacloud/rsm/current.csv</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>defaultoffsets</param-name>
+  <param-value>0.0,-0.00006</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>rsm-rsm-xml--tfhrc-carma-test-21--innovation-road</param-name>
+  <param-value>0.0,-0.000031</param-value>
+ </init-param>
+
+ <load-on-startup>2</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>RsmServlet</servlet-name>
+ <url-pattern>/api/rsm/*</url-pattern>
+</servlet-mapping>
+
 </web-app>
