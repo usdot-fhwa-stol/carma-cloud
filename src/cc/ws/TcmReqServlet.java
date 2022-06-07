@@ -12,6 +12,7 @@ import cc.ctrl.TcmReqParser2;
 import cc.ctrl.TcmReq;
 import cc.ctrl.TcmReqParser;
 import cc.ctrl.TrafCtrlEnums;
+import cc.ctrl.proc.ProcCtrl;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
 import cc.util.Geo;
@@ -34,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -50,8 +52,10 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 {
 	protected static final Logger LOGGER = LogManager.getRootLogger();
 
+	private int m_nExplodeDistForXml = 0;
 	private final ArrayDeque<StringBuilder> REPLYBUFS = new ArrayDeque();
 	private final ExecutorService THREADPOOL = Executors.newFixedThreadPool(53);
+	private boolean m_bRemoveWidth = false;
 	private static int[] IGNORE_CTRLS;
 	static
 	{
@@ -59,6 +63,25 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 		java.util.Arrays.sort(IGNORE_CTRLS);
 	}
 	
+	
+	@Override
+	public void init(ServletConfig oConfig)
+	{
+		String sRemoveWidth = oConfig.getInitParameter("removewidth");
+		if (sRemoveWidth != null)
+			m_bRemoveWidth = Boolean.parseBoolean(sRemoveWidth);
+		
+		String sExplodeDistForXml = oConfig.getInitParameter("xmldist");
+		if (sExplodeDistForXml != null)
+		{
+			int nExplode = Integer.parseInt(sExplodeDistForXml);
+			if (nExplode == 0)
+				return;
+			if (nExplode < ProcCtrl.g_dExplodeStep * 100)
+				nExplode = (int)(ProcCtrl.g_dExplodeStep * 100);
+			m_nExplodeDistForXml = nExplode;
+		}
+	}
 	
 	@Override
 	public void destroy()
@@ -202,6 +225,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 								
 								System.out.println(TrafCtrl.getId(oCtrl.m_yId));
 								oResCtrls.add(~nSearchIndex, oCtrl);
+								oCtrl.preparePoints(m_nExplodeDistForXml);
 								nMsgTot += (oCtrl.size() / 256 + 1);
 							}
 						}
@@ -222,6 +246,12 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 					else
 						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, false, nIndex * 256 - 1);
 					++nMsgCount;
+					if (m_bRemoveWidth)
+					{
+						int nStart = sBuf.indexOf("<refwidth>");
+						int nEnd = sBuf.indexOf("</refwidth>", nStart) + "</refwidth>".length();
+						sBuf.delete(nStart, nEnd);
+					}
 					synchronized (REPLYBUFS)
 					{
 						REPLYBUFS.push(sBuf);
