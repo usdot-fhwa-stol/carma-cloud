@@ -1,5 +1,6 @@
 package cc.ctrl;
 
+import cc.ctrl.proc.ProcCtrl;
 import cc.geosrv.Mercator;
 import cc.util.Arrays;
 import cc.util.FileUtil;
@@ -717,6 +718,45 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		}
 		
 		return dRet;
+	}
+	
+	
+	public void preparePoints(int nExplodeDist)
+	{
+		if (nExplodeDist == 0)
+			return;
+		double[] dC = m_oFullGeo.m_dC;
+		double[] dNT = m_oFullGeo.m_dNT;
+		int nLimit = Arrays.size(dC);
+		ArrayList<TrafCtrlPt> oNewPts = new ArrayList();
+		int[] nPrevPt = new int[]{Mercator.lonToCm(Geo.fromIntDeg(m_nLon)), Mercator.latToCm(Geo.fromIntDeg(m_nLat)), m_nWidth};
+		int nStep = (int)(nExplodeDist / (ProcCtrl.g_dExplodeStep * 100)) * 2;
+		for (int nIndex = 1; nIndex < nLimit; nIndex += nStep)
+		{
+			int nX = Mercator.mToCm(dC[nIndex]);
+			int nY = Mercator.mToCm(dC[nIndex + 1]);
+			int nW = Mercator.mToCm(Geo.distance(dC[nIndex], dC[nIndex + 1], dNT[nIndex], dNT[nIndex + 1]) * 2);
+			int nXd = nX - nPrevPt[0];
+			int nYd = nY - nPrevPt[1];
+			int nWd = nW - nPrevPt[2];
+			TrafCtrlPt oTemp = new TrafCtrlPt(nXd, nYd, nWd);
+			oNewPts.add(oTemp);
+			nPrevPt[0] = nX;
+			nPrevPt[1] = nY;
+			nPrevPt[2] = nW;
+		}
+		
+		int nX = Mercator.mToCm(dC[nLimit - 2]);
+		int nY = Mercator.mToCm(dC[nLimit - 1]);
+		int nW = Mercator.mToCm(Geo.distance(dC[nLimit - 2], dC[nLimit - 1], dNT[nLimit - 2], dNT[nLimit - 1]) * 2);
+		int nXd = nX - nPrevPt[0];
+		int nYd = nY - nPrevPt[1];
+		int nWd = nW - nPrevPt[2];
+		if (nXd != 0 || nYd != 0 || nWd != 0)
+			oNewPts.add(new TrafCtrlPt(nXd, nYd, nWd));
+		
+		clear();
+		addAll(oNewPts);
 	}
 
 
