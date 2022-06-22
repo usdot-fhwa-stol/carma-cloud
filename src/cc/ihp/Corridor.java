@@ -11,12 +11,12 @@ import java.util.ArrayList;
  *
  * @author aaron.cherney
  */
-public class BoundsList extends ArrayList<Bounds>
+public class Corridor extends ArrayList<Subsegment>
 {
 	public double[] m_dBb = new double[]{Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
 	
 	@Override
-	public boolean add(Bounds oBounds)
+	public boolean add(Subsegment oBounds)
 	{
 		double[] dInnerBb = oBounds.m_dBb;
 		if (dInnerBb[0] < m_dBb[0])

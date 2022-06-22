@@ -30,7 +30,7 @@ public class SessMgr extends HttpServlet
 	}
 
 
-	static Session getSession(HttpServletRequest oReq)
+	public static Session getSession(HttpServletRequest oReq)
 	{
 		return getSession(oReq, false);
 	}

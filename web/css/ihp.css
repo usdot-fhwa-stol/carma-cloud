@@ -1,0 +1,31 @@
+h1 button
+{
+	font-size: 15px;
+	margin-left: 5px;
+	font-weight: 600;
+}
+
+.w3-table input
+{
+	width: 40px;
+}
+
+h1 span
+{
+	font-size: 15px;
+	font-weight: 400;
+	vertical-align: middle;
+}
+h1 input
+{
+	width: 40px;
+	margin-left: 5px;
+	font-size: 15px;
+	font-weight: 400;
+	vertical-align: middle;
+}
+
+.red-focus
+{
+	border: 3px solid #f00;
+}
