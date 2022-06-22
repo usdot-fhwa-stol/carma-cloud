@@ -37,7 +37,6 @@ import cc.util.Units;
 import cc.vector_tile.VectorTile;
 import java.awt.geom.Area;
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -477,7 +476,11 @@ public class CtrlTiles extends HttpServlet
 			String sVal = oReq.getParameter("value");
 			if (sVal != null)
 			{
-				nControlValue = Integer.parseInt(sVal);
+				double dVal = Double.parseDouble(sVal);
+				if (sUnits.length > 0)
+					nControlValue = (int)Math.round(Units.getInstance().convert(sUnits[1], sUnits[0], dVal));
+				else
+					nControlValue = (int)dVal;
 			}
 			else
 			{
@@ -497,11 +500,7 @@ public class CtrlTiles extends HttpServlet
 						nControlValue = Integer.parseInt(sVal);
 				}
 			}
-			if (sUnits.length > 0)
-			{
-				double dVal = Units.getInstance().convert(sUnits[1], sUnits[0], nControlValue);
-				nControlValue = (int)Math.round(dVal);
-			}
+			
 			String sId = oReq.getParameter("id");
 			int nStartIndex = Integer.parseInt(oReq.getParameter("s")) * 4 + 1; // add one since we use the growable arrays with the insertion index at position 0
 			int nEndIndex = Integer.parseInt(oReq.getParameter("e")) * 4 + 1;

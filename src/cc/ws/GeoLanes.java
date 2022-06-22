@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -196,13 +197,13 @@ public class GeoLanes extends HttpServlet
 				sBuf.append("]");
 				if (TrafCtrlEnums.CTRLS[oCtrl.m_nControlType].length == 1)
 				{
-					int nDisplay = Integer.parseInt(sVals.get(1));
+					double dDisplay = Integer.parseInt(sVals.get(1));
 					String[] sUnits = TrafCtrlEnums.UNITS[oCtrl.m_nControlType];
 					if (sUnits.length > 0)
 					{
-						nDisplay = (int)Math.round(Units.getInstance().convert(sUnits[0], sUnits[1], nDisplay));
+						dDisplay = Units.getInstance().convert(sUnits[0], sUnits[1], dDisplay);
 					}
-					sBuf.append(",\"display\":").append(nDisplay);
+					sBuf.append(",\"display\":").append(new DecimalFormat("#.##").format(dDisplay));
 				}
 				sBuf.append("},");
 			}
