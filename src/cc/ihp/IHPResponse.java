@@ -5,24 +5,12 @@
  */
 package cc.ihp;
 
-import cc.ctrl.CtrlGeo;
-import cc.ctrl.TrafCtrl;
-import cc.ctrl.TrafCtrlEnums;
-import cc.ctrl.proc.ProcCtrl;
 import cc.geosrv.Mercator;
-import cc.util.Arrays;
-import cc.util.FileUtil;
 import cc.util.Geo;
-import cc.util.MathUtil;
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -33,12 +21,30 @@ import org.json.JSONTokener;
  */
 public class IHPResponse
 {
+
+	/**
+	 * Timestamp of response
+	 */
 	public long m_lTimestamp;
+
+	/**
+	 * Request  identifier
+	 */
 	public String m_sRequestId;
+
+	/**
+	 * List of detectors
+	 */
 	public ArrayList<Detector> m_oDetectors = new ArrayList();
 	
-	
-	public IHPResponse(InputStream oIn, ArrayList<Corridor> oAllBounds)
+	/**
+	 * Parses the data from the JSON response
+	 * 
+	 * @param oIn input stream of data in JSON format
+	 * @param oAllCorridors list of corridors used for the Speed Harmonization Algorithm
+	 * @throws Exception
+	 */
+	public IHPResponse(InputStream oIn, ArrayList<Corridor> oAllCorridors)
 		throws Exception
 	{
 		JSONObject oJson = new JSONObject(new JSONTokener(oIn));
@@ -70,7 +76,7 @@ public class IHPResponse
 						m_oDetectors.add(~nSearch, oDetector);
 						double dX = Mercator.lonToMeters(oDetector.m_dLon);
 						double dY = Mercator.latToMeters(oDetector.m_dLat);
-						for (Corridor oBoundsList : oAllBounds)
+						for (Corridor oBoundsList : oAllCorridors)
 						{
 							if (Geo.isInBoundingBox(dX, dY, oBoundsList.m_dBb[0], oBoundsList.m_dBb[1], oBoundsList.m_dBb[2], oBoundsList.m_dBb[3]))
 							{

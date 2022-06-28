@@ -10,6 +10,7 @@ let oPopup;
 let nLastSegment = -1;
 let sActiveMonth;
 let sActiveDay;
+let bStop = false;
 
 async function initialize()
 {
@@ -204,6 +205,7 @@ function pollStatus()
 		if (oData.users > 1)
 		{
 			showPageoverlay('Another user is using the system. Try again later.');
+			bStop = true;
 			return;
 		}
 		$('#sim_status').html(oData.desc);
@@ -987,13 +989,13 @@ function createDetectorList()
 {
 	let oDetectorDiv = $('#detectors_container');
 	let oTable = $('<table></table>');
-	oTable.append($('<tr><th>subsegment</th><th>speed limit</th><th>15th %ile</th><th>85th %ile</th><th>Occupancy</th><th>Volume</th></tr>'));
+	oTable.append($('<tr><th>subsegment</th><th>speed limit</th><th>15th %ile</th><th>85th %ile</th><th>Density</th><th>Volume</th></tr>'));
 	oTable.append($('<tr><th></th><th>mph</th><th>mph</th><th>mph</th><th>% (0-100)</th><th>veh/h/lane</th></tr>'));
 	oTable.addClass('w3-table');
 	let oSrc = oMap.getSource('corridor_poly');
 	for (let oFeature of oSrc._data.features.values())
 	{
-		let oRow = $(`<tr><td>${oFeature.properties.sub}</td><td><input id="limit_${oFeature.properties.sub}"></td><td><input id="15_${oFeature.properties.sub}"></td><td><input id="85_${oFeature.properties.sub}"></td><td><input id="occ_${oFeature.properties.sub}"></td><td><input id="vol_${oFeature.properties.sub}"></td></tr>`);
+		let oRow = $(`<tr><td>${oFeature.properties.sub}</td><td><input id="limit_${oFeature.properties.sub}"></td><td><input id="15_${oFeature.properties.sub}"></td><td><input id="85_${oFeature.properties.sub}"></td><td><input id="den_${oFeature.properties.sub}"></td><td><input id="vol_${oFeature.properties.sub}"></td></tr>`);
 		oRow.mouseenter({'id': oFeature.properties.sub}, highlightPoly).mouseleave({'id': oFeature.properties.sub}, unhighlightPoly);
 		oTable.append(oRow);
 	}
@@ -1034,7 +1036,7 @@ function getDetectors()
 				$('#limit_' + nSegmentIndex).val(aSegment[0]);
 				$('#15_' + nSegmentIndex).val(aSegment[1]);
 				$('#85_' + nSegmentIndex).val(aSegment[2]);
-				$('#occ_' + nSegmentIndex).val(aSegment[3]);
+				$('#den_' + nSegmentIndex).val(aSegment[3]);
 				$('#vol_' + nSegmentIndex).val(aSegment[4]);
 			}
 		}
@@ -1128,7 +1130,7 @@ function processDetectors()
 					$('#limit_' + nSegmentIndex).val(aSegment[0]);
 					$('#15_' + nSegmentIndex).val(aSegment[1]);
 					$('#85_' + nSegmentIndex).val(aSegment[2]);
-					$('#occ_' + nSegmentIndex).val(aSegment[3]);
+					$('#den_' + nSegmentIndex).val(aSegment[3]);
 					$('#vol_' + nSegmentIndex).val(aSegment[4]);
 				}
 			}
@@ -1152,13 +1154,16 @@ function timeoutPageoverlay(nMillis = 1500)
 {
 	window.setTimeout(function()
 	{
-		$('#pageoverlay').hide();
+		if (!bStop)
+			$('#pageoverlay').hide();
 	}, nMillis);
 }
 
 
 function showPageoverlay(sContents)
 {
+	if (bStop)
+		return;
 	$('#pageoverlay p').html(sContents);
 	$('#pageoverlay').show();
 }

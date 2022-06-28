@@ -24,16 +24,39 @@ import org.json.JSONTokener;
  */
 public class IHPRequest
 {
+
+	/**
+	 * Request identifier
+	 */
 	String m_sRequestId;
+
+	/**
+	 * Device identifier
+	 */
 	String m_sDeviceId;
+
+	/**
+	 * Device type
+	 */
 	String m_sDeviceType;
+
+	/**
+	 * Request geometry
+	 */
 	ArrayList<int[]> m_oGeometry = new ArrayList();
 	
+	/**
+	 *
+	 */
 	public IHPRequest()
 	{
 		
 	}
 
+	/**
+	 *
+	 * @param in
+	 */
 	public IHPRequest(InputStream oIn)
 	{
 		JSONObject oRequest = new JSONObject(new JSONTokener(oIn));
@@ -48,6 +71,9 @@ public class IHPRequest
 		}
 	}
 	
+	/**
+	 *
+	 */
 	public void sendRequest()
 	{
 		JSONObject oRequest = new JSONObject();
@@ -82,7 +108,11 @@ public class IHPRequest
 		System.out.print(oRequest.toString(2));
 	}
 	
-	
+	/**
+	 *
+	 * @param sArgs
+	 * @throws Exception
+	 */
 	public static void main(String[] sArgs)
 		throws Exception
 	{

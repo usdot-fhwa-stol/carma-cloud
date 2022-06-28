@@ -316,4 +316,9 @@
  <load-on-startup>2</load-on-startup>
 </servlet>
 
+<servlet-mapping>
+ <servlet-name>IHP</servlet-name>
+ <url-pattern>/api/ihp/*</url-pattern>
+</servlet-mapping>
+
 </web-app>
