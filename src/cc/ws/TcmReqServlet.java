@@ -18,23 +18,18 @@ import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.Text;
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -48,13 +43,11 @@ import org.apache.logging.log4j.Logger;
  *
  * @author aaron.cherney
  */
-public class TcmReqServlet extends HttpServlet implements Runnable
+public class TcmReqServlet extends HttpServlet
 {
-	protected static final Logger LOGGER = LogManager.getRootLogger();
+	protected static final Logger LOGGER = LogManager.getLogger(TcmReqServlet.class);
 
 	private int m_nExplodeDistForXml = 0;
-	private final ArrayDeque<StringBuilder> REPLYBUFS = new ArrayDeque();
-	private final ExecutorService THREADPOOL = Executors.newFixedThreadPool(53);
 	private boolean m_bRemoveWidth = false;
 	private static int[] IGNORE_CTRLS;
 	static
@@ -81,12 +74,6 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 				nExplode = (int)(ProcCtrl.g_dExplodeStep * 100);
 			m_nExplodeDistForXml = nExplode;
 		}
-	}
-	
-	@Override
-	public void destroy()
-	{
-		THREADPOOL.shutdown();
 	}
 	
 	
@@ -145,9 +132,6 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 						dTcMercBounds[3] = dY;
 				}
 				Geo.untwist(dCorners);
-				for (int n = 0; n < dCorners.length; n += 2) 
-					System.out.print(String.format("[%2.7f,%2.7f],", Mercator.xToLon(dCorners[n]), Mercator.yToLat(dCorners[n + 1])));
-				System.out.println();
 				Mercator oM = Mercator.getInstance();
 				int[] nTiles = new int[2];
 				int[] nTileIndices = new int[4];
@@ -200,6 +184,9 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 							if (nSearchIndex < 0) // only load controls once
 							{
 								String sFile = CtrlTiles.g_sCtrlDir + TrafCtrl.getId(yId) + ".bin";
+								Path oCtrlFile = Paths.get(sFile);
+								if (!Files.exists(oCtrlFile))
+									continue;
 								TrafCtrl oCtrl;
 								try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
 								{
@@ -223,7 +210,6 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 								if (!Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dC) && !Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dNT) && !Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dPT))
 									continue;
 								
-								System.out.println(TrafCtrl.getId(oCtrl.m_yId));
 								oResCtrls.add(~nSearchIndex, oCtrl);
 								oCtrl.preparePoints(m_nExplodeDistForXml);
 								nMsgTot += (oCtrl.size() / 256 + 1);
@@ -231,16 +217,16 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 						}
 					}
 				}
-			}
-			
+			}			
 			
 			int nMsgCount = 1;
+			StringBuilder sBuf = new StringBuilder();
 			for (TrafCtrl oCtrl : oResCtrls)
 			{
 				int nParts = oCtrl.size() / 256 + 1;
-				StringBuilder sBuf = new StringBuilder();
 				for (int nIndex = 0; nIndex < nParts; nIndex++)
 				{
+					sBuf.setLength(0);
 					if (nIndex == 0)
 						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, true, 0);
 					else
@@ -252,57 +238,36 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 						int nEnd = sBuf.indexOf("</refwidth>", nStart) + "</refwidth>".length();
 						sBuf.delete(nStart, nEnd);
 					}
-					synchronized (REPLYBUFS)
+					
+					Text.removeCtrlChars(sBuf); // pack chars into one line
+					sBuf.insert(0, ' '); // build log msg in reverse order
+					sBuf.insert(0, "TCM ");
+					LOGGER.debug(sBuf);
+					
+					HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://tcmreplyhost:10001/tcmreply").openConnection();
+					oHttpClient.setDoOutput(true);
+					oHttpClient.setRequestMethod("POST");
+					oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+					oHttpClient.setFixedLengthStreamingMode(sBuf.length());
+
+					try
 					{
-						REPLYBUFS.push(sBuf);
-						THREADPOOL.execute(this);
+						oHttpClient.connect(); // send post request
+
+						try (OutputStreamWriter oOut = new OutputStreamWriter(oHttpClient.getOutputStream()))
+						{
+							oOut.append(sBuf);
+						}
+
+						oHttpClient.disconnect();
 					}
-					try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(Paths.get(String.format("/dev/shm/testreqreply%d.xml", nMsgCount - 1)), FileUtil.WRITE, FileUtil.FILEPERS), "UTF-8")))
+					catch (Exception oEx)
 					{
-						oOut.append(sBuf);
+						oEx.printStackTrace();
+						LOGGER.error(oEx.getMessage());
 					}
 				}
 			}
-		}
-		catch (Exception oEx)
-		{
-			oEx.printStackTrace();
-		}
-	}
-	
-	@Override
-	public void run()
-	{
-		StringBuilder sBuf = null;
-		synchronized (REPLYBUFS)
-		{
-			if (!REPLYBUFS.isEmpty())
-				sBuf = REPLYBUFS.removeFirst();
-		}
-		if (sBuf == null)
-			return;
-		
-		try
-		{
-//			Thread.sleep(10000);
-			HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://tcmreplyhost:10001/tcmreply").openConnection();
-			oHttpClient.setDoOutput(true);
-			oHttpClient.setRequestMethod("POST");
-			oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-			oHttpClient.setFixedLengthStreamingMode(sBuf.length());
-			
-			oHttpClient.connect(); // send post request
-			
-			try (OutputStreamWriter oOut = new OutputStreamWriter(oHttpClient.getOutputStream()))
-			{
-				oOut.append(sBuf);
-			}
-			Text.removeCtrlChars(sBuf); // pack chars into one line
-			sBuf.insert(0, ' '); // build log msg in reverse order
-			sBuf.insert(0, oHttpClient.getResponseCode());
-			sBuf.insert(0, "TCM ");
-			LOGGER.debug(sBuf);
-			oHttpClient.disconnect();
 		}
 		catch (Exception oEx)
 		{
