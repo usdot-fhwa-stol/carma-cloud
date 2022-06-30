@@ -54,12 +54,12 @@ public class Subsegment extends ArrayList<Detector>
 	public double[] m_dSpeeds = Arrays.newDoubleArray();
 
 	/**
-	 * Traffic volume in veh/h/lane
+	 * Traffic volume in veh/s/lane
 	 */
-	public int m_nVolume;
+	public double m_dVolume;
 
 	/**
-	 * Traffic density 0 < x < 1
+	 * Traffic density veh/m/lane
 	 */
 	public double m_dDensity;
 
@@ -182,11 +182,12 @@ public class Subsegment extends ArrayList<Detector>
 	public void reset()
 	{
 		m_dSpeeds[0] = 1;
-		m_nVolume = 0;
+		m_dVolume = 0;
 		m_nMaxSpeed = Integer.MIN_VALUE;
 		m_dPreviousDensity = m_dDensity;
 		m_dPreviousAdvisorySpeed = m_dAdvisorySpeed;
 		m_dDensity = 0;
+		m_oCtrl = null;
 		clear();
 	}
 	
@@ -261,6 +262,6 @@ public class Subsegment extends ArrayList<Detector>
 		m_d15th = d15th;
 		m_d85th = d85th;
 		m_dDensity = dDensity;
-		m_nVolume = (int)Math.round(dVolume);
+		m_dVolume = dVolume;
 	}
 }

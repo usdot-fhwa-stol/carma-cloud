@@ -285,7 +285,7 @@ public class IHP extends HttpServlet
 	 * A sample is below, the first array contains each corridor. Each corridor contains
 	 * an array of subsegments. Each subsegment contains an array of values which
 	 * represent detector data in this format [speed limit (mph), 15th percentile speed (mph),
-	 * 85th percentile speed (mph), occupancy (%), volume (veh/h/lane]
+	 * 85th percentile speed (mph), occupancy (veh/mile/lane), volume (veh/h/lane]
 	 * [ 
 	 *	[ // start of corridor 0
 	 *		[], // subsegment 0
@@ -334,8 +334,8 @@ public class IHP extends HttpServlet
 					oSubsegment.updateDetectors(oUnits.convert("mph", "m/s", oSubsegmentDetectors.getDouble(0)), // store in m/s for calculations
 						oUnits.convert("mph", "m/s", oSubsegmentDetectors.getDouble(1)), // store in m/s for calculations
 						oUnits.convert("mph", "m/s", oSubsegmentDetectors.getDouble(2)), // store in m/s for calculations 
-						oSubsegmentDetectors.getDouble(3) / 100.0, // divide percent
-						oSubsegmentDetectors.getDouble(4));
+						oUnits.convert("veh/mi/lane", "veh/m/lane", oSubsegmentDetectors.getDouble(3)), // store in veh/m/lane
+						oUnits.convert("veh/hr/lane", "veh/s/lane", oSubsegmentDetectors.getDouble(4))); // store in veh/s/lane
 				}
 			}
 		}
@@ -993,7 +993,8 @@ public class IHP extends HttpServlet
 		int nConsecutiveTrigger = (int)oParameters.get("consecutive_time_interval_trigger").doubleValue();
 		int nTimeInterval = (int)oParameters.get("time_interval").doubleValue();
 		double dMaximalGap = oParameters.get("maximal_gap");
-		int nBaselineFlow = (int)oParameters.get("baseline_flow").doubleValue();
+		Units oUnits = Units.getInstance();
+		double dBaselineFlow = oUnits.convert("veh/hr/lane", "veh/s/lane", oParameters.get("baseline_flow").doubleValue());
 		StringBuilder sLogBuf = new StringBuilder();
 		sLogBuf.append(oSdf.format(lNow)).append('\n');
 		sLogBuf.append("space factor,").append(oDf.format(dSpaceFactor)).append('\n');
@@ -1001,7 +1002,7 @@ public class IHP extends HttpServlet
 		sLogBuf.append("number of consecutive reduced speed,").append(nConsecutiveTrigger).append('\n');
 		sLogBuf.append("time interval,").append(nTimeInterval).append('\n');
 		sLogBuf.append("maximal gap,").append(oDf.format(dMaximalGap)).append('\n');
-		sLogBuf.append("baseline traffic flow,").append(nBaselineFlow).append('\n');
+		sLogBuf.append("baseline traffic flow,").append(dBaselineFlow).append('\n');
 		sLogBuf.append("input json,\"").append(m_oCurrentDetectors.toString()).append("\"\n");
 		if (!bSimulation) // if data was received from live source
 		{
@@ -1012,7 +1013,7 @@ public class IHP extends HttpServlet
 					for (Detector oDetector : oSubsegment) // calculate the traffic parameters using the detectors inside of the subsegment
 					{
 						oSubsegment.m_dDensity += oDetector.m_dDensity;
-						oSubsegment.m_nVolume += oDetector.m_nVolume;
+						oSubsegment.m_dVolume += oDetector.m_nVolume;
 						Iterator<double[]> oIt = Arrays.iterator(oDetector.m_dSpeeds, new double[1], 1, 1);
 						while (oIt.hasNext())
 							oSubsegment.m_dSpeeds = Arrays.add(oSubsegment.m_dSpeeds, oIt.next()[0]);
@@ -1070,7 +1071,7 @@ public class IHP extends HttpServlet
 			}
 		}
 		
-		Units oUnits = Units.getInstance();
+		
 		String[] sUnits = TrafCtrlEnums.UNITS[TrafCtrlEnums.getCtrl("maxspeed")];
 		
 		for (Corridor oCorridor : oCorridors) // for each corridor run the algorithm
@@ -1083,9 +1084,9 @@ public class IHP extends HttpServlet
 			{
 				++m_nTriggers; // increase consecutive trigger count
 				sLogBuf.append("Consecutive reduced speed triggers,").append(m_nTriggers).append('\n');
-				double dControlFlowRate = dSpaceFactor * oReducedSpeedZone.m_nVolume + (1 - dSpaceFactor) * oSubSegOne.m_nVolume; // equation 1
+				double dControlFlowRate = dSpaceFactor * oReducedSpeedZone.m_dVolume + (1 - dSpaceFactor) * oSubSegOne.m_dVolume; // equation 1
 				sLogBuf.append("Equation 1,").append(oDf.format(dControlFlowRate)).append('\n');
-				double dTargetDensity = oSubSegOne.m_dPreviousDensity + (oReducedSpeedZone.m_nVolume - oSubSegOne.m_nVolume) / oSubSegOne.m_dLength * nTimeInterval; // equation 2
+				double dTargetDensity = oSubSegOne.m_dPreviousDensity + (oReducedSpeedZone.m_dVolume - oSubSegOne.m_dVolume) / oSubSegOne.m_dLength * nTimeInterval; // equation 2
 				sLogBuf.append("Equation 2,").append(oDf.format(dTargetDensity)).append('\n');
 				double dTargetSpeed = Math.max(Math.min(dControlFlowRate / dTargetDensity, oSubSegOne.m_d85th), oSubSegOne.m_d15th); // equation 3
 				sLogBuf.append("Equation 3,").append(oDf.format(dTargetSpeed)).append('\n');

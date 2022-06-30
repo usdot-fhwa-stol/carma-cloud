@@ -990,7 +990,7 @@ function createDetectorList()
 	let oDetectorDiv = $('#detectors_container');
 	let oTable = $('<table></table>');
 	oTable.append($('<tr><th>subsegment</th><th>speed limit</th><th>15th %ile</th><th>85th %ile</th><th>Density</th><th>Volume</th></tr>'));
-	oTable.append($('<tr><th></th><th>mph</th><th>mph</th><th>mph</th><th>% (0-100)</th><th>veh/h/lane</th></tr>'));
+	oTable.append($('<tr><th></th><th>mph</th><th>mph</th><th>mph</th><th>veh/mile/lane</th><th>veh/h/lane</th></tr>'));
 	oTable.addClass('w3-table');
 	let oSrc = oMap.getSource('corridor_poly');
 	for (let oFeature of oSrc._data.features.values())
