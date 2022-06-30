@@ -30,7 +30,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 /**
  *
@@ -197,7 +196,7 @@ public class GeoLanes extends HttpServlet
 				sBuf.append("]");
 				if (TrafCtrlEnums.CTRLS[oCtrl.m_nControlType].length == 1)
 				{
-					double dDisplay = Integer.parseInt(sVals.get(1));
+					double dDisplay = Double.parseDouble(sVals.get(1));
 					String[] sUnits = TrafCtrlEnums.UNITS[oCtrl.m_nControlType];
 					if (sUnits.length > 0)
 					{
