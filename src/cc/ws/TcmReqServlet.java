@@ -240,9 +240,7 @@ public class TcmReqServlet extends HttpServlet
 					}
 					
 					Text.removeCtrlChars(sBuf); // pack chars into one line
-					sBuf.insert(0, ' '); // build log msg in reverse order
-					sBuf.insert(0, "TCM ");
-					LOGGER.debug(sBuf);
+					LOGGER.debug("TCM " + sBuf);
 					
 					HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://tcmreplyhost:10001/tcmreply").openConnection();
 					oHttpClient.setDoOutput(true);
