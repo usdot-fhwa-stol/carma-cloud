@@ -77,6 +77,8 @@ public abstract class ProcCtrl
 		CHARS.put("X", new double[]{-0.1, -0.2, 0.1, 0.2, 0.0, 0.0, -0.1, 0.2, 0.1, -0.2});
 		CHARS.put("s", new double[]{0.1, 0.0, -0.1, 0.0, -0.1, -0.1, 0.1, -0.1, 0.1, -0.2, -0.1, -0.2});
 		CHARS.put(".", new double[]{0.1, -0.075, 0.1, -0.1, 0.075, -0.1, 0.075, -0.075, 0.1, -0.075});
+		CHARS.put("t", new double[]{-0.1, 0, 0.1, 0, 0.0, 0.0, 0.0, 0.2, 0.0, -0.2, 0.1, -0.2});
+		CHARS.put("f", new double[]{-0.1, 0, 0.1, 0, 0.0, 0.0, 0.0, -0.2, 0.0, 0.2, 0.1, 0.2});
 	}
 	
 	public String m_sLineArcDir;
