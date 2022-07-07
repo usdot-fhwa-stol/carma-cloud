@@ -594,6 +594,7 @@ function doneSaveEdit(oData)
 	oMapData.features[nSelectedId].properties.reg = oData.reg;
 	oMapData.features[nSelectedId].properties.label = oData.label;
 	oMapData.features[nSelectedId].properties.vtypes = oData.vtypes;
+	oMapData.features[nSelectedId].properties.display = oData.display;
 	oSrc.setData(oMapData);
 	console.log(oData.id);;
 	refreshVectorTiles();

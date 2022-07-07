@@ -43,6 +43,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -589,7 +590,12 @@ public class CtrlTiles extends HttpServlet
 			boolean bReg;
 			bReg = !(sReg == null || sReg.compareTo("on") != 0);
 			if (sVal != null)
-				nControlValue = Integer.parseInt(sVal);
+			{
+				double dVal = Double.parseDouble(sVal);
+				if (sUnits.length > 0)
+					dVal = Units.getInstance().convert(sUnits[1], sUnits[0], dVal);
+				nControlValue = (int)Math.round(dVal);
+			}
 			else
 			{
 				sVal = oReq.getParameter("value1");
@@ -603,11 +609,7 @@ public class CtrlTiles extends HttpServlet
 				else
 					nControlValue = Integer.parseInt(sVal);
 			}
-			if (sUnits.length > 0)
-			{
-				double dVal = Units.getInstance().convert(sUnits[1], sUnits[0], nControlValue);
-				nControlValue = (int)Math.round(dVal);
-			}
+
 			String sId = oReq.getParameter("id");
 			String sFile = g_sCtrlDir + sId + ".bin";
 			TrafCtrl oOriginalCtrl;
@@ -670,7 +672,17 @@ public class CtrlTiles extends HttpServlet
 			for (String sValue : sVals)
 				sBuf.append("\"").append(sValue).append("\",");
 			sBuf.setLength(sBuf.length() - 1);
-			sBuf.append("]}");
+			sBuf.append("]");
+			if (TrafCtrlEnums.CTRLS[oCtrlToWrite.m_nControlType].length == 1)
+			{
+				double dDisplay = Double.parseDouble(sVals.get(1));
+				if (sUnits.length > 0)
+				{
+					dDisplay = Units.getInstance().convert(sUnits[0], sUnits[1], dDisplay);
+				}
+				sBuf.append(",\"display\":").append(new DecimalFormat("#.##").format(dDisplay));
+			}
+			sBuf.append("}");
 			try (PrintWriter oOut = oRes.getWriter())
 			{
 				oOut.append(sBuf);
