@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,7 +30,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 /**
  *
@@ -133,10 +133,13 @@ public class GeoLanes extends HttpServlet
 			StringBuilder sBuf = new StringBuilder();
 			
 			sBuf.append("{");
+			boolean bAdded = false;
 			for (byte[] yId : oIdsToLoad)
 			{
 				String sId = TrafCtrl.getId(yId);
 				String sFile = CtrlTiles.g_sCtrlDir + sId + ".bin";
+				if (!Files.exists(Paths.get(sFile)))
+					continue;
 				sBuf.append("\"").append(sId).append("\":{\"a\":[");
 				TrafCtrl oCtrl;
 				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
@@ -196,17 +199,18 @@ public class GeoLanes extends HttpServlet
 				sBuf.append("]");
 				if (TrafCtrlEnums.CTRLS[oCtrl.m_nControlType].length == 1)
 				{
-					int nDisplay = Integer.parseInt(sVals.get(1));
+					double dDisplay = Integer.parseInt(sVals.get(1));
 					String[] sUnits = TrafCtrlEnums.UNITS[oCtrl.m_nControlType];
 					if (sUnits.length > 0)
 					{
-						nDisplay = (int)Math.round(Units.getInstance().convert(sUnits[0], sUnits[1], nDisplay));
+						dDisplay = Units.getInstance().convert(sUnits[0], sUnits[1], dDisplay);
 					}
-					sBuf.append(",\"display\":").append(nDisplay);
+					sBuf.append(",\"display\":").append(new DecimalFormat("#.##").format(dDisplay));
 				}
 				sBuf.append("},");
+				bAdded = true;
 			}
-			if (!oIdsToLoad.isEmpty())
+			if (bAdded)
 				sBuf.setLength(sBuf.length() - 1);
 			sBuf.append("}");
 			
