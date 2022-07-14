@@ -8,12 +8,14 @@ package cc.ctrl.proc;
 import cc.ctrl.CtrlGeo;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
+import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import cc.util.MathUtil;
 import cc.util.TileUtil;
+import cc.util.Units;
 import java.awt.geom.AffineTransform;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
@@ -73,7 +75,8 @@ public class ProcHeadway extends ProcCtrl
 		dSymbol1[0] = dSymbol1.length;
 		dSymbol2[0] = dSymbol2.length;
 		int nSymbolPts = SYMBOL.length / 2;
-		
+		Units oUnits = Units.getInstance();
+		String[] sUnits = TrafCtrlEnums.UNITS[TrafCtrlEnums.getCtrl("minhdwy")];
 		for (int[] nTile : nTiles)
 		{
 			int nX = nTile[0];
@@ -134,8 +137,8 @@ public class ProcHeadway extends ProcCtrl
 				{
 					oLayer.add(new TdFeature(dSymbol1, nTags, oCtrl));
 					oLayer.add(new TdFeature(dSymbol2, nTags, oCtrl));
-					
-					String sVal = oDf.format(MathUtil.bytesToInt(oCtrl.m_yControlValue)) + "s";
+					int nVal = (int)Math.round(oUnits.convert(sUnits[0], sUnits[1], MathUtil.bytesToInt(oCtrl.m_yControlValue)));
+					String sVal = oDf.format(nVal) + "ft";
 					int nLimit = sVal.length();
 					double dStep = -0.3;
 					double dOffset = -0.45 + (nLimit * 0.3);

@@ -6,6 +6,7 @@
 package cc.ihp;
 
 import cc.ctrl.CtrlGeo;
+import cc.ctrl.CtrlIndex;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
 import cc.ctrl.proc.ProcCtrl;
@@ -982,7 +983,6 @@ public class IHP extends HttpServlet
 		Mercator oM = Mercator.getInstance();
 		int[] nTiles = new int[2];
 		int nMaxSpeedCtrl = TrafCtrlEnums.getCtrl("maxspeed");
-		byte[] yIdBuf = new byte[16];
 		StringBuilder sIdBuf = new StringBuilder();
 		long lNow = System.currentTimeMillis();
 		SimpleDateFormat oSdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -1031,34 +1031,25 @@ public class IHP extends HttpServlet
 					{
 						while (oIn.available() > 0)
 						{
-							int nType = oIn.readInt();
-							oIn.read(yIdBuf);
-							long lStart = oIn.readLong();
-							long lEnd = oIn.readLong();
-							if (nType == nMaxSpeedCtrl && (lStart >= lNow || lEnd > lNow)) // everything valid now and in the future add to tile
+							CtrlIndex oIndex = new CtrlIndex(oIn);
+							if (oIndex.m_nType == nMaxSpeedCtrl && (oIndex.m_lStart >= lNow || oIndex.m_lEnd > lNow) && Geo.isInBoundingBox(dX, dY, oIndex.m_dBB[0], oIndex.m_dBB[1], oIndex.m_dBB[2], oIndex.m_dBB[3])) // everything valid now and in the future add to tile
 							{
-								TrafCtrl.getId(yIdBuf, sIdBuf);
+								TrafCtrl.getId(oIndex.m_yId, sIdBuf);
 								TrafCtrl oCtrl;
 								Path oPath = Paths.get(ProcCtrl.g_sTrafCtrlDir + sIdBuf.toString() + ".bin");
-								try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
-								{
-									oCtrl = new TrafCtrl(oCtrlIn, false);
-								}
-								if (oCtrl.m_yId[0] != ProcCtrl.CC)
+								if (oIndex.m_yId[0] != ProcCtrl.CC)
 									continue;
-								try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
+								try (DataInputStream oCtrlIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oPath))))
 								{
-									oCtrl.m_oFullGeo = new CtrlGeo(oCtrlIn, false, ProcCtrl.g_nDefaultZoom);
+									oCtrl = new TrafCtrl(oCtrlIn, true, false);
 								}
-								if (Geo.isInBoundingBox(dX, dY, oCtrl.m_oFullGeo.m_dBB[0], oCtrl.m_oFullGeo.m_dBB[1], oCtrl.m_oFullGeo.m_dBB[2], oCtrl.m_oFullGeo.m_dBB[3]))
+
+								double[] dPolygon = Geo.createPolygon(oCtrl.m_oFullGeo.m_dPT, oCtrl.m_oFullGeo.m_dNT);
+								dPolygon = Arrays.add(dPolygon, oCtrl.m_oFullGeo.m_dPT[1], oCtrl.m_oFullGeo.m_dPT[2]); // close the polygon
+								if (Geo.isInsidePolygon(dPolygon, dX, dY, 1))
 								{
-									double[] dPolygon = Geo.createPolygon(oCtrl.m_oFullGeo.m_dPT, oCtrl.m_oFullGeo.m_dNT);
-									dPolygon = Arrays.add(dPolygon, oCtrl.m_oFullGeo.m_dPT[1], oCtrl.m_oFullGeo.m_dPT[2]); // close the polygon
-									if (Geo.isInsidePolygon(dPolygon, dX, dY, 1))
-									{
-										oSubsegment.m_nMaxSpeed = MathUtil.bytesToInt(oCtrl.m_yControlValue);
-										break;
-									}
+									oSubsegment.m_nMaxSpeed = MathUtil.bytesToInt(oCtrl.m_yControlValue);
+									break;
 								}
 							}
 						}

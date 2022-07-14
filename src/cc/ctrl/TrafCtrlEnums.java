@@ -51,7 +51,7 @@ public abstract class TrafCtrlEnums
 		new String[0], //parking", "no", "parallel", "angled 
 		new String[]{"dm/s", "mph", "kph"}, //minspeed 
 		new String[]{"dm/s", "mph", "kph"}, //maxspeed 
-		new String[]{"sec", "sec", "sec"}, //minhdwy 
+		new String[]{"dm", "ft", "m"}, //minhdwy 
 		new String[]{"kg", "lb", "kg"}, //maxvehmass 
 		new String[]{"dm", "ft", "m"}, //maxvehheight 
 		new String[]{"dm", "ft", "m"}, //maxvehwidth 
