@@ -39,7 +39,6 @@ import cc.util.Units;
 import cc.vector_tile.VectorTile;
 import java.awt.geom.Area;
 import java.io.BufferedInputStream;
-import java.io.BufferedWriter;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -474,7 +473,7 @@ public class CtrlTiles extends HttpServlet
 			{
 				double dVal = Double.parseDouble(sVal);
 				if (sUnits.length > 0)
-					dVal = Units.getInstance().convert(sUnits[1], sUnits[0], dVal);
+				  dVal = Units.getInstance().convert(sUnits[1], sUnits[0], dVal);
 				nControlValue = (int)Math.round(dVal);
 			}
 			else
