@@ -5,7 +5,7 @@
  */
 package cc.ws;
 
-import cc.ctrl.CtrlGeo;
+import cc.ctrl.CtrlIndex;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
 import cc.ctrl.proc.ProcCtrl;
@@ -13,6 +13,7 @@ import cc.ctrl.proc.ProcMaxSpeed;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Introsort;
 import cc.util.MathUtil;
 import cc.util.Units;
 import java.io.BufferedInputStream;
@@ -21,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -91,64 +91,39 @@ public class WxPoly extends HttpServlet
 						if (!Files.exists(oPath))
 							continue;
 
-						ArrayList<byte[]> oTileIds = new ArrayList();
 						try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oPath))))
 						{
 							while (oIn.available() > 0)
 							{
-								int nType = oIn.readInt();
-								if (nType != nMaxSpeed)
-									oIn.skipBytes(32); // skip id and 2 timestamps
-								else
-								{
-									oIn.read(sIdBuf);
-									long lStart = oIn.readLong();
-									long lEnd = oIn.readLong();
-									if (lStart >= lNow || lEnd > lNow)
-									{
-										
-										int nSearch = Collections.binarySearch(oTileIds, sIdBuf, TrafCtrl.ID_COMP);
-										if (nSearch < 0)
-										{
-											byte[] yId = new byte[16];
-											System.arraycopy(sIdBuf, 0, yId, 0 , yId.length);
-											oTileIds.add(~nSearch, yId);
-										}
-									}
-								}
+								CtrlIndex oIndex = new CtrlIndex(oIn);
+								
+								if (oIndex.m_nType == nMaxSpeed && oIndex.m_lStart >= lNow || oIndex.m_lEnd > lNow && Geo.boundingBoxesIntersect(dMercBB, oIndex.m_dBB))
+									oCurrentIds.add(oIndex.m_yId);
 							}
-						}
-
-						
-						for (byte[] yId : oTileIds)
-						{
-							int nSearch = Collections.binarySearch(oCurrentIds, yId, TrafCtrl.ID_COMP);
-							if (nSearch < 0)
-								oCurrentIds.add(~nSearch, yId);
 						}
 					}
 				}
 				
+				Introsort.usort(oCurrentIds, TrafCtrl.ID_COMP);
 				ArrayList<TrafCtrl> oCtrls = new ArrayList();
 				ArrayList<int[]> oTiles = new ArrayList();
+				byte[] yPrev = new byte[16];
+				yPrev[0] = -1;
 				for (byte[] yId : oCurrentIds)
 				{
+					if (TrafCtrl.ID_COMP.compare(yPrev, yId) == 0)
+						continue;
+					yPrev = yId;
 					String sId = TrafCtrl.getId(yId);
 					TrafCtrl oCtrl;
 					Path oFile = Paths.get(CtrlTiles.g_sCtrlDir + sId + ".bin");
-					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(oFile)))
+					try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oFile))))
 					{
-						oCtrl = new TrafCtrl(oIn, false);
+						oCtrl = new TrafCtrl(oIn, true, false);
 					}
 					if (!oCtrl.m_bRegulatory)
 						continue;
 					
-					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(oFile)))
-					{
-						oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);
-					}
-					if (!Geo.boundingBoxesIntersect(dMercBB, oCtrl.m_oFullGeo.m_dBB))
-						continue;
 					int nSpeedMph = (int)Math.round(oUnits.convert(sUnits[0], sUnits[1], MathUtil.bytesToInt(oCtrl.m_yControlValue))) - 10;
 					int nNewSpeed = (int)Math.round(oUnits.convert(sUnits[1], sUnits[0], nSpeedMph));
 					TrafCtrl oSpdLimit = new TrafCtrl("maxspeed", nNewSpeed, lNow, oCtrl, "weather", false, ProcCtrl.CC);
@@ -169,6 +144,5 @@ public class WxPoly extends HttpServlet
 	
 	private void updateCtrl(byte[] yId, long lNow)
 	{
-		
-	}
+	}		
 }

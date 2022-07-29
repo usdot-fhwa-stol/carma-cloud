@@ -169,8 +169,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		this();
 		m_nControlType = TrafCtrlEnums.getCtrl(sControlType);
 		m_lTime = lTime;
-		m_nLon = Geo.toIntDeg(Mercator.xToLon(MathUtil.round(dLineArcs[5], 2)));
-		m_nLat = Geo.toIntDeg(Mercator.yToLat(MathUtil.round(dLineArcs[6], 2)));
+		m_nLon = Geo.toIntDeg(Mercator.xToLon(dLineArcs[5]));
+		m_nLat = Geo.toIntDeg(Mercator.yToLat(dLineArcs[6]));
 		m_nWidth = Mercator.mToCm(dLineArcs[7]);
 		int[] nPrevPt = new int[]{Mercator.mToCm(dLineArcs[5]), Mercator.mToCm(dLineArcs[6]), m_nWidth};
 		double dHdg = Geo.heading(nPrevPt[0], nPrevPt[1], dLineArcs[8], dLineArcs[9]);
@@ -201,7 +201,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 	
 	
-	public TrafCtrl(DataInputStream oIn, boolean bConcat)
+	public TrafCtrl(DataInputStream oIn, boolean bLoadGeo, boolean bSetTiles)
 		throws Exception
 	{
 		m_sVersion = oIn.readUTF();
@@ -248,17 +248,8 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		ensureCapacity(nCount);
 		while (nCount-- > 0)
 			add(new TrafCtrlPt(oIn));
-
-		if (bConcat)
-		{
-			oIn.skip(16); // skip length and average width, both doubles
-			for (int nIndex = 0; nIndex < 3; nIndex++) // there are 3 sets of points: center, nt, pt
-			{
-				int nLen = oIn.readInt(); // read array length
-				oIn.skip(8); // skip start x and start y, both ints
-				oIn.skip(nLen * 2 - 2); // skip the rest of the point which are deltas written as bytes
-			}
-		}
+		if (bLoadGeo)
+			m_oFullGeo = new CtrlGeo(oIn, bSetTiles, ProcCtrl.g_nDefaultZoom);
 	}
 
 
@@ -403,33 +394,15 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 			for (TrafCtrlPt oPt : this)
 				oPt.writeBin(oOut);
 			
-			
 			if (m_oFullGeo == null)
 				m_oFullGeo = new CtrlGeo(this, dExplodeStep, nZoom);
 			for (int nIndex = 0; nIndex < m_oFullGeo.m_dBB.length; nIndex++)
-				oOut.writeInt((int)(MathUtil.round(m_oFullGeo.m_dBB[nIndex] * 100.0, 0)));
+				oOut.writeInt((int)(m_oFullGeo.m_dBB[nIndex] * 100.0 + 0.5));
 			oOut.writeDouble(m_oFullGeo.m_dLength);
 			oOut.writeDouble(m_oFullGeo.m_dAverageWidth);
 			CtrlGeo.writePts(oOut, m_oFullGeo.m_dC); // center line
 			CtrlGeo.writePts(oOut, m_oFullGeo.m_dNT); // negative tangent line
 			CtrlGeo.writePts(oOut, m_oFullGeo.m_dPT); // positive tangent line
-			
-//			if (Math.abs(m_oFullGeo.m_nTileIndices[2] - m_oFullGeo.m_nTileIndices[0]) > 10 ||
-//				Math.abs(m_oFullGeo.m_nTileIndices[3] - m_oFullGeo.m_nTileIndices[1]) > 10)
-//				 throw new Exception("Ctrl spans too many tiles");
-//			for (int nX = m_oFullGeo.m_nTileIndices[0]; nX <= m_oFullGeo.m_nTileIndices[2]; nX++)
-//			{
-//				for (int nY = m_oFullGeo.m_nTileIndices[1]; nY <= m_oFullGeo.m_nTileIndices[3]; nY++)
-//				{
-//					Path oFile = Paths.get(String.format("", nX, nZoom, nX, nY));
-//					Files.createDirectories(oFile.getParent(), FileUtil.DIRPERS);
-//					try (DataOutputStream oIndexFile = new DataOutputStream(new BufferedOutputStream(FileUtil.newOutputStream(oFile, FileUtil.APPENDTO, FileUtil.FILEPERS))))
-//					{
-//						oIndexFile.write(m_yId);
-//						oIndexFile.writeInt(m_nControlType);
-//					}
-//				}
-//			}
 		}
 	}
 	
@@ -441,6 +414,10 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		oOut.write(m_yId);
 		oOut.writeLong(m_lStart);
 		oOut.writeLong(m_lEnd);
+		oOut.writeInt((int)(m_oFullGeo.m_dBB[0] * 100.0 + 0.5));
+		oOut.writeInt((int)(m_oFullGeo.m_dBB[1] * 100.0 + 0.5));
+		oOut.writeInt((int)(m_oFullGeo.m_dBB[2] * 100.0 + 0.5));
+		oOut.writeInt((int)(m_oFullGeo.m_dBB[3] * 100.0 + 0.5));
 	}
 
 
@@ -550,45 +527,45 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 //			sBuf.append("invalid version");
 //			return;
 //		}
-		sBuf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n").append("<TrafficControlMessage>\n");
-		sBuf.append("\t<tcmV01>\n");
-		sBuf.append("\t\t<reqid>").append(sReqId).append("</reqid>\n");
-		sBuf.append("\t\t<reqseq>").append(nReqSeq).append("</reqseq>\n");
-		sBuf.append("\t\t<msgtot>").append(nMsgTot).append("</msgtot>\n");
-		sBuf.append("\t\t<msgnum>").append(nMsgNum).append("</msgnum>\n");
-		sBuf.append("\t\t<id>");
+		sBuf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>").append("<TrafficControlMessage>");
+		sBuf.append("<tcmV01>");
+		sBuf.append("<reqid>").append(sReqId).append("</reqid>");
+		sBuf.append("<reqseq>").append(nReqSeq).append("</reqseq>");
+		sBuf.append("<msgtot>").append(nMsgTot).append("</msgtot>");
+		sBuf.append("<msgnum>").append(nMsgNum).append("</msgnum>");
+		sBuf.append("<id>");
 		Text.toHexString(m_yId, 0, m_yId.length, sBuf);
-		sBuf.append("</id>\n");
-		sBuf.append("\t\t<updated>").append(m_lUpdated / 1000 / 60).append("</updated>\n"); // convert to epoch minutes
+		sBuf.append("</id>");
+		sBuf.append("<updated>").append(m_lUpdated / 1000 / 60).append("</updated>"); // convert to epoch minutes
 		
-		sBuf.append("\t\t<package>\n");
+		sBuf.append("<package>");
 		if (m_sLabel != null && !m_sLabel.isEmpty())
 		{
-			sBuf.append("\t\t\t<label>").append(Text.truncate(m_sLabel, 63)).append("</label>\n");
+			sBuf.append("<label>").append(Text.truncate(m_sLabel, 63)).append("</label>");
 		}
 		else
 		{
-			sBuf.append("\t\t\t<label>null</label>\n");
+			sBuf.append("<label>null</label>");
 		}
 			
-		sBuf.append("\t\t\t<tcids>\n");
-		sBuf.append("\t\t\t\t<Id128b>");
+		sBuf.append("<tcids>");
+		sBuf.append("<Id128b>");
 		Text.toHexString(m_yId, 0, m_yId.length, sBuf);
-		sBuf.append("</Id128b>\n");
-		sBuf.append("\t\t\t</tcids>\n");
-		sBuf.append("\t\t</package>\n");
+		sBuf.append("</Id128b>");
+		sBuf.append("</tcids>");
+		sBuf.append("</package>");
 			
 		if (bIncludeParams)
 		{
-			sBuf.append("\t\t<params>\n");
-			sBuf.append("\t\t\t<vclasses>\n");
+			sBuf.append("<params>");
+			sBuf.append("<vclasses>");
 			for (int nIndex = 0; nIndex < m_nVTypes.size(); nIndex++)
-				sBuf.append("\t\t\t\t<").append(TrafCtrlEnums.VTYPES[m_nVTypes.get(nIndex)]).append("/>\n");
-			sBuf.append("\t\t\t</vclasses>\n");
-			sBuf.append("\t\t\t<schedule>\n");
-			sBuf.append("\t\t\t\t<start>").append(m_lStart / 1000 / 60).append("</start>\n"); // convert to epoch minutes
-			sBuf.append("\t\t\t\t<end>").append(m_lEnd / 1000 / 60).append("</end>\n"); // convert to epoch minutes
-			sBuf.append("\t\t\t\t<dow>");
+				sBuf.append("<").append(TrafCtrlEnums.VTYPES[m_nVTypes.get(nIndex)]).append("/>");
+			sBuf.append("</vclasses>");
+			sBuf.append("<schedule>");
+			sBuf.append("<start>").append(m_lStart / 1000 / 60).append("</start>"); // convert to epoch minutes
+			sBuf.append("<end>").append(m_lEnd / 1000 / 60).append("</end>"); // convert to epoch minutes
+			sBuf.append("<dow>");
 			int nDoW = m_nDoW; // bit-shift day-of-week characters
 			for (int nDay = 0; nDay < 7; nDay++)
 			{
@@ -599,38 +576,38 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 				nDoW >>= 1;
 			}
 
-			sBuf.append("</dow>\n");
+			sBuf.append("</dow>");
 
 			if (!m_nBetween.isEmpty())
 			{
-				sBuf.append("\t\t\t\t<between>\n");
+				sBuf.append("<between>");
 				for (int[] nBegDur : m_nBetween)
 				{
-					sBuf.append("\t\t\t\t\t<DailySchedule>\n");
-					sBuf.append("\t\t\t\t\t\t<begin>").append(nBegDur[0]).append("</begin>\n");
-					sBuf.append("\t\t\t\t\t\t<duration>").append(nBegDur[1]).append("</duration>\n");
-					sBuf.append("\t\t\t\t\t</DailySchedule>\n");
+					sBuf.append("<DailySchedule>");
+					sBuf.append("<begin>").append(nBegDur[0]).append("</begin>");
+					sBuf.append("<duration>").append(nBegDur[1]).append("</duration>");
+					sBuf.append("</DailySchedule>");
 
 				}
-				sBuf.append("\t\t\t\t</between>\n");
+				sBuf.append("</between>");
 			}
 
 			if (m_nOffset >= 0)
 			{
-				sBuf.append("\t\t\t\t<repeat>\n");
-				sBuf.append("\t\t\t\t\t<offset>").append(m_nOffset).append("</offset>\n");
-				sBuf.append("\t\t\t\t\t<period>").append(m_nPeriod).append("</period>\n");
-				sBuf.append("\t\t\t\t\t<span>").append(m_nSpan).append("</span>\n");
-				sBuf.append("\t\t\t\t</repeat>\n");
+				sBuf.append("<repeat>");
+				sBuf.append("<offset>").append(m_nOffset).append("</offset>");
+				sBuf.append("<period>").append(m_nPeriod).append("</period>");
+				sBuf.append("<span>").append(m_nSpan).append("</span>");
+				sBuf.append("</repeat>");
 			}
 
-			sBuf.append("\t\t\t</schedule>\n");
-			sBuf.append("\t\t\t<regulatory><").append(m_bRegulatory).append("/></regulatory>\n");
-			sBuf.append("\t\t\t<detail>\n");
+			sBuf.append("</schedule>");
+			sBuf.append("<regulatory><").append(m_bRegulatory).append("/></regulatory>");
+			sBuf.append("<detail>");
 			ArrayList<String> sVals = new ArrayList(4);
 			TrafCtrlEnums.getCtrlValString(m_nControlType, m_yControlValue, sVals);
 			String sTag = sVals.get(0);
-			sBuf.append("\t\t\t\t<").append(sTag);
+			sBuf.append("<").append(sTag);
 			if (sVals.size() == 1) // null value so empty tag
 				sBuf.append("/>");
 			else
@@ -645,30 +622,30 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 						sBuf.append("><").append(sVals.get(1)).append("/><").append(sVals.get(3)).append("/></").append(sTag).append(">");
 				}
 			}
-			sBuf.append("\n");
-			sBuf.append("\t\t\t</detail>\n");
-			sBuf.append("\t\t</params>\n");
+			sBuf.append("");
+			sBuf.append("</detail>");
+			sBuf.append("</params>");
 		}
-		sBuf.append("\t\t<geometry>\n");
+		sBuf.append("<geometry>");
 		
-		sBuf.append("\t\t\t<proj>").append(m_sProj).append("</proj>\n");
-		sBuf.append("\t\t\t<datum>").append(m_sDatum).append("</datum>\n");
-		sBuf.append("\t\t\t<reftime>").append(m_lTime / 1000 / 60).append("</reftime>\n"); // convert to EpochMins
-		sBuf.append("\t\t\t<reflon>").append(m_nLon).append("</reflon>\n");
-		sBuf.append("\t\t\t<reflat>").append(m_nLat).append("</reflat>\n");
-		sBuf.append("\t\t\t<refelv>").append(m_nAlt).append("</refelv>\n");
-		sBuf.append("\t\t\t<refwidth>").append(m_nWidth).append("</refwidth>\n");
-		sBuf.append("\t\t\t<heading>").append(m_nHeading).append("</heading>\n");
-		sBuf.append("\t\t\t<nodes>\n");
+		sBuf.append("<proj>").append(m_sProj).append("</proj>");
+		sBuf.append("<datum>").append(m_sDatum).append("</datum>");
+		sBuf.append("<reftime>").append(m_lTime / 1000 / 60).append("</reftime>"); // convert to EpochMins
+		sBuf.append("<reflon>").append(m_nLon).append("</reflon>");
+		sBuf.append("<reflat>").append(m_nLat).append("</reflat>");
+		sBuf.append("<refelv>").append(m_nAlt).append("</refelv>");
+		sBuf.append("<refwidth>").append(m_nWidth).append("</refwidth>");
+		sBuf.append("<heading>").append(m_nHeading).append("</heading>");
+		sBuf.append("<nodes>");
 		int nEnd = Math.min(size(), (nPtsIndex / 256 + 1) * 256);
 		for (int nIndex = nPtsIndex; nIndex < nEnd; nIndex++)
 		{
-			sBuf.append("\t\t\t\t");
+			sBuf.append("");
 			get(nIndex).writeXml(sBuf);
 		}
-		sBuf.append("\t\t\t</nodes>\n");
-		sBuf.append("\t\t</geometry>\n");
-		sBuf.append("\t</tcmV01>\n");
+		sBuf.append("</nodes>");
+		sBuf.append("</geometry>");
+		sBuf.append("</tcmV01>");
 		sBuf.append("</TrafficControlMessage>");
 	}
 	

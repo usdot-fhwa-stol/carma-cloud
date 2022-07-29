@@ -61,7 +61,7 @@ public class ProcLatPerm extends ProcCtrl
 	{
 		m_oRdMkInfo.clear();
 		m_nColors[0] = 1;
-		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(oSource)))
+		try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oSource))))
 		{
 			while (oIn.available() > 0)
 			{

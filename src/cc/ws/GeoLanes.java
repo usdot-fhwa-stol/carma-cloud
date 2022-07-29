@@ -6,12 +6,14 @@
 package cc.ws;
 
 import cc.ctrl.CtrlGeo;
+import cc.ctrl.CtrlIndex;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
 import cc.geosrv.Mercator;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Introsort;
 import cc.util.Units;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -104,51 +106,45 @@ public class GeoLanes extends HttpServlet
 					return;
 				}
 
-				byte[] yIdBuf = new byte[16];
 				try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile))))
 				{
 					while (oIn.available() > 0)
 					{
-						int nTempType = oIn.readInt();
-						oIn.read(yIdBuf);
-						long lStart = oIn.readLong();
-						long lEnd = oIn.readLong();
-						if ((lStart >= lNow || lEnd > lNow) && nType == nTempType) // everything valid now and in the future add to tile
+						CtrlIndex oIndex = new CtrlIndex(oIn);
+						if ((oIndex.m_lStart >= lNow || oIndex.m_lEnd > lNow) && nType == oIndex.m_nType) // everything valid now and in the future add to tile
 						{
-							int nIndex = Collections.binarySearch(oLoadedIds, yIdBuf, TrafCtrl.ID_COMP);
+							int nIndex = Collections.binarySearch(oLoadedIds, oIndex.m_yId, TrafCtrl.ID_COMP);
 							if (nIndex < 0)
 							{
-								byte[] yId = new byte[16];
-								System.arraycopy(yIdBuf, 0, yId, 0, 16);
-								oLoadedIds.add(~nIndex, yId);
-								nIndex = Collections.binarySearch(oIdsToLoad, yId, TrafCtrl.ID_COMP);
-								if (nIndex < 0)
-									oIdsToLoad.add(~nIndex, yId);
-							}	
+								oLoadedIds.add(~nIndex, oIndex.m_yId);
+								oIdsToLoad.add(oIndex.m_yId);
+							}
 						}
 					}
 				}
 			}
 
+			Introsort.usort(oIdsToLoad, TrafCtrl.ID_COMP);
 			StringBuilder sBuf = new StringBuilder();
 			
 			sBuf.append("{");
 			boolean bAdded = false;
+			byte[] yPrev = new byte[16];
+			yPrev[0] = -1;
 			for (byte[] yId : oIdsToLoad)
 			{
+				if (TrafCtrl.ID_COMP.compare(yPrev, yId) == 0)
+					continue;
+				yPrev = yId;
 				String sId = TrafCtrl.getId(yId);
 				String sFile = CtrlTiles.g_sCtrlDir + sId + ".bin";
 				if (!Files.exists(Paths.get(sFile)))
 					continue;
 				sBuf.append("\"").append(sId).append("\":{\"a\":[");
 				TrafCtrl oCtrl;
-				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+				try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(Paths.get(sFile)))))
 				{
-					oCtrl = new TrafCtrl(oIn, false);
-				}
-				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-				{
-					oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);
+					oCtrl = new TrafCtrl(oIn, true, false);
 				}
 				
 				double[] dPts = oCtrl.m_oFullGeo.m_dPT;
@@ -199,7 +195,7 @@ public class GeoLanes extends HttpServlet
 				sBuf.append("]");
 				if (TrafCtrlEnums.CTRLS[oCtrl.m_nControlType].length == 1)
 				{
-					double dDisplay = Integer.parseInt(sVals.get(1));
+					double dDisplay = Double.parseDouble(sVals.get(1));
 					String[] sUnits = TrafCtrlEnums.UNITS[oCtrl.m_nControlType];
 					if (sUnits.length > 0)
 					{
@@ -208,9 +204,8 @@ public class GeoLanes extends HttpServlet
 					sBuf.append(",\"display\":").append(new DecimalFormat("#.##").format(dDisplay));
 				}
 				sBuf.append("},");
-				bAdded = true;
 			}
-			if (bAdded)
+			if (!oIdsToLoad.isEmpty())
 				sBuf.setLength(sBuf.length() - 1);
 			sBuf.append("}");
 			

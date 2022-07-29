@@ -403,20 +403,17 @@ public class RsmCollect extends TimerTask
 					String sId = TrafCtrl.getId(yId);
 					String sFile = ProcCtrl.g_sTrafCtrlDir + sId + ".bin";
 					TrafCtrl oCtrl;
-					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+					try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(Paths.get(sFile)))))
 					{
-						oCtrl = new TrafCtrl(oIn, false);
+						oCtrl = new TrafCtrl(oIn, true, true);
 					}
-					try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-					{
-						oCtrl.m_oFullGeo = new CtrlGeo(oIn, true, ProcCtrl.g_nDefaultZoom);
-					}
+
 					synchronized (this)
 					{
 						for (int[] nTile : oCtrl.m_oFullGeo.m_oTiles)
 						{
 							String sIndex = String.format(ProcCtrl.g_sTdFileFormat, nTile[0], ProcCtrl.g_nDefaultZoom, nTile[0], nTile[1]) + ".ndx";
-							ProcCtrl.updateIndex(sIndex, oCtrl.m_yId, lNow);
+							ProcCtrl.updateIndex(sIndex, oCtrl, lNow);
 						}
 					}
 				}
