@@ -173,7 +173,7 @@ public class ProcDirection extends ProcCtrl
 
 				for (int nIndex = 1; nIndex <= nArrows; nIndex++)
 				{
-					boolean bForward = TrafCtrlEnums.getCtrlVal("direction", "forward") == MathUtil.bytesToInt(oFullGeo.m_yCtrlValue);
+					boolean bForward = TrafCtrlEnums.getCtrlVal("direction", "forward") == MathUtil.bytesToInt(oCtrl.m_yControlValue);
 					double dHdg = getCoordAndHeadingAtLength(oFullGeo.m_dC, oFullGeo.m_dLength * dPercentStep * nIndex, !bForward, dPt);
 					if (Double.isNaN(dHdg))
 						continue;

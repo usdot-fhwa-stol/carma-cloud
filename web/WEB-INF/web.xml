@@ -289,4 +289,36 @@
  <url-pattern>/api/rsm/*</url-pattern>
 </servlet-mapping>
 
+<servlet>
+ <servlet-name>IHP</servlet-name>
+ <servlet-class>cc.ihp.IHP</servlet-class>
+
+ <init-param>
+  <param-name>pfile</param-name>
+  <param-value>/opt/tomcat/work/carmacloud/ihp/parameters.csv</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>cfile</param-name>
+  <param-value>/opt/tomcat/work/carmacloud/ihp/corridor.csv</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>dfile</param-name>
+  <param-value>/opt/tomcat/work/carmacloud/ihp/detectors.json</param-value>
+ </init-param>
+
+ <init-param>
+  <param-name>basedir</param-name>
+  <param-value>/opt/tomcat/work/carmacloud/ihp/</param-value>
+ </init-param>
+
+ <load-on-startup>2</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>IHP</servlet-name>
+ <url-pattern>/api/ihp/*</url-pattern>
+</servlet-mapping>
+
 </web-app>

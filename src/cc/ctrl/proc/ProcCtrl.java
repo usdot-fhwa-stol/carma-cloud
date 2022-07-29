@@ -6,6 +6,7 @@
 package cc.ctrl.proc;
 
 import cc.ctrl.CtrlGeo;
+import cc.ctrl.CtrlIndex;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.CtrlLineArcs;
 import cc.geosrv.Mercator;
@@ -13,6 +14,7 @@ import cc.geosrv.xodr.XodrUtil;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Introsort;
 import cc.util.MathUtil;
 import cc.util.Text;
 import cc.util.TileUtil;
@@ -283,36 +285,30 @@ public abstract class ProcCtrl
 	}
 	
 	
-	public static void updateIndex(String sIndexFile, byte[] yId, long lTimestamp)
+	public static void updateIndex(String sIndexFile, TrafCtrl oCtrl, long lTimestamp)
 		throws IOException
 	{
 		Path oIndexFile = Paths.get(sIndexFile);
 		int nPos = 0;
 		byte[] yIdBuf = new byte[16];
 		long lSize = Files.size(oIndexFile);
-		int nParts = (int)(lSize / 36);
-		int nCount = 0;
 		try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile))))
 		{
 			while (oIn.available() > 0)
 			{
 				oIn.skipBytes(4); // skip type (int)
 				oIn.read(yIdBuf);
-				if (TrafCtrl.ID_COMP.compare(yIdBuf, yId) == 0)
+				if (TrafCtrl.ID_COMP.compare(yIdBuf, oCtrl.m_yId) == 0)
 					break;
-				oIn.skipBytes(16); // skip both timestamps (2 longs)
-				nPos += 36;
+				oIn.skipBytes(32); // skip both timestamps (2 longs) and bounding box (4 ints)
+				nPos += 52;
 			}
 		}
 		if (nPos >= lSize)
 			throw new IOException("Id not found");
-		System.out.println(sIndexFile + " " + nPos);
+
 		try (RandomAccessFile oRaf = new RandomAccessFile(sIndexFile, "rw"))
 		{
-			oRaf.seek(nPos);
-			oRaf.skipBytes(4);
-			oRaf.read(yIdBuf);
-			System.out.println(TrafCtrl.getId(yIdBuf));
 			oRaf.seek(nPos + 28); // want to edit the end timestamp, so seek to the record position and skip type(4) id(16) startts(8)
 			oRaf.writeLong(lTimestamp);
 		}
@@ -417,13 +413,9 @@ public abstract class ProcCtrl
 	{
 		String sFile = g_sTrafCtrlDir + sId + ".bin";
 		TrafCtrl oOriginalCtrl;
-		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+		try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(Paths.get(sFile)))))
 		{
-			oOriginalCtrl = new TrafCtrl(oIn, false);
-		}
-		try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-		{
-			oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nDefaultZoom);
+			oOriginalCtrl = new TrafCtrl(oIn, true, true);
 		}
 		
 		return deleteControl(oOriginalCtrl);
@@ -439,7 +431,7 @@ public abstract class ProcCtrl
 				for (int[] nTile : oCtrl.m_oFullGeo.m_oTiles)
 				{
 					String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nDefaultZoom, nTile[0], nTile[1]) + ".ndx";
-					ProcCtrl.updateIndex(sIndex, oCtrl.m_yId, System.currentTimeMillis() - 10);
+					ProcCtrl.updateIndex(sIndex, oCtrl, System.currentTimeMillis() - 10);
 				}
 			}
 			catch (Exception oEx)
@@ -464,8 +456,8 @@ public abstract class ProcCtrl
 			int nStartX = nTiles[0];
 			int nStartY = nTiles[1];
 			oM.lonLatToTile(dMaxLon, dMinLat, g_nDefaultZoom, nTiles);
+			double[] dMercBounds = new double[]{Mercator.lonToMeters(dMinLon), Mercator.latToMeters(dMinLat), Mercator.lonToMeters(dMaxLon), Mercator.latToMeters(dMaxLat)};
 			ArrayList<byte[]> oIds = new ArrayList();
-			byte[] yIdBuf = new byte[16];
 			for (int nX = nStartX; nX <= nTiles[0]; nX++)
 			{
 				for (int nY = nStartY; nY <= nTiles[1]; nY++)
@@ -475,43 +467,33 @@ public abstract class ProcCtrl
 					{
 						while (oIn.available() > 0)
 						{
-							int nType = oIn.readInt();
-							oIn.read(yIdBuf);
-							long lStart = oIn.readLong();
-							long lEnd = oIn.readLong();
-							if (nCtrlType == nType || nCtrlType == Integer.MIN_VALUE && (lStart >= lNow || lEnd > lNow))
-							{
-								byte[] yId = new byte[16];
-								System.arraycopy(yIdBuf, 0, yId, 0, 16);
-								int nIndex = Collections.binarySearch(oIds, yId, TrafCtrl.ID_COMP);
-								if (nIndex < 0)
-									oIds.add(~nIndex, yId);
-							}
+							CtrlIndex oIndex = new CtrlIndex(oIn);
+							if (nCtrlType == oIndex.m_nType || nCtrlType == Integer.MIN_VALUE && (oIndex.m_lStart >= lNow || oIndex.m_lEnd > lNow) && Geo.boundingBoxesIntersect(oIndex.m_dBB, dMercBounds))
+								oIds.add(oIndex.m_yId);
 						}
 					}
 				}
 			}
 
+			Introsort.usort(oIds, TrafCtrl.ID_COMP);
 			StringBuilder sIdBuf = new StringBuilder();
+			byte[] yPrev = new byte[16];
+			yPrev[0] = -1;
 			for (byte[] yId : oIds)
 			{
+				if (TrafCtrl.ID_COMP.compare(yPrev, yId) == 0)
+					continue;
+				yPrev = yId;
 				TrafCtrl.getId(yId, sIdBuf);
 				TrafCtrl oCtrl;
 				Path oPath = Paths.get(g_sTrafCtrlDir + sIdBuf.toString() + ".bin");
-				try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
+				try (DataInputStream oCtrlIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oPath))))
 				{
-					oCtrl = new TrafCtrl(oCtrlIn, false);
+					oCtrl = new TrafCtrl(oCtrlIn, bLoadFullGeo, false);
 				}
 				if (oCtrl.m_yId[0] != ProcCtrl.CC)
 					continue;
 				
-				if (bLoadFullGeo)
-				{
-					try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
-					{
-						oCtrl.m_oFullGeo = new CtrlGeo(oCtrlIn, false, g_nDefaultZoom);
-					}
-				}
 				oCtrls.add(oCtrl);
 			}
 		}

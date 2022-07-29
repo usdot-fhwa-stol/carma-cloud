@@ -40,12 +40,7 @@ public class RenderCtrl
 		TrafCtrl oCtrl = null;
 		try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(Files.newInputStream(Paths.get(sFile)))))
 		{
-			oCtrl = new TrafCtrl(oIn, false);
-		}
-		
-		try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(Files.newInputStream(Paths.get(sFile)))))
-		{
-			oCtrl.m_oFullGeo = new CtrlGeo(oIn, true, nZoom);
+			oCtrl = new TrafCtrl(oIn, true, true);
 		}
 		
 		ArrayList<int[]> nTiles = new ArrayList();
@@ -54,7 +49,7 @@ public class RenderCtrl
 		for (int[] nTile : nTiles)
 		{
 			String sIndex = String.format(sTdFF, nTile[0], nZoom, nTile[0], nTile[1]) + ".ndx";
-			ProcCtrl.updateIndex(sIndex, oCtrl.m_yId, lNow);
+			ProcCtrl.updateIndex(sIndex, oCtrl, lNow);
 		}
 		
 		oCtrl.m_yId = null;

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html lang="en">
+<head>
+	<title>CARMAcloud IHP</title>
+	<meta charset="UTF-8"/>
+	<meta name="viewport" content="width=device-width, initial-scale=1"/>
+	<link rel="stylesheet" href="css/w3.css"/>
+	<link rel="stylesheet" href="css/fontawesome.min.css"/>
+	<link rel="stylesheet" href="css/solid.min.css"/>
+	<link rel="stylesheet" href="css/jquery/themes/overcast/jquery-ui.css"/>
+	<link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.css"/>
+	<link rel="stylesheet" href="css/carmacloud.css"/>
+	<link rel="stylesheet" href="css/ihp.css"/>
+	<script src="script/jquery/jquery.js"></script>
+	<script src="script/jquery/jquery-ui.js"></script>
+	<script src="https://api.mapbox.com/mapbox-gl-js/v1.10.1/mapbox-gl.js"></script>
+	<script src="script/moment.min.js"></script>
+	<script type="module" src="script/ihp.js"></script>
+	<script src="script/check.js"></script>
+</head>
+<body>
+	<div id="pageoverlay"><p class="centered-element"></p></div>
+	<div class="w3-bar w3-dark-gray">
+		<a href="map.html" class="w3-bar-item w3-button"><i class="fas fa-globe-americas"></i>&nbsp;&nbsp;Map</a>
+		<a href="ihp.html" class="w3-bar-item w3-button"><i class="fas fa-car-side"></i>&nbsp;&nbsp;IHP</a>
+		<a href="help.html" class="w3-bar-item w3-button"><i class="fas fa-life-ring"></i>&nbsp;&nbsp;Help</a>
+		<a href="./" class="w3-bar-item w3-button w3-right" title="Logout"><span id="uname"></span>&nbsp;&nbsp;<i class="fas fa-cogs"></i></a>
+	</div>
+	
+	<div class="w3-row-padding" style="height: 95%">
+		<div class="w3-col s6">
+			<div class="w3-col s7">
+				<h1>Parameters<button class="w3-button w3-round-large w3-green" id="save_parameters">Save</button></h1>
+				<table class="w3-table" style="height:284px;">
+					<tr>
+						<th>Parameter</th><th>Value</th><th>Default</th>
+					</tr>
+					<tr>
+						<td>Space Factor (α)</td><td><input id="space_factor"></td><td>0.05</td>
+					</tr>
+					<tr>
+						<td>Reduced Speed Ratio (β)</td><td><input id="ratio_reduced_speed"></td><td>0.8</td>
+					</tr>
+					<tr>
+						<td>Consecutive Time Interval Trigger (γ)</td><td><input id="consecutive_time_interval_trigger"></td><td>2</td>
+					</tr>
+					<tr>
+						<td>Time Interval (Δt)</td><td><input id="time_interval"></td><td>300 s</td>
+					</tr>
+					<tr>
+						<td>Maximal Gap (<i style="text-decoration: overline;">v</i>)</td><td><input id="maximal_gap"></td><td>3 m/s</td>
+					</tr>
+					<tr>
+						<td>Baseline Traffic Flow (<i style="text-decoration: overline;">q</i><sub>n</sub>)</td><td><input id="baseline_flow"></td><td>2000 veh/h/lane</td>
+					</tr>
+				</table>
+			</div>
+			<div class="w3-col s5">
+				<h1>Simulation
+					<button class="w3-button w3-round-large w3-green" id="start_sim">Start</button>
+					<button class="w3-button w3-round-large w3-red" style="margin-right:5px" id="stop_sim">Stop</button>
+				</h1>
+				<table class="w3-table" style="height:284px;">
+					<tr>
+						<td>Status</td><td id="sim_status"></td>
+					</tr>
+					<tr>
+						<td>Next Run</td><td id="sim_next"></td>
+					</tr>
+					<tr>
+						<td>Last Run</td><td id="sim_last"></td>
+					</tr>
+					<tr>
+						<td>Previous Controls Created</td><td id="sim_ctrls"></td>
+					</tr>
+					<tr>
+						<td>Download logs</td><td><button class="w3-button w3-blue w3-round-large" id="download_logs"><i class="fas fa-cloud-download-alt" style="padding-left:0px"></i></button></td>
+					</tr>
+				</table>
+				<div class="w3-col s12">
+					<div class="w3-col s6">
+						
+					</div>
+					<div class="w3-col s6 w3-right">
+						
+					</div>
+				</div>
+			</div>
+			<div class="w3-col s12" id="detectors_container">
+				<h1>Subsegment Detector Data
+					<button class="w3-button w3-round-large w3-green" id="update_detectors">Update</button>
+					<button class="w3-button w3-round-large w3-blue" id="upload_detectors"><i class="fas fa-cloud-upload-alt" style="padding-left:0px"></i></button>
+				</h1>
+			</div>
+		</div>
+		<div class="w3-col s6" style="height: 100%">
+			<div class="w3-col s12" style="height: 100%">
+				<h1>Speed Harm Corridor
+					<button id="help_corridor" style="padding: 2px 4px;" class="w3-button w3-circle w3-border w3-white">?</button>
+					<button class="w3-button w3-round-large w3-blue" id="new_corridor">New</button>
+					<button class="w3-button w3-round-large w3-red" id="undo_corridor">Undo</button>
+					<button class="w3-button w3-round-large w3-green" id="save_corridor">Save</button>
+					<span id="lanes_txt"></span>
+					<span id="lanes_width_txt"></span>
+				</h1>
+				<div class="w3-col s12" id="map_container" style="height: 90%"></div>
+			</div>
+		</div>
+	</div>
+	
+	<div id="dlgInstructions"></div>
+	<div id="dlgConfirm"></div>
+	<div id="dlgStart" style="overflow: visible;"></div>
+	<div id="dlgFiles"></div>
+</body>
+</html>

@@ -7,6 +7,7 @@ package cc.ws;
 
 import cc.ctrl.CreateCtrls;
 import cc.ctrl.CtrlGeo;
+import cc.ctrl.CtrlIndex;
 import cc.ctrl.CtrlLineArcs;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.TrafCtrlEnums;
@@ -30,6 +31,7 @@ import cc.geosrv.xodr.rdmk.XodrRoadMarkParser;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Introsort;
 import cc.util.MathUtil;
 import cc.util.Text;
 import cc.util.TileUtil;
@@ -180,20 +182,12 @@ public class CtrlTiles extends HttpServlet
 		{
 			while (oIn.available() > 0)
 			{
-				int nType = oIn.readInt();
-				oIn.read(yIdBuf);
-				long lStart = oIn.readLong();
-				long lEnd = oIn.readLong();
-				if ((lStart >= lNow || lEnd > lNow) && m_nZoomFilter[nType] <= nZ) // everything valid now and in the future add to tile
-				{
-					byte[] yId = new byte[16];
-					System.arraycopy(yIdBuf, 0, yId, 0, 16);
-					int nIndex = Collections.binarySearch(yIdsToRender, yId, TrafCtrl.ID_COMP);
-					if (nIndex < 0)
-						yIdsToRender.add(~nIndex, yId);
-				}
+				CtrlIndex oIndex = new CtrlIndex(oIn);
+				if ((oIndex.m_lStart >= lNow || oIndex.m_lEnd > lNow) && m_nZoomFilter[oIndex.m_nType] <= nZ) // everything valid now and in the future add to tile
+					yIdsToRender.add(oIndex.m_yId);
 			}
 		}
+		Introsort.usort(yIdsToRender, TrafCtrl.ID_COMP);
 		double[] dClipBounds = TileUtil.getClippingBounds(nZ, nX, nY, dBounds);
 
 		int nExtent = 4096;
@@ -479,9 +473,8 @@ public class CtrlTiles extends HttpServlet
 			{
 				double dVal = Double.parseDouble(sVal);
 				if (sUnits.length > 0)
-					nControlValue = (int)Math.round(Units.getInstance().convert(sUnits[1], sUnits[0], dVal));
-				else
-					nControlValue = (int)dVal;
+				  dVal = Units.getInstance().convert(sUnits[1], sUnits[0], dVal);
+				nControlValue = (int)Math.round(dVal);
 			}
 			else
 			{
@@ -501,21 +494,17 @@ public class CtrlTiles extends HttpServlet
 						nControlValue = Integer.parseInt(sVal);
 				}
 			}
-			
+
 			String sId = oReq.getParameter("id");
 			int nStartIndex = Integer.parseInt(oReq.getParameter("s")) * 4 + 1; // add one since we use the growable arrays with the insertion index at position 0
 			int nEndIndex = Integer.parseInt(oReq.getParameter("e")) * 4 + 1;
 			String sFile = g_sCtrlDir + sId + ".bin";
 			TrafCtrl oOriginalCtrl;
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(Paths.get(sFile)))))
 			{
-				oOriginalCtrl = new TrafCtrl(oIn, false);
+				oOriginalCtrl = new TrafCtrl(oIn, true, true);
 			}
 			
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-			{
-				oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
-			}
 			double[] dCenter = Arrays.newDoubleArray();
 			dCenter = Arrays.add(dCenter, new double[]{Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE});			
 			double[] dC = oOriginalCtrl.m_oFullGeo.m_dC;
@@ -613,9 +602,9 @@ public class CtrlTiles extends HttpServlet
 			String sId = oReq.getParameter("id");
 			String sFile = g_sCtrlDir + sId + ".bin";
 			TrafCtrl oOriginalCtrl;
-			try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
+			try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(Paths.get(sFile)))))
 			{
-				oOriginalCtrl = new TrafCtrl(oIn, false);
+				oOriginalCtrl = new TrafCtrl(oIn, true, true);
 			}
 			TrafCtrl oCtrlToWrite;
 			Collections.sort(nVtypes);
@@ -635,10 +624,6 @@ public class CtrlTiles extends HttpServlet
 			}
 			else
 			{	
-				try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-				{
-					oOriginalCtrl.m_oFullGeo = new CtrlGeo(oIn, true, g_nZoom);
-				}
 				TrafCtrl oNewCtrl = new TrafCtrl(sType, nControlValue, nVtypes, lNow, lNow, oOriginalCtrl, sLabel, bReg, ProcCtrl.CC);
 				oCtrlToWrite = oNewCtrl;
 				oNewCtrl.write(ProcCtrl.g_sTrafCtrlDir, ProcCtrl.g_dExplodeStep, ProcCtrl.g_nDefaultZoom, ProcCtrl.CC);
@@ -652,7 +637,7 @@ public class CtrlTiles extends HttpServlet
 					{
 	//					ProcCtrl.writeIndexFile(oCtrls, nTile[0], nTile[1]);
 						String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
-						ProcCtrl.updateIndex(sIndex, oOriginalCtrl.m_yId, oNewCtrl.m_lStart);
+						ProcCtrl.updateIndex(sIndex, oOriginalCtrl, oNewCtrl.m_lStart);
 					}
 				}
 			}
@@ -710,7 +695,7 @@ public class CtrlTiles extends HttpServlet
 				return;
 			ArrayList<CtrlLineArcs> oClas = new ArrayList();
 			int nShoulder = XodrUtil.getLaneType("shoulder");
-			try (DataInputStream oIn = new DataInputStream(Files.newInputStream(oPath)))
+			try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(Files.newInputStream(oPath))))
 			{
 				while (oIn.available() > 0)
 				{
@@ -934,7 +919,7 @@ public class CtrlTiles extends HttpServlet
 			ProcLatPerm.renderTiledData(oCtrls, nTiles, nColors);
 			
 			ArrayList<CtrlLineArcs> oPvmt = new ArrayList();
-			try (DataInputStream oIn = new DataInputStream(Files.newInputStream(Paths.get(sPvmtFile))))
+			try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(Files.newInputStream(Paths.get(sPvmtFile)))))
 			{
 				while (oIn.available() > 0)
 				{

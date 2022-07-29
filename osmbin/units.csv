@@ -17,3 +17,5 @@ ft,in,12,1,0
 dm/s,mph,3600,16093.44,0
 m/s,dm/s,10,1,0
 ft,dm,3.048,1,0
+veh/hr/lane,veh/s/lane,1,3600,0
+veh/mi/lane,veh/m/lane,1609.344,1,0

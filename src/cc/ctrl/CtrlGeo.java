@@ -8,7 +8,6 @@ package cc.ctrl;
 import cc.geosrv.Mercator;
 import cc.util.Arrays;
 import cc.util.Geo;
-import cc.util.MathUtil;
 import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.io.DataInputStream;
@@ -22,9 +21,8 @@ import java.util.Iterator;
  *
  * @author aaron.cherney
  */
-public class CtrlGeo implements Comparable<CtrlGeo>
+public class CtrlGeo
 {
-	public byte[] m_yId;
 	/**
 	 * negative tangent path
 	 */
@@ -41,51 +39,16 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 	public double[] m_dBB = new double[] {Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
 	public ArrayList<int[]> m_oTiles = new ArrayList();
 	int m_nZoom;
-	public int m_nCtrlType;
-	public byte[] m_yCtrlValue;
 	public double m_dLength;
 	public double m_dAverageWidth = 0.0;
 	public double[] m_dDebugNT;
 	public double[] m_dDebugPT;
-	public boolean[] m_bDow = new boolean[7];
 	
 	
-	public CtrlGeo(DataInputStream oIn, int nZoom)
-		throws IOException
-	{
-		this(oIn, false, nZoom);
-	}
-	
-	
-	public CtrlGeo(DataInputStream oIn, boolean bUpdateTiles, int nZoom)
+	CtrlGeo(DataInputStream oIn, boolean bUpdateTiles, int nZoom)
 	   throws IOException
 	{
-		m_nZoom = nZoom;
-		oIn.readUTF(); // read version, discard it
-		m_yId = new byte[16];
-		oIn.read(m_yId);
-		oIn.skip(8); // skip updated, long
-
-		int nCount = oIn.readInt();
-		oIn.skip(nCount * 4); // skip vehicle types, they are ints
-		oIn.skip(20); // skip start, end, DoW (long, long ,int)
-		nCount = oIn.readInt();
-		oIn.skip(nCount * 8); // skip between which is pairs of ints
-		oIn.skip(13); // skip offset, period, span, regulatory (int, int, int, bool)
-		
-		m_nCtrlType = oIn.readInt();
-		m_yCtrlValue = new byte[oIn.readInt()];
-		oIn.read(m_yCtrlValue);
-		
-		oIn.readUTF(); // read proj, discard it
-		oIn.readUTF(); // read datum, discard it
-		
-		oIn.skip(28); // skip time, lon, lat, alt, width, heading (long, int, int, int, int, int)
-		oIn.readUTF(); // read label, discard it
-
-		nCount = oIn.readInt();
-		oIn.skip(nCount * 16); // skip all the points (each are 4 ints)
-		
+		m_nZoom = nZoom;		
 		for (int nIndex = 0; nIndex < m_dBB.length; nIndex++)
 			m_dBB[nIndex] = oIn.readInt() / 100.0; // convert mercator cm to mercator meters
 
@@ -106,15 +69,10 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 	}
 	
 	
-	public CtrlGeo(TrafCtrl oCtrl, double dMaxStep, int nZoom)
+	CtrlGeo(TrafCtrl oCtrl, double dMaxStep, int nZoom)
 	   throws Exception
 	{
 		m_nZoom = nZoom;
-		m_yId = new byte[oCtrl.m_yId.length];
-		m_nCtrlType = oCtrl.m_nControlType;
-		m_yCtrlValue = new byte[oCtrl.m_yControlValue.length];
-		System.arraycopy(oCtrl.m_yControlValue, 0, m_yCtrlValue, 0, m_yCtrlValue.length);
-		System.arraycopy(oCtrl.m_yId, 0, m_yId, 0, m_yId.length);
 		int nNumPts = oCtrl.size();
 		double dTotalLength = 0.0;
 		double[] dPts = Arrays.newDoubleArray(nNumPts * 3);
@@ -382,8 +340,8 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 	   throws IOException
 	{
 		oOut.writeInt(Arrays.size(dPts) - 1);
-		int nPrevX = (int)(MathUtil.round(dPts[1] * 100.0, 0)); // convert mercator meters to mercator cms, rounding to nearest cm
-		int nPrevY = (int)(MathUtil.round(dPts[2] * 100.0, 0));
+		int nPrevX = (int)(dPts[1] * 100.0 + 0.5); // convert mercator meters to mercator cms, rounding to nearest cm
+		int nPrevY = (int)(dPts[2] * 100.0 + 0.5);
 		oOut.writeInt(nPrevX);
 		oOut.writeInt(nPrevY);
 		Iterator<double[]> oIt = Arrays.iterator(dPts, new double[2], 3, 2);
@@ -392,8 +350,8 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 		while (oIt.hasNext())
 		{
 			double[] dPt = oIt.next();
-			nCurX = (int)(MathUtil.round(dPt[0] * 100.0, 0)); // convert mercator meters to mercator cms, rounding to nearest cm
-			nCurY = (int)(MathUtil.round(dPt[1] * 100.0, 0));
+			nCurX = (int)(dPt[0] * 100.0 + 0.5); // convert mercator meters to mercator cms, rounding to nearest cm
+			nCurY = (int)(dPt[1] * 100.0 + 0.5);
 			oOut.writeByte(nCurX - nPrevX); // write the deltas in the file
 			oOut.writeByte(nCurY - nPrevY);
 			nPrevX = nCurX;
@@ -470,21 +428,6 @@ public class CtrlGeo implements Comparable<CtrlGeo>
 		}
 		
 		return nPts;
-	}
-
-
-	@Override
-	public int compareTo(CtrlGeo o)
-	{
-		int nRet = 0;
-		for (int nIndex = 0; nIndex < m_yId.length; nIndex++)
-		{
-			nRet = m_yId[nIndex] - o.m_yId[nIndex];
-			if (nRet != 0)
-				return nRet;
-		}
-		
-		return nRet;
 	}
 	
 	
