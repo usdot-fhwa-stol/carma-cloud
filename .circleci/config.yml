@@ -64,7 +64,7 @@ jobs:
           name: Start Tomcat and verify deployment
           command: |
             sudo /opt/tomcat/bin/catalina.sh start
-            sleep 5
+            sleep 10
             if [[ `sudo grep "startup in" /opt/tomcat/logs/catalina.out | wc -l` -ne "1" ]]; then exit 1; fi
             if [[ `wget -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 2; fi
             if [[ `wget -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 3; fi
