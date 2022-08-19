@@ -1,3 +1,7 @@
+| CicleCI Build Status |
+|------|
+[![CircleCI](https://circleci.com/gh/usdot-fhwa-stol/carma-cloud.svg?style=svg)](https://circleci.com/gh/usdot-fhwa-stol/carma-cloud)
+
 # CARMAcloud
 
 ## Documentation

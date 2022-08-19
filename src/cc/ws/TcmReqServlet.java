@@ -6,16 +6,16 @@
 package cc.ws;
 
 import cc.ctrl.TrafCtrl;
-import cc.ctrl.CtrlGeo;
+import cc.ctrl.CtrlIndex;
 import cc.ctrl.TcBounds;
 import cc.ctrl.TcmReqParser2;
 import cc.ctrl.TcmReq;
 import cc.ctrl.TcmReqParser;
 import cc.ctrl.TrafCtrlEnums;
+import cc.ctrl.proc.ProcCtrl;
 import cc.geosrv.Mercator;
 import cc.util.FileUtil;
 import cc.util.Geo;
-import cc.util.Text;
 import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -24,16 +24,13 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.channels.Channels;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -48,10 +45,11 @@ import org.apache.logging.log4j.Logger;
  */
 public class TcmReqServlet extends HttpServlet implements Runnable
 {
-	protected static final Logger LOGGER = LogManager.getRootLogger();
+	protected static final Logger LOGGER = LogManager.getLogger(TcmReqServlet.class);
 
-	private final ArrayDeque<StringBuilder> REPLYBUFS = new ArrayDeque();
-	private final ExecutorService THREADPOOL = Executors.newFixedThreadPool(53);
+	private int m_nExplodeDistForXml = 0;
+	private boolean m_bRemoveWidth = false;
+	private int m_nPolyStep = 50;
 	private static int[] IGNORE_CTRLS;
 	static
 	{
@@ -61,9 +59,26 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 	
 	
 	@Override
-	public void destroy()
+	public void init(ServletConfig oConfig)
 	{
-		THREADPOOL.shutdown();
+		String sRemoveWidth = oConfig.getInitParameter("removewidth");
+		if (sRemoveWidth != null)
+			m_bRemoveWidth = Boolean.parseBoolean(sRemoveWidth);
+		
+		String sExplodeDistForXml = oConfig.getInitParameter("xmldist");
+		if (sExplodeDistForXml != null)
+		{
+			int nExplode = Integer.parseInt(sExplodeDistForXml);
+			if (nExplode == 0)
+				return;
+			if (nExplode < ProcCtrl.g_dExplodeStep * 100)
+				nExplode = (int)(ProcCtrl.g_dExplodeStep * 100);
+			m_nExplodeDistForXml = nExplode;
+		}
+		
+		String sPolyStep = oConfig.getInitParameter("polystep");
+		if (sPolyStep != null)
+			m_nPolyStep = Integer.parseInt(sPolyStep);
 	}
 	
 	
@@ -71,36 +86,40 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 	public void doPost(HttpServletRequest oReq, HttpServletResponse oRes)
 	   throws ServletException, IOException
 	{
+		StringBuilder sReq = new StringBuilder(1024);
+		try (BufferedInputStream oIn = new BufferedInputStream(oReq.getInputStream()))
+		{
+			int nByte;
+			while ((nByte = oIn.read()) >= 0)
+				sReq.append((char)nByte);
+		}
+		
+		new Thread(this, sReq.toString()).start();
+		LOGGER.debug(sReq);
+	}
+
+	
+	@Override
+	public void run()
+	{
 		try
 		{
 			long lNow = System.currentTimeMillis();
-			
-			StringBuilder sReq = new StringBuilder();
-			try (BufferedInputStream oIn = new BufferedInputStream(oReq.getInputStream()))
-			{
-				int nByte;
-				while ((nByte = oIn.read()) >= 0)
-					sReq.append((char)nByte);
-			}
-
+			String sReq = Thread.currentThread().getName();
 			TcmReqParser oReqParser;
 			if (sReq.indexOf("<tcrV01>") >= 0)
 				oReqParser = new TcmReqParser();
 			else
 				oReqParser = new TcmReqParser2();
 
-			TcmReq oTcmReq = oReqParser.parseRequest(new ByteArrayInputStream(sReq.toString().getBytes(StandardCharsets.UTF_8)));
-			Text.removeCtrlChars(sReq); // pack chars into one line
-			sReq.insert(0, "TCR ");
-			LOGGER.debug(sReq);
+			TcmReq oTcmReq = oReqParser.parseRequest(new ByteArrayInputStream(sReq.getBytes(StandardCharsets.UTF_8)));
 
 			ArrayList<TrafCtrl> oResCtrls = new ArrayList();
-			ArrayList<TrafCtrl> oCtrls = new ArrayList();
-			ArrayList<TileIds> oTiles = new ArrayList();
+			ArrayList<TileIds> oTiles = new ArrayList(50);
+			ArrayList<byte[]> oProcessed = new ArrayList(1000);
 			TrafCtrl oTrafCtrlSearch = new TrafCtrl();
 			oTrafCtrlSearch.m_yId = new byte[16];
 			TileIds oTileIdsSearch = new TileIds();
-			byte[] yIdBuf = new byte[16];
 			int nMsgTot = 0;
 			for (TcBounds oBounds : oTcmReq.m_oBounds)
 			{
@@ -122,9 +141,6 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 						dTcMercBounds[3] = dY;
 				}
 				Geo.untwist(dCorners);
-				for (int n = 0; n < dCorners.length; n += 2) 
-					System.out.print(String.format("[%2.7f,%2.7f],", Mercator.xToLon(dCorners[n]), Mercator.yToLat(dCorners[n + 1])));
-				System.out.println();
 				Mercator oM = Mercator.getInstance();
 				int[] nTiles = new int[2];
 				int[] nTileIndices = new int[4];
@@ -141,142 +157,105 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 						Path oIndexFile = Paths.get(String.format(CtrlTiles.g_sTdFileFormat, nTileX, CtrlTiles.g_nZoom, nTileX, nTileY) + ".ndx");
 						if (!Files.exists(oIndexFile)) // check if the index file exists
 							continue;
-						
+
 						oTileIdsSearch.setIndices(nTileX, nTileY);
 						int nIndex = Collections.binarySearch(oTiles, oTileIdsSearch);
 						if (nIndex < 0) // if the tile index file has not been loaded
 						{
-							TileIds oTile = new TileIds(nTileX, nTileY);
+							TileIds oTile = new TileIds(nTileX, nTileY, 1000);
 							nIndex = ~nIndex;
 							oTiles.add(nIndex, oTile);
 							try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile)))) // read the index file to find which controls are in the tile
 							{
 								while (oIn.available() > 0)
 								{
-									int nType = oIn.readInt();
-									oIn.read(yIdBuf);
-									long lStart = oIn.readLong();
-									long lEnd = oIn.readLong();
-									if (oBounds.m_lOldest <= lStart && lEnd > lNow && java.util.Arrays.binarySearch(IGNORE_CTRLS, nType) < 0) // skip out controls and control types to ignore
-									{
-										byte[] yId = new byte[16];
-										System.arraycopy(yIdBuf, 0, yId, 0, 16);
-										int nSearchIndex = Collections.binarySearch(oTile, yId, TrafCtrl.ID_COMP);
-										if (nSearchIndex < 0) // only add ids once
-											oTile.add(~nSearchIndex, yId);
-									}
+									CtrlIndex oIndex = new CtrlIndex(oIn);
+									if (oBounds.m_lOldest <= oIndex.m_lStart && oIndex.m_lEnd > lNow && java.util.Arrays.binarySearch(IGNORE_CTRLS, oIndex.m_nType) < 0 && Geo.boundingBoxesIntersect(dTcMercBounds, oIndex.m_dBB)) // skip out controls and control types to ignore
+										oTile.add(oIndex.m_yId);
 								}
 							}
 						}
-						
+
 						TileIds oTile = oTiles.get(nIndex);
+						oResCtrls.ensureCapacity(oResCtrls.size() + oTile.size());
 						for (byte[] yId : oTile)
 						{
-							System.arraycopy(yId, 0, oTrafCtrlSearch.m_yId, 0, yId.length);
-							int nSearchIndex = Collections.binarySearch(oCtrls, oTrafCtrlSearch);
-							if (nSearchIndex < 0) // only load controls once
+							int nProcessIndex = Collections.binarySearch(oProcessed, yId, TrafCtrl.ID_COMP);
+							if (nProcessIndex < 0)
+								oProcessed.add(~nProcessIndex, yId);
+							else
+								continue;
+							
+							String sFile = CtrlTiles.g_sCtrlDir + TrafCtrl.getId(yId) + ".bin";
+							Path oCtrlFile = Paths.get(sFile);
+	
+							if (!Files.exists(oCtrlFile))
+								continue;
+							TrafCtrl oCtrl;
+							try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oCtrlFile))))
 							{
-								String sFile = CtrlTiles.g_sCtrlDir + TrafCtrl.getId(yId) + ".bin";
-								TrafCtrl oCtrl;
-								try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-								{
-									oCtrl = new TrafCtrl(oIn, false);
-								}
-								try (DataInputStream oIn = new DataInputStream(FileUtil.newInputStream(Paths.get(sFile))))
-								{
-									oCtrl.m_oFullGeo = new CtrlGeo(oIn, CtrlTiles.g_nZoom);
-								}
-								nSearchIndex = ~nSearchIndex;
-								oCtrls.add(nSearchIndex, oCtrl);
+								oCtrl = new TrafCtrl(oIn, true, false);
 							}
 							
-							TrafCtrl oCtrl = oCtrls.get(nSearchIndex);
-							nSearchIndex = Collections.binarySearch(oResCtrls, oTrafCtrlSearch);
-							if (nSearchIndex < 0)
+							if (Geo.ctrlIntersectBounds(dCorners, oCtrl, m_nPolyStep))
 							{
-								if (!Geo.boundingBoxesIntersect(dTcMercBounds, oCtrl.m_oFullGeo.m_dBB))
-									continue;
-								
-								if (!Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dC) && !Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dNT) && !Geo.polylineInside(dCorners, oCtrl.m_oFullGeo.m_dPT))
-									continue;
-								
-								System.out.println(TrafCtrl.getId(oCtrl.m_yId));
-								oResCtrls.add(~nSearchIndex, oCtrl);
+								oResCtrls.add(oCtrl);
+								oCtrl.preparePoints(m_nExplodeDistForXml);
 								nMsgTot += (oCtrl.size() / 256 + 1);
 							}
 						}
 					}
 				}
-			}
-			
-			
+			}			
+
 			int nMsgCount = 1;
+			StringBuilder sBuf = new StringBuilder(2048);
 			for (TrafCtrl oCtrl : oResCtrls)
 			{
 				int nParts = oCtrl.size() / 256 + 1;
-				StringBuilder sBuf = new StringBuilder();
 				for (int nIndex = 0; nIndex < nParts; nIndex++)
 				{
+					sBuf.setLength(0);
 					if (nIndex == 0)
 						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, true, 0);
 					else
 						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, false, nIndex * 256 - 1);
 					++nMsgCount;
-					synchronized (REPLYBUFS)
+					if (m_bRemoveWidth)
 					{
-						REPLYBUFS.push(sBuf);
-						THREADPOOL.execute(this);
+						int nStart = sBuf.indexOf("<refwidth>");
+						int nEnd = sBuf.indexOf("</refwidth>", nStart) + "</refwidth>".length();
+						sBuf.delete(nStart, nEnd);
 					}
-					try (BufferedWriter oOut = new BufferedWriter(Channels.newWriter(Files.newByteChannel(Paths.get(String.format("/dev/shm/testreqreply%d.xml", nMsgCount - 1)), FileUtil.WRITE, FileUtil.FILEPERS), "UTF-8")))
+
+					HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://tcmreplyhost:10001/tcmreply").openConnection();
+					oHttpClient.setDoOutput(true);
+					oHttpClient.setRequestMethod("POST");
+					oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+					oHttpClient.setFixedLengthStreamingMode(sBuf.length());
+
+					try
 					{
-						oOut.append(sBuf);
+						oHttpClient.connect(); // send post request
+
+						try (BufferedWriter oOut = new BufferedWriter(new OutputStreamWriter(oHttpClient.getOutputStream())))
+						{
+							oOut.append(sBuf);
+						}
+
+						oHttpClient.disconnect();
 					}
+					catch (Exception oEx)
+					{
+						oEx.printStackTrace();
+					}
+					LOGGER.debug(sBuf);
 				}
 			}
 		}
 		catch (Exception oEx)
 		{
-			oEx.printStackTrace();
-		}
-	}
-	
-	@Override
-	public void run()
-	{
-		StringBuilder sBuf = null;
-		synchronized (REPLYBUFS)
-		{
-			if (!REPLYBUFS.isEmpty())
-				sBuf = REPLYBUFS.removeFirst();
-		}
-		if (sBuf == null)
-			return;
-		
-		try
-		{
-//			Thread.sleep(10000);
-			HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://tcmreplyhost:10001/tcmreply").openConnection();
-			oHttpClient.setDoOutput(true);
-			oHttpClient.setRequestMethod("POST");
-			oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-			oHttpClient.setFixedLengthStreamingMode(sBuf.length());
-			
-			oHttpClient.connect(); // send post request
-			
-			try (OutputStreamWriter oOut = new OutputStreamWriter(oHttpClient.getOutputStream()))
-			{
-				oOut.append(sBuf);
-			}
-			Text.removeCtrlChars(sBuf); // pack chars into one line
-			sBuf.insert(0, ' '); // build log msg in reverse order
-			sBuf.insert(0, oHttpClient.getResponseCode());
-			sBuf.insert(0, "TCM ");
-			LOGGER.debug(sBuf);
-			oHttpClient.disconnect();
-		}
-		catch (Exception oEx)
-		{
-			oEx.printStackTrace();
+			LOGGER.error(oEx, oEx);
 		}
 	}
 
@@ -292,8 +271,9 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 		}
 
 
-		TileIds(int nX, int nY)
+		TileIds(int nX, int nY, int nInitSize)
 		{
+			super(nInitSize);
 			setIndices(nX, nY);
 		}
 

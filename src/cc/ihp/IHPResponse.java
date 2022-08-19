@@ -5,24 +5,12 @@
  */
 package cc.ihp;
 
-import cc.ctrl.CtrlGeo;
-import cc.ctrl.TrafCtrl;
-import cc.ctrl.TrafCtrlEnums;
-import cc.ctrl.proc.ProcCtrl;
 import cc.geosrv.Mercator;
-import cc.util.Arrays;
-import cc.util.FileUtil;
 import cc.util.Geo;
-import cc.util.MathUtil;
-import java.io.BufferedInputStream;
-import java.io.DataInputStream;
 import java.io.InputStream;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.json.JSONTokener;
@@ -33,12 +21,30 @@ import org.json.JSONTokener;
  */
 public class IHPResponse
 {
+
+	/**
+	 * Timestamp of response
+	 */
 	public long m_lTimestamp;
+
+	/**
+	 * Request  identifier
+	 */
 	public String m_sRequestId;
+
+	/**
+	 * List of detectors
+	 */
 	public ArrayList<Detector> m_oDetectors = new ArrayList();
 	
-	
-	public IHPResponse(InputStream oIn, ArrayList<BoundsList> oAllBounds)
+	/**
+	 * Parses the data from the JSON response
+	 * 
+	 * @param oIn input stream of data in JSON format
+	 * @param oAllCorridors list of corridors used for the Speed Harmonization Algorithm
+	 * @throws Exception
+	 */
+	public IHPResponse(InputStream oIn, ArrayList<Corridor> oAllCorridors)
 		throws Exception
 	{
 		JSONObject oJson = new JSONObject(new JSONTokener(oIn));
@@ -70,11 +76,11 @@ public class IHPResponse
 						m_oDetectors.add(~nSearch, oDetector);
 						double dX = Mercator.lonToMeters(oDetector.m_dLon);
 						double dY = Mercator.latToMeters(oDetector.m_dLat);
-						for (BoundsList oBoundsList : oAllBounds)
+						for (Corridor oBoundsList : oAllCorridors)
 						{
 							if (Geo.isInBoundingBox(dX, dY, oBoundsList.m_dBb[0], oBoundsList.m_dBb[1], oBoundsList.m_dBb[2], oBoundsList.m_dBb[3]))
 							{
-								for (Bounds oBounds : oBoundsList)
+								for (Subsegment oBounds : oBoundsList)
 								{
 									if (oBounds.pointInside(dX, dY))
 										oBounds.add(oDetector);
@@ -212,153 +218,5 @@ public class IHPResponse
 				}
 			}
 		}
-	}
-
-
-	ArrayList<TrafCtrl> generateSpeedControls(ArrayList<BoundsList> oAllBounds, int nTimeIntervalSecs)
-	{
-		ArrayList<TrafCtrl> oCtrls = new ArrayList();
-		Mercator oM = Mercator.getInstance();
-		int[] nTiles = new int[2];
-		int nMaxSpeedCtrl = TrafCtrlEnums.getCtrl("maxspeed");
-		byte[] yIdBuf = new byte[16];
-		StringBuilder sIdBuf = new StringBuilder();
-		long lNow = System.currentTimeMillis();
-		for (BoundsList oBoundsList : oAllBounds)
-		{
-			for (Bounds oBounds : oBoundsList)
-			{
-				for (Detector oDetector : oBounds)
-				{
-					oBounds.m_dOcc += oDetector.m_dOcc;
-					oBounds.m_nVolume += oDetector.m_nVolume;
-					Iterator<double[]> oIt = Arrays.iterator(oDetector.m_dSpeeds, new double[1], 1, 1);
-					while (oIt.hasNext())
-						oBounds.m_dSpeeds = Arrays.add(oBounds.m_dSpeeds, oIt.next()[0]);
-				}
-				oBounds.m_dOcc /= oBounds.size();
-				
-				oBounds.generateStats();
-				double dX = Mercator.lonToMeters(oBounds.get(0).m_dLon);
-				double dY = Mercator.latToMeters(oBounds.get(0).m_dLat);
-				oBounds.m_nMaxSpeed = Integer.MIN_VALUE;
-				oM.metersToTile(dX, dY, ProcCtrl.g_nDefaultZoom, nTiles);
-				Path oIndexFile = Paths.get(String.format(ProcCtrl.g_sTdFileFormat, nTiles[0], ProcCtrl.g_nDefaultZoom, nTiles[0], nTiles[1]) + ".ndx");
-				
-				try (DataInputStream oIn = new DataInputStream(new BufferedInputStream(FileUtil.newInputStream(oIndexFile))))
-				{
-					while (oIn.available() > 0)
-					{
-						int nType = oIn.readInt();
-						oIn.read(yIdBuf);
-						long lStart = oIn.readLong();
-						long lEnd = oIn.readLong();
-						if (nType == nMaxSpeedCtrl && (lStart >= lNow || lEnd > lNow)) // everything valid now and in the future add to tile
-						{
-							TrafCtrl.getId(yIdBuf, sIdBuf);
-							TrafCtrl oCtrl;
-							Path oPath = Paths.get(ProcCtrl.g_sTrafCtrlDir + sIdBuf.toString() + ".bin");
-							try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
-							{
-								oCtrl = new TrafCtrl(oCtrlIn, false);
-							}
-							if (oCtrl.m_yId[0] != ProcCtrl.CC)
-								continue;
-							try (DataInputStream oCtrlIn = new DataInputStream(FileUtil.newInputStream(oPath)))
-							{
-								oCtrl.m_oFullGeo = new CtrlGeo(oCtrlIn, false, ProcCtrl.g_nDefaultZoom);
-							}
-							if (Geo.isInBoundingBox(dX, dY, oCtrl.m_oFullGeo.m_dBB[0], oCtrl.m_oFullGeo.m_dBB[1], oCtrl.m_oFullGeo.m_dBB[2], oCtrl.m_oFullGeo.m_dBB[3]))
-							{
-								double[] dPolygon = Geo.createPolygon(oCtrl.m_oFullGeo.m_dPT, oCtrl.m_oFullGeo.m_dNT);
-								if (Geo.isInsidePolygon(dPolygon, dX, dY, 1))
-								{
-									oBounds.m_nMaxSpeed = MathUtil.bytesToInt(oCtrl.m_yControlValue);
-									break;
-								}
-							}
-						}
-					}
-				}
-				catch (Exception oEx)
-				{
-					oEx.printStackTrace();
-				}
-			}
-		}
-
-		for (BoundsList oBoundsList : oAllBounds)
-		{
-			int nSize = oBoundsList.size();
-			for (int nBoundsIndex = 0; nBoundsIndex < nSize - 1; nBoundsIndex++)
-			{
-				Bounds oBounds = oBoundsList.get(nBoundsIndex);
-				if (oBounds.m_nMaxSpeed == Integer.MIN_VALUE) // if there isn't a maxspeed control found cannot run the algorithm
-				{
-					oBounds.m_nConsecutiveTimes = 0;
-					continue;
-				}
-				if (oBounds.m_nConsecutiveTimes == 0) // if this is the first pass or the last speed did not fall under the threshold, reset the previous advisory speed
-					oBounds.m_dPreviousAdvisorySpeed = oBounds.m_nMaxSpeed;
-				
-				if (oBounds.m_dPreviousAdvisorySpeed != oBounds.m_nMaxSpeed) // if an advisory speed has been set
-				{
-					if (oBounds.m_d85th > 1.4 * oBounds.m_dPreviousAdvisorySpeed) // check if the current speed is 40% greater than the advisory speed
-					{
-						oBounds.cancelCtrls(); // if so cancel ctrls
-						for (int nIndex = nBoundsIndex + 1; nIndex < nSize; nIndex++) // and reset the upstream subsegments
-						{
-							Bounds oUpstream = oBoundsList.get(nIndex);
-							oUpstream.m_nConsecutiveTimes = 0;
-							oUpstream.m_dAdvisorySpeed = oUpstream.m_dPreviousAdvisorySpeed = oUpstream.m_nMaxSpeed;
-						}
-					}
-				}
-				
-				
-				if (oBounds.m_d85th < IHP.RATIO_REDUCED_SPEED * oBounds.m_nMaxSpeed)
-				{
-					++oBounds.m_nConsecutiveTimes;
-
-					Bounds oSubSeg1 = oBoundsList.get(nBoundsIndex + 1);
-					double dControlFlowRate = IHP.SPACE_FACTOR * oBounds.m_nVolume + (1 - IHP.SPACE_FACTOR) * oSubSeg1.m_nVolume; // equation 1
-					oSubSeg1.m_dTarDensity = oSubSeg1.m_dPreviousDensity + (oBounds.m_nVolume - oSubSeg1.m_nVolume) / oSubSeg1.m_dLength * nTimeIntervalSecs; // equation 2
-					oSubSeg1.m_dTarCtrlSpeed = Math.max(Math.min(dControlFlowRate / oSubSeg1.m_dTarDensity, oSubSeg1.m_d85th), oSubSeg1.m_d15th); // equation 3
-					for (int nSubIndex = nBoundsIndex + 2; nSubIndex < oBoundsList.size(); nSubIndex++)
-					{
-						Bounds oSubSegN = oBoundsList.get(nSubIndex);
-						oSubSegN.m_dTarCtrlSpeed = oSubSeg1.m_dTarCtrlSpeed + ((oSubSegN.m_d85th - oSubSeg1.m_dTarCtrlSpeed) / (nSize - 1)) * (nSubIndex - 1); // equation 4
-						oSubSegN.m_dTarCtrlSpeed = Math.max(Math.min(oSubSegN.m_dTarCtrlSpeed, oSubSegN.m_d85th), oSubSegN.m_d15th); // equation 6
-					}
-
-					int r = nSize - 1;
-					int j = nBoundsIndex + 1;
-					Bounds oEnd = oBoundsList.get(r);
-
-					for (int i = j; i < r; i++)
-					{
-						Bounds oAdvisorySeg = oBoundsList.get(i);
-						oAdvisorySeg.m_dAdvisorySpeed = oSubSeg1.m_dTarCtrlSpeed + ((oEnd.m_d85th - oSubSeg1.m_dTarCtrlSpeed) / (r - j)) * (i - j); // equation 7
-						oAdvisorySeg.m_dAdvisorySpeed = Math.max(Math.min(oAdvisorySeg.m_dAdvisorySpeed, oAdvisorySeg.m_dPreviousAdvisorySpeed + IHP.MAX_DIFF), oAdvisorySeg.m_dPreviousAdvisorySpeed - IHP.MAX_DIFF); // equation 8
-						if (oBounds.m_nConsecutiveTimes > IHP.CONSECUTIVE_TIME_INTERVAL_TRIGGER)
-						{
-							TrafCtrl oSpeed = new TrafCtrl("maxspeed", (int)oAdvisorySeg.m_dAdvisorySpeed, new ArrayList(), lNow, lNow, oAdvisorySeg.m_dCenterLine, "IHP2 Speed Harmonization", false, ProcCtrl.IHP2);
-							oCtrls.add(oSpeed);
-							oBounds.m_oCtrls.add(oSpeed);
-						}
-					}
-				}
-				else // speed is not below the threshold so reset values
-				{
-					oBounds.m_nConsecutiveTimes = 0;
-					oBounds.m_dAdvisorySpeed = oBounds.m_dPreviousAdvisorySpeed = oBounds.m_nMaxSpeed;
-				}
-				
-				if (!oBounds.m_oCtrls.isEmpty()) // if controls have been set, do not check the upstream segments because advisory speeds will have been generated for them
-					break;
-			}
-		}
-		
-		return oCtrls;
 	}
 }

@@ -51,7 +51,7 @@ public abstract class TrafCtrlEnums
 		new String[0], //parking", "no", "parallel", "angled 
 		new String[]{"dm/s", "mph", "kph"}, //minspeed 
 		new String[]{"dm/s", "mph", "kph"}, //maxspeed 
-		new String[]{"sec", "sec", "sec"}, //minhdwy 
+		new String[]{"dm", "ft", "m"}, //minhdwy 
 		new String[]{"kg", "lb", "kg"}, //maxvehmass 
 		new String[]{"dm", "ft", "m"}, //maxvehheight 
 		new String[]{"dm", "ft", "m"}, //maxvehwidth 
@@ -163,6 +163,11 @@ public abstract class TrafCtrlEnums
 	public static void getCtrlValString(int nCtrl, byte[] yVal, ArrayList<String> sVals)
 	{
 		sVals.add(CTRLS[nCtrl][0]); // ctrl name
+		if (nCtrl == getCtrl("signal"))
+		{
+			sVals.add(Text.toHexString(yVal));
+			return;
+		}
 		if (CTRLS[nCtrl].length == 1) // not enumerated type
 		{
 			if (yVal.length > 0) // negative values aren't valid
@@ -171,7 +176,6 @@ public abstract class TrafCtrlEnums
 		}
 		
 		int nLatPerm = getCtrl("latperm");
-		int nSignal = getCtrl("signal");
 		if (nCtrl == nLatPerm)
 		{
 			sVals.add(CTRLS[nCtrl][((yVal[2] & 0xff) << 8) | (yVal[3] & 0xff)]); // outer
@@ -179,10 +183,6 @@ public abstract class TrafCtrlEnums
 			sVals.add(CTRLS[nCtrl][0]);
 			sVals.add(CTRLS[nCtrl][((yVal[0] & 0xff) << 8) | (yVal[1] & 0xff)]); // inner
 //			sVals.add(CTRLS[nCtrl][((nVal >> 16) & 0xffff)]);
-		}
-		else if (nCtrl == nSignal)
-		{
-			sVals.add(Text.toHexString(yVal));
 		}
 		else
 		{

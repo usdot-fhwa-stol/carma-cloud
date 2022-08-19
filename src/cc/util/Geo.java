@@ -1,6 +1,7 @@
 package cc.util;
 
 import cc.ctrl.CtrlLineArcs;
+import cc.ctrl.TrafCtrl;
 import cc.geosrv.Mercator;
 import cc.geosrv.xodr.XodrUtil;
 import java.awt.geom.Area;
@@ -1225,4 +1226,20 @@ public abstract class Geo
 		return 2 * EARTH_RADIUS_KM * Math.asin(Math.sqrt(dA));
 	}
 	
+	
+	public static boolean ctrlIntersectBounds(double[] dBounds, TrafCtrl oCtrl, int nPtStep)
+	{
+		double[] dC = oCtrl.m_oFullGeo.m_dC;
+		double[] dNt = oCtrl.m_oFullGeo.m_dNT;
+		double[] dPt = oCtrl.m_oFullGeo.m_dPT;
+		int nStep = nPtStep * 2;
+		int nSize = Arrays.size(dC);
+		for (int nIndex = 1; nIndex < nSize; nIndex += nStep)
+		{
+			if (Geo.isInsidePolygon(dBounds, dC[nIndex], dC[nIndex + 1]) && Geo.isInsidePolygon(dBounds, dNt[nIndex], dNt[nIndex + 1]) && Geo.isInsidePolygon(dBounds, dPt[nIndex], dPt[nIndex + 1]))
+				return true;
+		}
+		
+		return Geo.isInsidePolygon(dBounds, dC[nSize - 2], dC[nSize - 1]) && Geo.isInsidePolygon(dBounds, dNt[nSize - 2], dNt[nSize - 1]) && Geo.isInsidePolygon(dBounds, dPt[nSize - 2], dPt[nSize - 1]);
+	}
 }

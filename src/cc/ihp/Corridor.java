@@ -8,17 +8,30 @@ package cc.ihp;
 import java.util.ArrayList;
 
 /**
- *
+ * This class represents a Corridor used in the IHP2 Speed Harmonization Algorithm
+ * 
  * @author aaron.cherney
  */
-public class BoundsList extends ArrayList<Bounds>
+public class Corridor extends ArrayList<Subsegment>
 {
+
+	/**
+	 * Array containing the bounding box of the corridor in Mercator meters in order
+	 * min_x, min_y, max_x, max_y
+	 */
 	public double[] m_dBb = new double[]{Double.MAX_VALUE, Double.MAX_VALUE, -Double.MAX_VALUE, -Double.MAX_VALUE};
 	
+	
+	/**
+	 * Add a subsegment to the corridor and updates the bounding box of the corridor
+	 * based on the bounding box of the subsegment
+	 * @param oSubsegment Subsegment to be added to the Corridor
+	 * @return true if the add is successful
+	 */
 	@Override
-	public boolean add(Bounds oBounds)
+	public boolean add(Subsegment oSubsegment)
 	{
-		double[] dInnerBb = oBounds.m_dBb;
+		double[] dInnerBb = oSubsegment.m_dBb;
 		if (dInnerBb[0] < m_dBb[0])
 			m_dBb[0] = dInnerBb[0];
 		if (dInnerBb[1] < m_dBb[1])
@@ -28,6 +41,6 @@ public class BoundsList extends ArrayList<Bounds>
 		if (dInnerBb[3] > m_dBb[2])
 			m_dBb[3] = dInnerBb[3];
 		
-		return super.add(oBounds);
+		return super.add(oSubsegment);
 	}
 }

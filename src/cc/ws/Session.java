@@ -34,4 +34,10 @@ public class Session implements Comparable<String>, Comparator<Session>
 	{
 		return oLhs.m_sToken.compareTo(oRhs.m_sToken);
 	}
+	
+	
+	public String getUserName()
+	{
+		return m_oUser.m_sUser;
+	}
 }

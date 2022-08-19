@@ -5,6 +5,7 @@
  */
 package cc.ws;
 
+import cc.ctrl.CtrlIndex;
 import cc.ctrl.TrafCtrl;
 import cc.ctrl.proc.ProcClosed;
 import cc.ctrl.proc.ProcCtrl;
@@ -24,6 +25,7 @@ import cc.geosrv.xodr.rdmk.XodrRoadMarkParser;
 import cc.util.Arrays;
 import cc.util.FileUtil;
 import cc.util.Geo;
+import cc.util.Introsort;
 import cc.util.TileUtil;
 import cc.vector_tile.VectorTile;
 import java.awt.geom.Area;
@@ -135,21 +137,13 @@ public class ValidateXodrTiles extends HttpServlet
 		{
 			while (oIn.available() > 0)
 			{
-				oIn.skipBytes(4);
-				oIn.read(yIdBuf);
-				long lStart = oIn.readLong();
-				long lEnd = oIn.readLong();
-				if (lStart >= lNow || lEnd > lNow) // everything valid now and in the future add to tile
-				{
-					byte[] yId = new byte[16];
-					System.arraycopy(yIdBuf, 0, yId, 0, 16);
-					int nIndex = Collections.binarySearch(yIdsToRender, yId, TrafCtrl.ID_COMP);
-					if (nIndex < 0)
-						yIdsToRender.add(~nIndex, yId);
-				}
+				CtrlIndex oIndex = new CtrlIndex(oIn);
+				
+				if (oIndex.m_lStart >= lNow || oIndex.m_lEnd > lNow) // everything valid now and in the future add to tile
+					yIdsToRender.add(oIndex.m_yId);
 			}
 		}
-		
+		Introsort.usort(yIdsToRender, TrafCtrl.ID_COMP);
 		double[] dClipBounds = TileUtil.getClippingBounds(nZ, nX, nY, dBounds);
 
 		int nExtent = 4096;
