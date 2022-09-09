@@ -638,7 +638,7 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		sBuf.append("<reflon>").append(m_nLon).append("</reflon>");
 		sBuf.append("<reflat>").append(m_nLat).append("</reflat>");
 		sBuf.append("<refelv>").append(m_nAlt).append("</refelv>");
-		if (bRemoveWidth)
+		if (!bRemoveWidth)
 			sBuf.append("<refwidth>").append(m_nWidth).append("</refwidth>");
 		sBuf.append("<heading>").append(m_nHeading).append("</heading>");
 		sBuf.append("<nodes>");
