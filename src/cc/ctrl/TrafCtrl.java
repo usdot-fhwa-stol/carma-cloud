@@ -518,16 +518,20 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 	}
 	
 	
-	public void getXml(StringBuilder sBuf, String sReqId, int nReqSeq, int nMsgNum, int nMsgTot, String sVersion, boolean bIncludeParams, int nPtsIndex)
+	public void getXml(StringBuilder sBuf, String sReqId, int nReqSeq, int nMsgNum, int nMsgTot, String sVersion, boolean bIncludeParams, int nPtsIndex, boolean bRemoveWidth, boolean bList)
 	   throws IOException
 	{
-		sBuf.setLength(0);
+		if (!bList)
+		{
+			sBuf.setLength(0);
+			sBuf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+		}
 //		if (sVersion.compareTo("1.0") != 0)
 //		{
 //			sBuf.append("invalid version");
 //			return;
 //		}
-		sBuf.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>").append("<TrafficControlMessage>");
+		sBuf.append("<TrafficControlMessage>");
 		sBuf.append("<tcmV01>");
 		sBuf.append("<reqid>").append(sReqId).append("</reqid>");
 		sBuf.append("<reqseq>").append(nReqSeq).append("</reqseq>");
@@ -634,13 +638,18 @@ public class TrafCtrl extends ArrayList<TrafCtrlPt> implements Comparable<TrafCt
 		sBuf.append("<reflon>").append(m_nLon).append("</reflon>");
 		sBuf.append("<reflat>").append(m_nLat).append("</reflat>");
 		sBuf.append("<refelv>").append(m_nAlt).append("</refelv>");
-		sBuf.append("<refwidth>").append(m_nWidth).append("</refwidth>");
+		if (!bRemoveWidth)
+			sBuf.append("<refwidth>").append(m_nWidth).append("</refwidth>");
 		sBuf.append("<heading>").append(m_nHeading).append("</heading>");
 		sBuf.append("<nodes>");
 		int nEnd = Math.min(size(), (nPtsIndex / 256 + 1) * 256);
+		if (bList)
+		{
+			nPtsIndex = 0;
+			nEnd = size();
+		}
 		for (int nIndex = nPtsIndex; nIndex < nEnd; nIndex++)
 		{
-			sBuf.append("");
 			get(nIndex).writeXml(sBuf);
 		}
 		sBuf.append("</nodes>");

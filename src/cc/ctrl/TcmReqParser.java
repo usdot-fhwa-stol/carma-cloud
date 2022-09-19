@@ -5,10 +5,7 @@
  */
 package cc.ctrl;
 
-import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
@@ -30,6 +27,8 @@ public class TcmReqParser extends DefaultHandler2
 	protected int[] m_nYs = new int[3];
 	protected int m_nXCount = 0;
 	protected int m_nYCount = 0;
+	public int m_nPort = 10001;
+	public boolean m_bList = false;
 	public TcmReqParser()
 	{
 		super();
@@ -51,6 +50,13 @@ public class TcmReqParser extends DefaultHandler2
 	{
 		switch (sQname)
 		{
+			case "TrafficControlRequest":
+			{
+				String sVal;
+				m_nPort = (sVal = iAtt.getValue("port")) != null ? Integer.parseInt(sVal) : m_nPort;
+				m_bList = (sVal = iAtt.getValue("list")) != null ? Boolean.parseBoolean(sVal) : m_bList;
+				break;
+			}
 			case "tcrV01":
 			{
 				m_oReq.m_sVersion = "1.0";
@@ -154,14 +160,5 @@ public class TcmReqParser extends DefaultHandler2
 		iXmlReader.parse(new InputSource(oIn));
 		
 		return m_oReq;
-	}
-	
-	
-	public static void main(String[] sArgs)
-	   throws Exception
-	{
-		System.out.println(String.valueOf(false));
-//		TcmReq oReq = new TcmReqParser().parseRequest(Files.newInputStream(Paths.get("C:/Users/aaron.cherney/Documents/CarmaCloud/traf_ctrl/request.xml")));
-//		System.out.println();
 	}
 }

@@ -913,9 +913,9 @@ function checkDoubleInputs(sIds)
 	for (let sKey of sIds.values())
 	{
 		let dVal = $('#' + sKey).val();
-		if (!/^-?[0-9]+([.][0-9]+)?$/.test(dVal))
+		if (!/^-?[0-9]+([.][0-9]+)?$/.test(dVal) || (sKey === 'time_interval' && dVal < 60))
 		{
-			let oPopuptext = $('<span class="popuptext show" style="margin-left:-60px;bottom:100%;">Invalid parameter</span>');
+			let oPopuptext = $(`<span class="popuptext show" style="margin-left:-60px;bottom:100%;">Invalid parameter${sKey === 'time_interval' && dVal < 60 ? ': must be >= 60' : ''}</span>`);
 			$('#' + sKey).parent().addClass('popup').append(oPopuptext);
 			$('#' + sKey).focus();
 			setTimeout(function() 

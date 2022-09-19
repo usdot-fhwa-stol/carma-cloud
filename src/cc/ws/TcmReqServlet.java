@@ -17,8 +17,10 @@ import cc.geosrv.Mercator;
 import cc.util.FileUtil;
 import cc.util.Geo;
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -30,6 +32,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.zip.GZIPOutputStream;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -209,48 +212,87 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 			}			
 
 			int nMsgCount = 1;
-			StringBuilder sBuf = new StringBuilder(2048);
-			for (TrafCtrl oCtrl : oResCtrls)
+			if (oReqParser.m_bList)
+				nMsgTot = oResCtrls.size();
+			
+			StringBuilder sBuf = new StringBuilder(nMsgTot * 2048);
+
+			for (int nCtrlIndex = 0; nCtrlIndex < oResCtrls.size(); nCtrlIndex++)
 			{
+				TrafCtrl oCtrl = oResCtrls.get(nCtrlIndex);
 				int nParts = oCtrl.size() / 256 + 1;
+				if (oReqParser.m_bList)
+					nParts = 1;
 				for (int nIndex = 0; nIndex < nParts; nIndex++)
 				{
-					sBuf.setLength(0);
 					if (nIndex == 0)
-						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, true, 0);
+						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, true, 0, m_bRemoveWidth, oReqParser.m_bList);
 					else
-						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, false, nIndex * 256 - 1);
+						oCtrl.getXml(sBuf, oTcmReq.m_sReqId, oTcmReq.m_nReqSeq, nMsgCount, nMsgTot, oTcmReq.m_sVersion, false, nIndex * 256 - 1, m_bRemoveWidth, oReqParser.m_bList);
 					++nMsgCount;
-					if (m_bRemoveWidth)
+
+					if (!oReqParser.m_bList)
 					{
-						int nStart = sBuf.indexOf("<refwidth>");
-						int nEnd = sBuf.indexOf("</refwidth>", nStart) + "</refwidth>".length();
-						sBuf.delete(nStart, nEnd);
+						HttpURLConnection oHttpClient = (HttpURLConnection)new URL(String.format("http://tcmreplyhost:%d/tcmreply", oReqParser.m_nPort)).openConnection();
+						oHttpClient.setFixedLengthStreamingMode(sBuf.length());
+						oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+						oHttpClient.setDoOutput(true);
+						oHttpClient.setRequestMethod("POST");
+						oHttpClient.setConnectTimeout(1000);
+
+						try
+						{
+							oHttpClient.connect(); // send post request
+
+							try (BufferedWriter oOut = new BufferedWriter(new OutputStreamWriter(oHttpClient.getOutputStream())))
+							{
+								oOut.append(sBuf);
+							}
+
+							oHttpClient.disconnect();
+						}
+						catch (Exception oEx)
+						{
+							oEx.printStackTrace();
+						}
+						LOGGER.debug(sBuf);
 					}
-
-					HttpURLConnection oHttpClient = (HttpURLConnection)new URL("http://tcmreplyhost:10001/tcmreply").openConnection();
-					oHttpClient.setDoOutput(true);
-					oHttpClient.setRequestMethod("POST");
-					oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-					oHttpClient.setFixedLengthStreamingMode(sBuf.length());
-
+				}
+			}
+			
+			if (oReqParser.m_bList)
+			{
+				HttpURLConnection oHttpClient = (HttpURLConnection)new URL(String.format("http://tcmreplyhost:%d/tcmreply", oReqParser.m_nPort)).openConnection();
+				oHttpClient.setRequestProperty("Content-Encoding", "gzip");
+				oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+				oHttpClient.setDoOutput(true);
+				oHttpClient.setRequestMethod("POST");
+				oHttpClient.setConnectTimeout(1000);
+				try (ByteArrayOutputStream oBaos = new ByteArrayOutputStream(sBuf.length()))
+				{
+					try (BufferedWriter oOut = new BufferedWriter(new OutputStreamWriter(new GZIPOutputStream(oBaos))))
+					{
+						oOut.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?><TrafficControlMessageList>").append(sBuf).append("</TrafficControlMessageList>");
+					}
+					oHttpClient.setFixedLengthStreamingMode(oBaos.size());
 					try
 					{
 						oHttpClient.connect(); // send post request
-
-						try (BufferedWriter oOut = new BufferedWriter(new OutputStreamWriter(oHttpClient.getOutputStream())))
+						try (BufferedOutputStream oOut = new BufferedOutputStream(oHttpClient.getOutputStream()))
 						{
-							oOut.append(sBuf);
+							oOut.write(oBaos.toByteArray());
 						}
-
+						
 						oHttpClient.disconnect();
 					}
 					catch (Exception oEx)
 					{
 						oEx.printStackTrace();
 					}
-					LOGGER.debug(sBuf);
 				}
+				sBuf.insert(0, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><TrafficControlMessageList>");
+				sBuf.append("</TrafficControlMessageList>");
+				LOGGER.debug(sBuf);
 			}
 		}
 		catch (Exception oEx)
