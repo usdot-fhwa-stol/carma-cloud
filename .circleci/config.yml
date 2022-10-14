@@ -69,11 +69,3 @@ jobs:
             if [[ `wget -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 2; fi
             if [[ `wget -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 3; fi
 
-workflows:
-  version: 2
-  build:
-    jobs:
-      - build:
-          filters:
-           branches:
-              ignore: gh-pages
