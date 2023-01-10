@@ -321,4 +321,17 @@
  <url-pattern>/api/ihp/*</url-pattern>
 </servlet-mapping>
 
+
+<servlet>
+ <servlet-name>ERVRSU</servlet-name>
+ <servlet-class>cc.ws.ERVRSUServlet</servlet-class>
+ <load-on-startup>1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>ERVRSU</servlet-name>
+ <url-pattern>/carmacloud/rsu/*</url-pattern>
+</servlet-mapping>
+
+
 </web-app>
