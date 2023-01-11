@@ -55,8 +55,6 @@ function refreshRSUs() {
 			$("div.marker").remove();
 			geojson.features = [];
 
-			console.log('remove')
-
 			for (let rsu of rsu_list) {
 				let latitude = formatLatLng(rsu.latitude);
 				let longitude = formatLatLng(rsu.longitude);
@@ -72,7 +70,6 @@ function refreshRSUs() {
 			}
 
 			//Populate Map with list of RSU Geo location markers and add to map
-			console.log(geojson.features);
 			for (const feature of geojson.features) {
 				// create a HTML element for each feature
 				const el = document.createElement('div');
