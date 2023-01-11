@@ -58,14 +58,19 @@ function refreshRSUs() {
 			for (let rsu of rsu_list) {
 				let latitude = formatLatLng(rsu.latitude);
 				let longitude = formatLatLng(rsu.longitude);
+				let rsu_name = rsu.id;
+				if(rsu_name.lastIndexOf("_") != -1)
+				{
+					rsu_name = rsu_name.substr(0, rsu_name.lastIndexOf("_"));
+				}		
 
 				//Populate RSU table
-				let row = $(`<tr><td>${rsu.id}</td><td>${latitude}</td><td>${longitude}</td><td>${rsu.v2xhub_port}</td><td>${new Date(rsu.last_update_at).toLocaleString()}</td></tr>`);
+				let row = $(`<tr><td>${rsu_name}</td><td>${latitude}</td><td>${longitude}</td><td>${rsu.v2xhub_port}</td><td>${new Date(rsu.last_update_at).toLocaleString()}</td></tr>`);
 				row.mouseenter({ 'id': rsu.id + rsu.v2xhub_port }, highlightMarker).mouseleave({ 'id': rsu.id + rsu.v2xhub_port }, unHighlightMarker);;
-				rsu_table.append(row);
+				rsu_table.append(row);		
 
 				//Populate geojson with features
-				let feature = createFeature(rsu.id + rsu.v2xhub_port, longitude, latitude, rsu.id, latitude + ',' + longitude + '<br> V2x Hub Port: ' + rsu.v2xhub_port);
+				let feature = createFeature(rsu.id + rsu.v2xhub_port, longitude, latitude, rsu_name, latitude + ',' + longitude + '<br> V2x Hub Port: ' + rsu.v2xhub_port);
 				geojson.features.push(feature);
 			}
 
