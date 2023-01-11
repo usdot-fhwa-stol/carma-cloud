@@ -2,7 +2,10 @@ import { MapControlIcons } from './MapControlIcons.js';
 
 //Global Variables
 var oMap;
-var trackAllMarkers = [];
+const geojson = {
+	'type': 'FeatureCollection',
+	'features': []
+};
 
 async function initialize() {
 	await initMap();
@@ -49,44 +52,80 @@ function refreshRSUs() {
 			rsu_table.append(row_header);
 
 			//clear all current markers on the OSM 
-			clearAllMarkers();
+			$("div.marker").remove();
+			geojson.features = [];
+
+			console.log('remove')
 
 			for (let rsu of rsu_list) {
-				let latitude = rsu.latitude.toString().split("");
-				if (latitude.includes("-")) {
-					latitude.splice(3, 0, '.')
-				} else {
-					latitude.splice(2, 0, '.')
-				}
-				latitude = latitude.join("");
-				let longitude = rsu.longitude.toString().split("");
-				if (longitude.includes("-")) {
-					longitude.splice(3, 0, '.')
-				} else {
-					longitude.splice(2, 0, '.')
-				}
-				longitude = longitude.join("");
+				let latitude = formatLatLng(rsu.latitude);
+				let longitude = formatLatLng(rsu.longitude);
 
 				//Populate RSU table
 				let row = $(`<tr><td>${rsu.id}</td><td>${latitude}</td><td>${longitude}</td><td>${rsu.v2xhub_port}</td><td>${new Date(rsu.last_update_at).toLocaleString()}</td></tr>`);
+				row.mouseenter({ 'id': rsu.id + rsu.v2xhub_port }, highlightMarker).mouseleave({ 'id': rsu.id + rsu.v2xhub_port }, unHighlightMarker);;
 				rsu_table.append(row);
 
-				//Populate Map with list of RSU Geo location markers and add to map
-				const marker = new mapboxgl.Marker({ color: "red" }).setLngLat([longitude, latitude]).addTo(oMap);
-				trackAllMarkers.push(marker);
+				//Populate geojson with features
+				let feature = createFeature(rsu.id + rsu.v2xhub_port, longitude, latitude, rsu.id, latitude + ',' + longitude + '<br> V2x Hub Port: ' + rsu.v2xhub_port);
+				geojson.features.push(feature);
+			}
+
+			//Populate Map with list of RSU Geo location markers and add to map
+			console.log(geojson.features);
+			for (const feature of geojson.features) {
+				// create a HTML element for each feature
+				const el = document.createElement('div');
+				el.className = 'marker';
+				el.id = feature.properties.id;
+
+				// make a marker for each feature and add it to the map
+				new mapboxgl.Marker(el).setLngLat(feature.geometry.coordinates)
+					.setPopup(new mapboxgl.Popup({ offset: 25 })
+						.setHTML(`<p><b>${feature.properties.title}</b> <br>${feature.properties.description}</p>`))
+					.addTo(oMap);
 			}
 		}).fail(function() {
 			alert('Failed to retrieve registered RSUs!');
 		});
+
 }
 
-function clearAllMarkers() {
-	if (trackAllMarkers.length > 0) {
-		for (var i = trackAllMarkers.length - 1; i >= 0; i--) {
-			trackAllMarkers[i].remove();
-		}
+function formatLatLng(latLng) {
+	let fmt_latLng = latLng.toString().split("");
+	if (fmt_latLng.includes("-")) {
+		fmt_latLng.splice(3, 0, '.')
+	} else {
+		fmt_latLng.splice(2, 0, '.')
 	}
+	fmt_latLng = fmt_latLng.join("");
+	return fmt_latLng;
 }
+
+function createFeature(id, longitude, latitude, title, description) {
+	let feature = {
+		'type': 'Feature',
+		'geometry': {
+			'type': 'Point',
+			'coordinates': [longitude, latitude]
+		},
+		'properties': {
+			'id': id,
+			'title': title,
+			'description': description
+		}
+	};
+	return feature;
+}
+
+function highlightMarker(oEvent) {
+	document.getElementById(oEvent.data.id).classList.add('active');
+}
+
+function unHighlightMarker(oEvent) {
+	document.getElementById(oEvent.data.id).classList.remove('active');
+}
+
 
 function toggleJumpTo() {
 	let oDialog = $('#dlgJumpTo');

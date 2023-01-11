@@ -1,5 +1,16 @@
-#refresh_rsu
-{
+#refresh_rsu {
 	float: right;
 	margin: 5px;
+}
+
+.marker {
+	background-image: url('../images/leaflet/marker-icon.png');
+	background-size: cover;
+	width: 30px;
+	height: 50px;
+	cursor: pointer;
+}
+
+.active {	
+	box-shadow: inset 0 0 20px 2px #73d216; 
 }
