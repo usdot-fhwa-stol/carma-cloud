@@ -24,8 +24,7 @@ import cc.erv.ERVRSUService;
 
 /***
  * <RSULocationRequest><id>XXXXXX</id><latitude>3895510833</latitude><longitude>-7714955667</longitude><v2xhubPort>44444</v2xhubPort></RSULocationRequest>
- * Registering RSU with carma-cloud and keep track of all connected RSUs.Clear
- * all connected RSUs at specified schedule.
+ * Registering RSU with carma-cloud and keep track of all connected RSUs.
  */
 public class ERVRSUServlet extends HttpServlet {
 	protected static final Logger LOGGER = LogManager.getRootLogger();
