@@ -1,4 +1,4 @@
-package cc.erv;
+package cc.rsu;
 
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
@@ -10,10 +10,10 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-public class ERVRSUService {
+public class RSUService {
 	protected static final Logger LOGGER = LogManager.getRootLogger();
 
-	public ERVRSUService() {
+	public RSUService() {
 		super();
 	}
 
@@ -46,7 +46,6 @@ public class ERVRSUService {
 			existing_rsus.add(new_rsu);
 		} else {
 			LOGGER.debug("Cannot parse new RSU Register request.");
-			System.out.println("Cannot parse new RSU register request.");
 		}
 		return existing_rsus;
 	}

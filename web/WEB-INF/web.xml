@@ -323,13 +323,13 @@
 
 
 <servlet>
- <servlet-name>ERVRSU</servlet-name>
- <servlet-class>cc.ws.ERVRSUServlet</servlet-class>
+ <servlet-name>RSU</servlet-name>
+ <servlet-class>cc.ws.RSUServlet</servlet-class>
  <load-on-startup>1</load-on-startup>
 </servlet>
 
 <servlet-mapping>
- <servlet-name>ERVRSU</servlet-name>
+ <servlet-name>RSU</servlet-name>
  <url-pattern>/carmacloud/rsu/*</url-pattern>
 </servlet-mapping>
 

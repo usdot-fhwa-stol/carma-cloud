@@ -1,4 +1,4 @@
-package cc.erv;
+package cc.rsu;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -12,6 +12,9 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
+/**
+Parse RSU location request in XML format and populate RSULocation object
+ */
 public class RSULocationParser extends DefaultHandler2 {
 	protected RSULocation rsu_loc;
 	protected StringBuilder m_sbuf = new StringBuilder();

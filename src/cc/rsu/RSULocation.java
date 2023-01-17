@@ -1,4 +1,4 @@
-package cc.erv;
+package cc.rsu;
 
 import java.time.Instant;
 

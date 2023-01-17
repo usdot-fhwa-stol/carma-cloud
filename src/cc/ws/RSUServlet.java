@@ -19,16 +19,19 @@ import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import cc.erv.RSULocation;
-import cc.erv.ERVRSUService;
+import cc.rsu.RSULocation;
+import cc.rsu.RSUService;
 
 /***
  * <RSULocationRequest><id>XXXXXX</id><latitude>3895510833</latitude><longitude>-7714955667</longitude><v2xhubPort>44444</v2xhubPort></RSULocationRequest>
  * Registering RSU with carma-cloud and keep track of all connected RSUs.
  */
-public class ERVRSUServlet extends HttpServlet {
+public class RSUServlet extends HttpServlet {
 	protected static final Logger LOGGER = LogManager.getRootLogger();
 
+	/**
+	 * Handler POST request
+	 */
 	@Override
 	public void doPost(HttpServletRequest oReq, HttpServletResponse oRes) throws IOException {
 		String[] sUriParts = oReq.getRequestURI().split("/");
@@ -36,8 +39,8 @@ public class ERVRSUServlet extends HttpServlet {
 		oRes.setContentType("application/json"); // all responses are json
 		JSONObject oResponse = new JSONObject();
 		int nStatus;
-		try // call the correct method depending on the request
-		{
+		// call the correct method depending on the request
+		try {
 			if (sMethod.compareTo("register") == 0) {
 				nStatus = registerRSU(oReq, oResponse);
 				oResponse.put("status", nStatus);
@@ -45,8 +48,9 @@ public class ERVRSUServlet extends HttpServlet {
 				nStatus = requestRSU(oReq, oResponse);
 			} else if (sMethod.compareTo("list") == 0) {
 				nStatus = listRSU(oReq, oResponse);
-			} else
+			} else {
 				nStatus = HttpServletResponse.SC_UNAUTHORIZED;
+			}
 
 			oRes.setStatus(nStatus);
 			try (PrintWriter oOut = oRes.getWriter()) // always write the JSON response
@@ -68,6 +72,48 @@ public class ERVRSUServlet extends HttpServlet {
 		}
 	}
 
+	/**
+	 * Handler DELETE request
+	 */
+	@Override
+	public void doDelete(HttpServletRequest oReq, HttpServletResponse oRes) throws IOException {
+		Session oSession = SessMgr.getSession(oReq);
+		JSONObject oResponse = new JSONObject();
+		if (oSession == null) // request must contain a valid session token
+		{
+			oRes.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+		} else {
+			if (oReq.getParameter("v2xhub_port") != null) {// Get RSU location list
+				ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute("RSUList");
+				ArrayList<RSULocation> rsu_list_update = new ArrayList<RSULocation>();
+				if (rsu_list != null) {
+					for (RSULocation rsu : rsu_list) {
+						if (rsu.v2xhub_port.equals(oReq.getParameter("v2xhub_port"))) {
+							continue;
+						}
+						rsu_list_update.add(rsu);
+					}
+					getServletContext().setAttribute("RSUList", rsu_list_update);
+					JSONArray rsuArr = RSUService.serializeRSUList(rsu_list_update);
+					oResponse.put("RSUList", rsuArr);
+					oRes.setStatus(HttpServletResponse.SC_OK);
+				}
+			} else {
+				oRes.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+				LOGGER.error("Cannot delete RSU!");
+			}
+
+		}
+
+		try (PrintWriter oOut = oRes.getWriter()) // write error messages to the JSON response
+		{
+			oResponse.write(oOut);
+		}
+	}
+
+	/**
+	 * Request for a list of RSUs
+	 */
 	private int listRSU(HttpServletRequest oReq, JSONObject oResponse) {
 		Session oSession = SessMgr.getSession(oReq);
 		if (oSession == null) // request must contain a valid session token
@@ -77,15 +123,21 @@ public class ERVRSUServlet extends HttpServlet {
 
 		// Get RSU location list
 		ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute("RSUList");
-		JSONArray rsuArr = ERVRSUService.serializeRSUList(rsu_list);
+		JSONArray rsuArr = RSUService.serializeRSUList(rsu_list);
 		oResponse.put("RSUList", rsuArr);
 		return HttpServletResponse.SC_OK;
 	}
 
+	/***
+	 * Request for identified RSUs
+	 */
 	private int requestRSU(HttpServletRequest oReq, JSONObject oResponse) throws Exception {
 		return HttpServletResponse.SC_OK;
 	}
 
+	/**
+	 * Request to register RSU with the server
+	 */
 	private int registerRSU(HttpServletRequest oReq, JSONObject oResponse) throws Exception {
 		StringBuilder sReq = new StringBuilder();
 		try (BufferedInputStream oIn = new BufferedInputStream(oReq.getInputStream())) {
@@ -97,7 +149,7 @@ public class ERVRSUServlet extends HttpServlet {
 		LOGGER.debug(sReq);
 		// Update RSU location list
 		ArrayList<RSULocation> existing_rsus = (ArrayList<RSULocation>) getServletContext().getAttribute("RSUList");
-		ArrayList<RSULocation> updated_rsus = ERVRSUService.RegisteringRSU(sReq, existing_rsus);
+		ArrayList<RSULocation> updated_rsus = RSUService.RegisteringRSU(sReq, existing_rsus);
 		if (updated_rsus != null) {
 			getServletContext().setAttribute("RSUList", updated_rsus);
 			LOGGER.debug(updated_rsus);

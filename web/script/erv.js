@@ -46,52 +46,83 @@ function refreshRSUs() {
 			'data': { 'token': sessionStorage.token }
 		}).done(function(data) {
 			let rsu_list = data["RSUList"];
-			let rsu_table = $('#rsu_table');
-			rsu_table.empty();
-			let row_header = $(`<tr><th>RSU Name</th><th>RSU latitude</th><th>RSU longitude</th><th>V2X Hub Port</th><th>Last Registered At</th></tr>`);
-			rsu_table.append(row_header);
-
-			//clear all current markers on the OSM 
-			$("div.marker").remove();
-			geojson.features = [];
-
-			for (let rsu of rsu_list) {
-				let latitude = formatLatLng(rsu.latitude);
-				let longitude = formatLatLng(rsu.longitude);
-				let rsu_name = rsu.id;
-				if(rsu_name.lastIndexOf("_") != -1)
-				{
-					rsu_name = rsu_name.substr(0, rsu_name.lastIndexOf("_"));
-				}		
-
-				//Populate RSU table
-				let row = $(`<tr><td>${rsu_name}</td><td>${latitude}</td><td>${longitude}</td><td>${rsu.v2xhub_port}</td><td>${new Date(rsu.last_update_at).toLocaleString()}</td></tr>`);
-				row.mouseenter({ 'id': rsu.id + rsu.v2xhub_port }, highlightMarker).mouseleave({ 'id': rsu.id + rsu.v2xhub_port }, unHighlightMarker);;
-				rsu_table.append(row);		
-
-				//Populate geojson with features
-				let feature = createFeature(rsu.id + rsu.v2xhub_port, longitude, latitude, rsu_name, latitude + ',' + longitude + '<br> V2x Hub Port: ' + rsu.v2xhub_port);
-				geojson.features.push(feature);
-			}
-
-			//Populate Map with list of RSU Geo location markers and add to map
-			for (const feature of geojson.features) {
-				// create a HTML element for each feature
-				const el = document.createElement('div');
-				el.className = 'marker';
-				el.id = feature.properties.id;
-
-				// make a marker for each feature and add it to the map
-				new mapboxgl.Marker(el).setLngLat(feature.geometry.coordinates)
-					.setPopup(new mapboxgl.Popup({ offset: 25 })
-						.setHTML(`<p><b>${feature.properties.title}</b> <br>${feature.properties.description}</p>`))
-					.addTo(oMap);
-			}
+			displayRSUList(rsu_list);
 		}).fail(function() {
 			alert('Failed to retrieve registered RSUs!');
 		});
 
 }
+
+function delRSU(v2xhub_port) {
+	let isDel = confirm("Are you sure to delete RSU with v2xhub port:" + v2xhub_port);
+	if (isDel) {
+		$.ajax({
+			url: 'carmacloud/rsu' + '?' + $.param({ "v2xhub_port": v2xhub_port, "token": sessionStorage.token }),
+			type: 'DELETE'
+		}).done(function(data) {
+			data = JSON.parse(data);
+			let rsu_list =  data["RSUList"];
+			console.log(rsu_list)
+			displayRSUList(rsu_list);
+		})
+			.fail(function() {
+				alert('Failed to delete an RSUs!');
+			});
+	}
+}
+
+function displayRSUList(rsu_list) {
+	let rsu_table = $('#rsu_table');
+	rsu_table.empty();
+	let row_header = $(`<tr><th>RSU Name</th><th>RSU latitude</th><th>RSU longitude</th><th>V2X Hub Port</th><th>Last Registered At</th><th>Controls</th></tr>`);
+	rsu_table.append(row_header);
+
+	//clear all current markers on the OSM 
+	$("div.marker").remove();
+	geojson.features = [];
+	if (rsu_list != undefined) {
+		for (let rsu of rsu_list) {
+			let latitude = formatLatLng(rsu.latitude);
+			let longitude = formatLatLng(rsu.longitude);
+			let rsu_name = rsu.id;
+			if (rsu_name.lastIndexOf("_") != -1) {
+				rsu_name = rsu_name.substr(0, rsu_name.lastIndexOf("_"));
+			}
+
+			//Populate RSU table
+			var btn = $('<button/>',
+				{
+					text: 'DELETE',
+					id: "${rsu.v2xhub_port}",
+					class: "w3-btn w3-red w3-round",
+					click: function() { delRSU(rsu.v2xhub_port) }
+				});
+			let row = $(`<tr><td>${rsu_name}</td><td>${latitude}</td><td>${longitude}</td><td>${rsu.v2xhub_port}</td><td>${new Date(rsu.last_update_at).toLocaleString()}</td></tr>`);
+			row.append(btn).end();
+			row.mouseenter({ 'id': rsu.id + rsu.v2xhub_port }, highlightMarker).mouseleave({ 'id': rsu.id + rsu.v2xhub_port }, unHighlightMarker);
+			rsu_table.append(row);
+
+			//Populate geojson with features
+			let feature = createFeature(rsu.id + rsu.v2xhub_port, longitude, latitude, rsu_name, latitude + ',' + longitude + '<br> V2x Hub Port: ' + rsu.v2xhub_port);
+			geojson.features.push(feature);
+		}
+	}
+
+	//Populate Map with list of RSU Geo location markers and add to map
+	for (const feature of geojson.features) {
+		// create a HTML element for each feature
+		const el = document.createElement('div');
+		el.className = 'marker';
+		el.id = feature.properties.id;
+
+		// make a marker for each feature and add it to the map
+		new mapboxgl.Marker(el).setLngLat(feature.geometry.coordinates)
+			.setPopup(new mapboxgl.Popup({ offset: 25 })
+				.setHTML(`<p><b>${feature.properties.title}</b> <br>${feature.properties.description}</p>`))
+			.addTo(oMap);
+	}
+}
+
 
 function formatLatLng(latLng) {
 	let fmt_latLng = latLng.toString().split("");
