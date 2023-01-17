@@ -28,6 +28,8 @@ import cc.rsu.RSUService;
  */
 public class RSUServlet extends HttpServlet {
 	protected static final Logger LOGGER = LogManager.getRootLogger();
+	private static final String V2XHUB_PORT = "v2xhub_port";
+	private static final String RSULIST = "RSUList";
 
 	/**
 	 * Handler POST request
@@ -83,19 +85,19 @@ public class RSUServlet extends HttpServlet {
 		{
 			oRes.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		} else {
-			if (oReq.getParameter("v2xhub_port") != null) {// Get RSU location list
-				ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute("RSUList");
+			if (oReq.getParameter(V2XHUB_PORT) != null) {// Get RSU location list
+				ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute(RSULIST);
 				ArrayList<RSULocation> rsu_list_update = new ArrayList<RSULocation>();
 				if (rsu_list != null) {
 					for (RSULocation rsu : rsu_list) {
-						if (rsu.v2xhub_port.equals(oReq.getParameter("v2xhub_port"))) {
+						if (rsu.v2xhub_port.equals(oReq.getParameter(V2XHUB_PORT))) {
 							continue;
 						}
 						rsu_list_update.add(rsu);
 					}
-					getServletContext().setAttribute("RSUList", rsu_list_update);
+					getServletContext().setAttribute(RSULIST, rsu_list_update);
 					JSONArray rsuArr = RSUService.serializeRSUList(rsu_list_update);
-					oResponse.put("RSUList", rsuArr);
+					oResponse.put(RSULIST, rsuArr);
 					oRes.setStatus(HttpServletResponse.SC_OK);
 				}
 			} else {
@@ -122,9 +124,9 @@ public class RSUServlet extends HttpServlet {
 		}
 
 		// Get RSU location list
-		ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute("RSUList");
+		ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute(RSULIST);
 		JSONArray rsuArr = RSUService.serializeRSUList(rsu_list);
-		oResponse.put("RSUList", rsuArr);
+		oResponse.put(RSULIST, rsuArr);
 		return HttpServletResponse.SC_OK;
 	}
 
@@ -148,10 +150,10 @@ public class RSUServlet extends HttpServlet {
 		}
 		LOGGER.debug(sReq);
 		// Update RSU location list
-		ArrayList<RSULocation> existing_rsus = (ArrayList<RSULocation>) getServletContext().getAttribute("RSUList");
+		ArrayList<RSULocation> existing_rsus = (ArrayList<RSULocation>) getServletContext().getAttribute(RSULIST);
 		ArrayList<RSULocation> updated_rsus = RSUService.RegisteringRSU(sReq, existing_rsus);
 		if (updated_rsus != null) {
-			getServletContext().setAttribute("RSUList", updated_rsus);
+			getServletContext().setAttribute(RSULIST, updated_rsus);
 			LOGGER.debug(updated_rsus);
 		}
 		return HttpServletResponse.SC_OK;
