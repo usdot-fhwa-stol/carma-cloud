@@ -325,6 +325,19 @@
 <servlet>
  <servlet-name>RSU</servlet-name>
  <servlet-class>cc.ws.RSUServlet</servlet-class>
+ 
+  <init-param>
+  <description>REQUIRED: Duration to store the received BSM request. Unit of second</description>
+  <param-name>bsmReqDuration</param-name>
+  <param-value>5</param-value>
+ </init-param> 
+ 
+ <init-param>
+  <description>REQUIRED: Periodically checking if the BSM is stored longer than the specified duration. Unit of second</description>
+  <param-name>bsmReqCheckPeriod</param-name>
+  <param-value>2</param-value>
+ </init-param> 
+ 
  <load-on-startup>1</load-on-startup>
 </servlet>
 
@@ -332,6 +345,5 @@
  <servlet-name>RSU</servlet-name>
  <url-pattern>/carmacloud/rsu/*</url-pattern>
 </servlet-mapping>
-
 
 </web-app>
