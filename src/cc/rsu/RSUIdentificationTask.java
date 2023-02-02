@@ -23,7 +23,7 @@ public class RSUIdentificationTask implements Callable<Void> {
 
 	@Override
 	public Void call() throws Exception {
-		LOGGER.info("Scheduled task to process BSM request: " + incomingBSMReq);
+		LOGGER.info("Task to process BSM request: " + incomingBSMReq);
 		return null;
 	}
 }
