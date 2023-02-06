@@ -11,7 +11,9 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
-
+/***
+ * Parse BSMRequest XML and return a java object
+ */
 public class BSMRequestParser  extends DefaultHandler2 {
 	protected BSMRequest bsmReq;
 	protected Position point;

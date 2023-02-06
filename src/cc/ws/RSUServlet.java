@@ -60,7 +60,7 @@ public class RSUServlet extends HttpServlet {
 				ArrayList<BSMRequest> newBsmReqList = new ArrayList<BSMRequest>();
 				// clear up old BSM request in the list
 				if (bsmReqList != null) {
-					System.out.println("BSM Request List size: " + bsmReqList.size());
+					LOGGER.debug("BSM Request List size: " + bsmReqList.size());
 					for (BSMRequest bsmReq : bsmReqList) {
 						if ((Instant.now().toEpochMilli() - bsmReq.getLast_update_at().toEpochMilli())
 								/ 1000 < bsmReqDuration) {
@@ -90,7 +90,7 @@ public class RSUServlet extends HttpServlet {
 				nStatus = registerRSU(oReq, oResponse);
 				oResponse.put("status", nStatus);
 			} else if (sMethod.compareTo("req") == 0) {
-				nStatus = requestRSU(oReq, oResponse);
+				nStatus = identifyRSU(oReq, oResponse);
 			} else if (sMethod.compareTo("list") == 0) {
 				nStatus = listRSU(oReq, oResponse);
 			} else if (sMethod.compareTo("bsm") == 0) {
@@ -201,7 +201,7 @@ public class RSUServlet extends HttpServlet {
 	/***
 	 * Request for identified RSUs
 	 */
-	private int requestRSU(HttpServletRequest oReq, JSONObject oResponse) throws Exception {
+	private int identifyRSU(HttpServletRequest oReq, JSONObject oResponse) throws Exception {
 		StringBuilder sReq = new StringBuilder();
 		try (BufferedInputStream oIn = new BufferedInputStream(oReq.getInputStream())) {
 			int nByte = 0;
