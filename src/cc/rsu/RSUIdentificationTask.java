@@ -7,7 +7,7 @@ import org.apache.logging.log4j.Logger;
 
 
 /**
- * Process incoming BSM request and determine the emergency response vehicle future path,
+ *TODO: Process incoming BSM request and determine the emergency response vehicle future path,
  * and identify the RSU along the emergency response vehicle future path
  * */
 public class RSUIdentificationTask implements Callable<Void> {
