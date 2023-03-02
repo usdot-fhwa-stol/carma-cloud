@@ -65,10 +65,10 @@ public class BSMRequestParser extends DefaultHandler2 {
 			route.add(loc);
 			break;
 		case "latitude":
-			loc.setLatitude((Long.parseLong(m_sbuf.toString()) / 100000000.0));
+			loc.setLatitude((Long.parseLong(m_sbuf.toString()) / 10000000.0));
 			break;
 		case "longitude":
-			loc.setlongitude((Long.parseLong(m_sbuf.toString()) / 100000000.0));
+			loc.setlongitude((Long.parseLong(m_sbuf.toString()) / 10000000.0));
 			break;
 		default:
 			break;

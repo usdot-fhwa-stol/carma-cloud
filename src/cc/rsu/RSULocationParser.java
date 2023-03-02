@@ -53,10 +53,10 @@ public class RSULocationParser extends DefaultHandler2 {
 			rsu_loc.id = m_sbuf.toString();
 			break;
 		case "latitude":
-			rsu_loc.latitude = (Long.parseLong(m_sbuf.toString()) / 100000000.0);
+			rsu_loc.latitude = (Long.parseLong(m_sbuf.toString()) / 10000000.0);
 			break;
 		case "longitude":
-			rsu_loc.longitude =(Long.parseLong(m_sbuf.toString()) / 100000000.0);
+			rsu_loc.longitude =(Long.parseLong(m_sbuf.toString()) / 10000000.0);
 			break;
 		case "v2xhubport":
 			rsu_loc.v2xhub_port = m_sbuf.toString();
