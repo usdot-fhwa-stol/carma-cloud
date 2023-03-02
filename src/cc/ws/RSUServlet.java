@@ -25,12 +25,12 @@ import org.json.JSONObject;
 
 import cc.rsu.BSMRequest;
 import cc.rsu.BSMRequestParser;
+import cc.rsu.RSUBoundingbox;
 import cc.rsu.RSUIdentificationTask;
-import cc.rsu.RSULocation;
 import cc.rsu.RSUService;
 
 /***
- *  Registering RSU with carma-cloud and keep track of all connected RSUs.
+ * Registering RSU with carma-cloud and keep track of all connected RSUs.
  * <RSULocationRequest><id>XXXXXX</id><latitude>3895510833</latitude><longitude>-7714955667</longitude><v2xhubPort>44444</v2xhubPort></RSULocationRequest>
  * 
  * Receive BSM request used to identify emergency response vehicle future path.
@@ -40,17 +40,20 @@ public class RSUServlet extends HttpServlet {
 	protected static final Logger LOGGER = LogManager.getLogger(RSUServlet.class);
 	private static final String V2XHUB_PORT = "v2xhub_port";
 	private static final String RSULIST = "RSUList";
-	private static final String BSMREQLIST = "RSUList";
+	private static final String BSMREQLIST = "BSMReqList";
 	private static final String BSMTIMER = "bsmtimer";
 	private int bsmReqDuration = 0;
 	private int bsmReqCheckPeriod = 0;
+	private double boundingBoxRadius = 0;
 
 	public void init(ServletConfig config) throws ServletException {
 		super.init(config);
 		bsmReqDuration = Integer.parseInt(config.getInitParameter("bsmReqDuration"));
 		bsmReqCheckPeriod = Integer.parseInt(config.getInitParameter("bsmReqCheckPeriod"));
+		boundingBoxRadius = Double.parseDouble(config.getInitParameter("boundingBoxRadius"));
 		LOGGER.info("bsm duration parameter (second):" + bsmReqDuration);
 		LOGGER.info("bsm check period parameter (second):" + bsmReqCheckPeriod);
+		LOGGER.info("RSU Boundingbox Radius:" + boundingBoxRadius);
 
 		Timer timer = new Timer();
 		timer.scheduleAtFixedRate(new TimerTask() {
@@ -60,7 +63,6 @@ public class RSUServlet extends HttpServlet {
 				ArrayList<BSMRequest> newBsmReqList = new ArrayList<BSMRequest>();
 				// clear up old BSM request in the list
 				if (bsmReqList != null) {
-					LOGGER.debug("BSM Request List size: " + bsmReqList.size());
 					for (BSMRequest bsmReq : bsmReqList) {
 						if ((Instant.now().toEpochMilli() - bsmReq.getLast_update_at().toEpochMilli())
 								/ 1000 < bsmReqDuration) {
@@ -68,6 +70,9 @@ public class RSUServlet extends HttpServlet {
 						}
 					}
 					getServletContext().setAttribute(BSMREQLIST, newBsmReqList);
+				}
+				if (bsmReqList != null && bsmReqList.size() > 0) {
+					LOGGER.debug("BSM Request List size: " + bsmReqList.size() + "\n");
 				}
 			}
 		}, 0, bsmReqCheckPeriod * 1000L);
@@ -90,7 +95,7 @@ public class RSUServlet extends HttpServlet {
 				nStatus = registerRSU(oReq, oResponse);
 				oResponse.put("status", nStatus);
 			} else if (sMethod.compareTo("req") == 0) {
-				nStatus = identifyRSU(oReq, oResponse);
+				nStatus = requestRSU(oReq, oResponse);
 			} else if (sMethod.compareTo("list") == 0) {
 				nStatus = listRSU(oReq, oResponse);
 			} else if (sMethod.compareTo("bsm") == 0) {
@@ -131,17 +136,18 @@ public class RSUServlet extends HttpServlet {
 			oRes.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 		} else {
 			if (oReq.getParameter(V2XHUB_PORT) != null) {// Get RSU location list
-				ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute(RSULIST);
-				ArrayList<RSULocation> rsu_list_update = new ArrayList<RSULocation>();
-				if (rsu_list != null) {
-					for (RSULocation rsu : rsu_list) {
-						if (rsu.v2xhub_port.equals(oReq.getParameter(V2XHUB_PORT))) {
+				ArrayList<RSUBoundingbox> rsuList = (ArrayList<RSUBoundingbox>) getServletContext()
+						.getAttribute(RSULIST);
+				ArrayList<RSUBoundingbox> rsuListUpdate = new ArrayList<RSUBoundingbox>();
+				if (rsuList != null) {
+					for (RSUBoundingbox rsu : rsuList) {
+						if (rsu.getCenterLoc().v2xhub_port.equals(oReq.getParameter(V2XHUB_PORT))) {
 							continue;
 						}
-						rsu_list_update.add(rsu);
+						rsuListUpdate.add(rsu);
 					}
-					getServletContext().setAttribute(RSULIST, rsu_list_update);
-					JSONArray rsuArr = RSUService.serializeRSUList(rsu_list_update);
+					getServletContext().setAttribute(RSULIST, rsuListUpdate);
+					JSONArray rsuArr = RSUService.serializeRSUList(rsuListUpdate);
 					oResponse.put(RSULIST, rsuArr);
 					oRes.setStatus(HttpServletResponse.SC_OK);
 				}
@@ -188,7 +194,7 @@ public class RSUServlet extends HttpServlet {
 
 		// Get RSU location list
 		try {
-			ArrayList<RSULocation> rsu_list = (ArrayList<RSULocation>) getServletContext().getAttribute(RSULIST);
+			ArrayList<RSUBoundingbox> rsu_list = (ArrayList<RSUBoundingbox>) getServletContext().getAttribute(RSULIST);
 			JSONArray rsuArr = RSUService.serializeRSUList(rsu_list);
 			oResponse.put(RSULIST, rsuArr);
 		} catch (NullPointerException oEx) {
@@ -201,7 +207,13 @@ public class RSUServlet extends HttpServlet {
 	/***
 	 * Request for identified RSUs
 	 */
-	private int identifyRSU(HttpServletRequest oReq, JSONObject oResponse) throws Exception {
+	private int requestRSU(HttpServletRequest oReq, JSONObject oResponse) throws Exception {
+		ArrayList<RSUBoundingbox> registeredRSUs = (ArrayList<RSUBoundingbox>) getServletContext()
+				.getAttribute(RSULIST);
+		if (registeredRSUs == null || registeredRSUs.size() == 0) {
+			LOGGER.error("No RSU is registered!");
+			return HttpServletResponse.SC_ACCEPTED;
+		}
 		StringBuilder sReq = new StringBuilder();
 		try (BufferedInputStream oIn = new BufferedInputStream(oReq.getInputStream())) {
 			int nByte = 0;
@@ -214,6 +226,15 @@ public class RSUServlet extends HttpServlet {
 		BSMRequestParser parser = new BSMRequestParser();
 		BSMRequest newBsmReq = parser
 				.parseRequest(new ByteArrayInputStream(sReq.toString().getBytes(StandardCharsets.UTF_8)));
+		newBsmReq.setLast_update_at(Instant.now());
+		LOGGER.info("Received: " + newBsmReq);
+		if (newBsmReq.getRoute().size() == 1) {
+			LOGGER.info(
+					"Ignore BSM Request: Only 1 point from BSM request route (Note: BSM Request route includes vehicle current location) ");
+			// If there is only one point in the BSM request, it means the vehicle arrived
+			// at the destination
+			return HttpServletResponse.SC_OK;
+		}
 		ArrayList<BSMRequest> updatedBsmReqsList = new ArrayList<BSMRequest>();
 		Boolean isIgnore = false;
 		try {
@@ -235,19 +256,18 @@ public class RSUServlet extends HttpServlet {
 		} catch (NullPointerException oEx) {
 			LOGGER.error("No existing BSM");
 		}
-		
+
 		if (isIgnore) {
 			// Update the tracking list
 			getServletContext().setAttribute(BSMREQLIST, updatedBsmReqsList);
 			return HttpServletResponse.SC_CONFLICT;
 		}
-		// Processing BSM request
+		// Processing new BSM request
 		ExecutorService singleExector = Executors.newSingleThreadExecutor();
-		singleExector.submit(new RSUIdentificationTask(newBsmReq));
+		singleExector.submit(new RSUIdentificationTask(newBsmReq, registeredRSUs));
 		singleExector.shutdown();
 
 		// Add newly processed BSM request to tracking list
-		newBsmReq.setLast_update_at(Instant.now());
 		updatedBsmReqsList.add(newBsmReq);
 		getServletContext().setAttribute(BSMREQLIST, updatedBsmReqsList);
 		return HttpServletResponse.SC_OK;
@@ -266,16 +286,16 @@ public class RSUServlet extends HttpServlet {
 		}
 		LOGGER.debug(sReq);
 		// Update RSU location list
-		ArrayList<RSULocation> existing_rsus = new ArrayList<RSULocation>();
+		ArrayList<RSUBoundingbox> existingRSUs = new ArrayList<RSUBoundingbox>();
 		try {
-			existing_rsus = (ArrayList<RSULocation>) getServletContext().getAttribute(RSULIST);
+			existingRSUs = (ArrayList<RSUBoundingbox>) getServletContext().getAttribute(RSULIST);
 		} catch (NullPointerException oEx) {
 			LOGGER.debug("No existing RSU");
 		}
-		ArrayList<RSULocation> updated_rsus = RSUService.RegisteringRSU(sReq, existing_rsus);
-		if (updated_rsus != null) {
-			getServletContext().setAttribute(RSULIST, updated_rsus);
-			LOGGER.debug(updated_rsus);
+		ArrayList<RSUBoundingbox> updatedRSUs = RSUService.RegisteringRSU(sReq, existingRSUs, boundingBoxRadius);
+		if (updatedRSUs != null) {
+			getServletContext().setAttribute(RSULIST, updatedRSUs);
+			LOGGER.debug(updatedRSUs);
 		}
 		return HttpServletResponse.SC_OK;
 	}
@@ -283,8 +303,8 @@ public class RSUServlet extends HttpServlet {
 	/***
 	 * Get BSM Request list
 	 * 
-	 * @param oReq BSM request payload
-	 * @param oResponse BSM request list
+	 * @param oReq
+	 * @param oResponse
 	 * @return http status code
 	 * @throws Exception
 	 */
@@ -295,8 +315,8 @@ public class RSUServlet extends HttpServlet {
 			return HttpServletResponse.SC_UNAUTHORIZED;
 		}
 		try {
-			ArrayList<RSULocation> bsmReqList = (ArrayList<RSULocation>) getServletContext().getAttribute(BSMREQLIST);
-			JSONArray bsmReqArr = RSUService.serializeRSUList(bsmReqList);
+			ArrayList<BSMRequest> bsmReqList = (ArrayList<BSMRequest>) getServletContext().getAttribute(BSMREQLIST);
+			JSONArray bsmReqArr = RSUService.serializeBSMList(bsmReqList);
 			oResponse.put(BSMREQLIST, bsmReqArr);
 		} catch (NullPointerException oEx) {
 			oResponse.put(BSMREQLIST, new JSONArray());

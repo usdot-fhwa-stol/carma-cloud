@@ -3,8 +3,9 @@ package cc.rsu;
 import java.util.Objects;
 
 public class Position {
-	public long latitude;
-	public long longitude;
+	private double latitude;
+	private double longitude;
+	private double altitude = 0;
 
 	@Override
 	public int hashCode() {
@@ -27,25 +28,40 @@ public class Position {
 		super();
 	}
 
-	public Position(long latitude, long longitude) {
+	public Position(double latitude, double longitude) {
 		super();
 		this.latitude = latitude;
 		this.longitude = longitude;
 	}
 
-	public long getLatitude() {
+	public Position(double latitude, double longitude, double altitude) {
+		super();
+		this.latitude = latitude;
+		this.longitude = longitude;
+		this.altitude = altitude;
+	}
+
+	public double getAltitude() {
+		return altitude;
+	}
+
+	public void setAltitude(double altitude) {
+		this.altitude = altitude;
+	}
+
+	public double getLatitude() {
 		return latitude;
 	}
 
-	public void setLatitude(long latitude) {
+	public void setLatitude(double latitude) {
 		this.latitude = latitude;
 	}
 
-	public long getLongitude() {
+	public double getlongitude() {
 		return longitude;
 	}
 
-	public void setLongitude(long longitude) {
+	public void setlongitude(double longitude) {
 		this.longitude = longitude;
 	}
 

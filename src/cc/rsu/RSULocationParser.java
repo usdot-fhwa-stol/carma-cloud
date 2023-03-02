@@ -12,9 +12,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
 
-/**
-Parse RSU location request in XML format and populate RSULocation object
- */
 public class RSULocationParser extends DefaultHandler2 {
 	protected RSULocation rsu_loc;
 	protected StringBuilder m_sbuf = new StringBuilder();
@@ -50,16 +47,16 @@ public class RSULocationParser extends DefaultHandler2 {
 	@Override
 	public void endElement(String sUri, String sLocalName, String sQname) throws SAXException {
 		switch (sQname.toLowerCase()) {
-		case "RSULocationRequest":
+		case "rsulocationrequest":
 			break;
 		case "id":
 			rsu_loc.id = m_sbuf.toString();
 			break;
 		case "latitude":
-			rsu_loc.latitude = Long.parseLong(m_sbuf.toString());
+			rsu_loc.latitude = (Long.parseLong(m_sbuf.toString()) / 100000000.0);
 			break;
 		case "longitude":
-			rsu_loc.longitude = Long.parseLong(m_sbuf.toString());
+			rsu_loc.longitude =(Long.parseLong(m_sbuf.toString()) / 100000000.0);
 			break;
 		case "v2xhubport":
 			rsu_loc.v2xhub_port = m_sbuf.toString();
