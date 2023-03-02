@@ -69,11 +69,10 @@ public class RSUIdentificationTask implements Callable<Void> {
 			LOGGER.info("Identified numbers of RSU: " + identifiedRSUs.size());
 
 			// sent BSM hex to the identified RSUs
-			for (RSUBoundingbox identifiedRSU : identifiedRSUs) {
-				ExecutorService singleExector = Executors.newSingleThreadExecutor();
-				singleExector.submit(new HTTPClientTask(identifiedRSU, incomingBSMReq));
-				singleExector.shutdown();
-			}
+			ExecutorService singleExector = Executors.newSingleThreadExecutor();		
+			singleExector.submit(new HTTPClientTask(identifiedRSUs, incomingBSMReq));	
+			singleExector.shutdown();
+			
 		} else {
 			LOGGER.info("No RSU is registered!");
 		}
