@@ -22,6 +22,7 @@ public class RSUService {
 	 * @param sReq         New RSU request sent by v2xhub
 	 * @param existingRsus The list of existing RSU locations and their bounding
 	 *                     boxes
+	 * @param boundingBoxRadius in meter
 	 * @return The updated list of RSU locations
 	 */
 	public static ArrayList<RSUBoundingbox> RegisteringRSU(StringBuilder sReq, ArrayList<RSUBoundingbox> existingRsus,

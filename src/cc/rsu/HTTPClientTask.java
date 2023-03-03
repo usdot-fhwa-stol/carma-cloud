@@ -12,6 +12,9 @@ import java.util.concurrent.Callable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/***
+ * A task to forward BSM Hex to identified RSU
+ */
 public class HTTPClientTask implements Callable<Void> {
 	private static final Logger LOGGER = LogManager.getLogger(HTTPClientTask.class);
 	private List<RSUBoundingbox> identifiedRSUs;

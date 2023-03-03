@@ -1,5 +1,8 @@
 package cc.rsu;
 
+/***
+ * Point class to represent xyz coordinates
+ */
 public class Point {
 	public double x;
 	public double y;

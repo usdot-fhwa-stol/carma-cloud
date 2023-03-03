@@ -54,6 +54,7 @@ public class RSUIdentificationTask implements Callable<Void> {
 		// Comparing the bounding boxes from BSM request with register RSU bounding
 		// boxes. If an RSU bounding box intersects with any of BSM request bounding
 		// boxes, the RSU is along the future path
+		//NOTE: For the carma-cloud registered RSUs, it needs additional consideration for those RSUs (RSUs, geofences, etc.) in a certain requested region.
 		if (registeredRSUs != null && registeredRSUs.size() > 0) {
 			ArrayList<RSUBoundingbox> identifiedRSUs = new ArrayList<>();
 			for (RSUBoundingbox rsuBoundingBox : registeredRSUs) {

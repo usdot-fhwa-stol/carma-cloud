@@ -1,7 +1,9 @@
 package cc.rsu;
 
 import java.util.Objects;
-
+/***
+ * Position class to represent latitude, longitude, and altitude coordinates
+ */
 public class Position {
 	private double latitude;
 	private double longitude;

@@ -12,9 +12,7 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.ext.DefaultHandler2;
-/***
- * Process incoming BSMRequest payload in xml format
- */
+
 public class BSMRequestParser extends DefaultHandler2 {
 	protected BSMRequest bsmReq;
 	protected Position loc = null;
@@ -65,10 +63,16 @@ public class BSMRequestParser extends DefaultHandler2 {
 			route.add(loc);
 			break;
 		case "latitude":
-			loc.setLatitude((Long.parseLong(m_sbuf.toString()) / 10000000.0));
+				/***
+				 * /ASN.1 Representation:
+				 * Latitude ::= INTEGER (-900000000..900000001)
+				 * Longitude ::= INTEGER (-1799999999..1800000001)
+				 * The incoming latitude and longitude values need to be devided (in 1/10th micodegree) by 10000000.0 before passing it on to the rest of the system
+				 */
+			loc.setLatitude((Long.parseLong(m_sbuf.toString()) / 100000000.0));
 			break;
 		case "longitude":
-			loc.setlongitude((Long.parseLong(m_sbuf.toString()) / 10000000.0));
+			loc.setlongitude((Long.parseLong(m_sbuf.toString()) / 100000000.0));
 			break;
 		default:
 			break;

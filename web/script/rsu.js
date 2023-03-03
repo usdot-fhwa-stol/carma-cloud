@@ -12,6 +12,9 @@ const geojsonPoly = {
 	'features': []
 };
 
+/***
+ * whether to stop overlay
+ */
 let bStop = false;
 
 async function f() {
@@ -61,6 +64,7 @@ function refreshRSUs() {
 			'data': { 'token': sessionStorage.token }
 		}).done(function(data) {
 			let rsu_list = data["RSUList"];
+			timeoutPageoverlay(500);
 			displayRSUList(rsu_list);
 		}).fail(function() {
 			alert('Failed to retrieve registered RSUs!');
@@ -80,6 +84,7 @@ function delRSU(v2xhub_port) {
 			data = JSON.parse(data);
 			let rsu_list =  data["RSUList"];
 			console.log(rsu_list)
+			timeoutPageoverlay(100);
 			displayRSUList(rsu_list);
 		})
 			.fail(function() {
@@ -93,7 +98,6 @@ Render RSUs on the table and MAP
 */
 function displayRSUList(rsu_list) {
 	showPageoverlay(`Loading RSUs...`);	
-	timeoutPageoverlay(1000);
 	let rsu_table = $('#rsu_table');
 	rsu_table.empty();
 	let row_header = $(`<tr><th>RSU Name</th><th>RSU latitude</th><th>RSU longitude</th><th>V2X Hub Port</th><th>Last Registered At</th><th>Controls</th></tr>`);

@@ -11,7 +11,7 @@ public class RSUBoundingbox {
 	 **/
 	private RSULocation centerLoc;
 	/**
-	 * Determine the size of the bounding box
+	 * Determine the size of the bounding box in meter
 	 */
 	private double boundingBoxRadius;
 	/**

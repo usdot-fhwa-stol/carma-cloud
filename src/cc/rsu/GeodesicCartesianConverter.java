@@ -16,19 +16,15 @@ public class GeodesicCartesianConverter {
 
 	/**
 	 * Converts a given 3d cartesian point into a WSG-84 geodesic location The
-	 * provided point should be defined relative to a frame which has a transform
-	 * with the ECEF
-	 * 
+	 * provided point should be defined relative to a frame 
 	 * @param point               The cartesian point to be converted
-	 * @param ecef2frameTransform The transform which defines the position of the
-	 *                            desired frame relative to the ECEF frame.
 	 * @return The calculated WSG-84 geodesic location
 	 */
 	public Position cartesian2Geodesic(Point point) {
 		double x = point.getX();
 		double y = point.getY();
 		double z = point.getZ();
-//	    // Calculate lat,lon,alt
+	    // Calculate lat,lon,alt
 		double p = Math.sqrt((x * x) + (y * y));
 		// Handle special case of poles
 		if (p < 1.0e-10) {
@@ -54,18 +50,11 @@ public class GeodesicCartesianConverter {
 
 	/**
 	 * Converts a given WSG-84 geodesic location into a 3d cartesian point The
-	 * returned 3d point is defined relative to a frame which has a transform with
-	 * the ECEF frame.
-	 * 
-	 * @param location            The geodesic location to convert
-	 * @param frame2ecefTransform A transform which defines the location of the ECEF
-	 *                            frame relative to the 3d point's frame of origin
+	 * returned 3d point is defined relative to a frame
+	 * @param location The geodesic location to convert
 	 * @return The calculated 3d point
 	 */
 	public Point geodesic2Cartesian(Position location) {
-		// frame2ecefTransform needs to define the position of the ecefFrame relative to
-		// the desired frame
-		// Put geodesic in proper units
 		double lonRad = Math.toRadians(location.getlongitude());
 		double latRad = Math.toRadians(location.getLatitude());
 		double alt = location.getAltitude();

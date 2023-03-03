@@ -1,5 +1,8 @@
 package cc.rsu;
 
+/***
+ * Utilities class to support bounding box related calculation
+ */
 public class BoundingBoxUtils {
 
 	/***
@@ -7,7 +10,7 @@ public class BoundingBoxUtils {
 	 * location
 	 * 
 	 * @param centerLoc the geodetic coordinate
-	 * @param radius    The bounding box size
+	 * @param radius    The bounding box size in meter
 	 * @return geodetic coordinates around the center location
 	 */
 	public static double[] calculateBoundingBoxCoordinates(Position centerLoc, double radius) {
@@ -16,7 +19,6 @@ public class BoundingBoxUtils {
 		double[] result = new double[4];
 		double latRad = Math.toRadians(centerLoc.getLatitude());
 		double lonRad = Math.toRadians(centerLoc.getlongitude());
-		;
 		double earth_radius = calculate_earth_radius(latRad);
 		double p_radius = earth_radius * Math.cos(latRad);
 		double latRad_min = latRad - radius / earth_radius;
@@ -34,7 +36,7 @@ public class BoundingBoxUtils {
 	 * Calculate earth radius
 	 * 
 	 * @param latRad latitude in radian
-	 * @return earth radius
+	 * @return earth radius in meter
 	 */
 	public static double calculate_earth_radius(double latRad) {
 		double wgsa = 6378137.0; // meter
