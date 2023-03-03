@@ -75,7 +75,7 @@ function refreshRSUs() {
 /***
 DELETE: Delete RSU */
 function delRSU(v2xhub_port) {
-	let isDel = confirm("Are you sure to delete RSU with v2xhub port:" + v2xhub_port);
+	let isDel = confirm("Are you sure you would like to delete RSU with v2xhub port:" + v2xhub_port);
 	if (isDel) {
 		$.ajax({
 			url: 'carmacloud/rsu' + '?' + $.param({ "v2xhub_port": v2xhub_port, "token": sessionStorage.token }),
