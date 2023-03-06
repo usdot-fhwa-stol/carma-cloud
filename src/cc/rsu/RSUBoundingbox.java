@@ -50,10 +50,6 @@ public class RSUBoundingbox {
 		return boundingBoxRadius;
 	}
 
-	public void setBoundingBoxRadius(double boundingBoxRadius) {
-		this.boundingBoxRadius = boundingBoxRadius;
-	}
-
 	public double[] getBoundingBoxLatLngCoordinates() {
 		return boundingBoxLatLngCoordinates;
 	}

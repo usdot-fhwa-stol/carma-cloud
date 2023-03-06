@@ -18,6 +18,7 @@ public class BSMRequestParser extends DefaultHandler2 {
 	protected Position loc = null;
 	protected ArrayList<Position> route = null;
 	protected StringBuilder m_sbuf = new StringBuilder();
+	protected double TENTH_MICRO_DEG_PER_DEG = 10000000.0;
 
 	public BSMRequestParser() {
 		super();
@@ -69,10 +70,10 @@ public class BSMRequestParser extends DefaultHandler2 {
 				 * Longitude ::= INTEGER (-1799999999..1800000001)
 				 * The incoming latitude and longitude values need to be devided (in 1/10th micodegree) by 10000000.0 before passing it on to the rest of the system
 				 */
-			loc.setLatitude((Long.parseLong(m_sbuf.toString()) / 100000000.0));
+			loc.setLatitude((Long.parseLong(m_sbuf.toString()) / TENTH_MICRO_DEG_PER_DEG));
 			break;
 		case "longitude":
-			loc.setlongitude((Long.parseLong(m_sbuf.toString()) / 100000000.0));
+			loc.setlongitude((Long.parseLong(m_sbuf.toString()) / TENTH_MICRO_DEG_PER_DEG));
 			break;
 		default:
 			break;

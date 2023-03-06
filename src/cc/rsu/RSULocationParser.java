@@ -18,6 +18,7 @@ import org.xml.sax.ext.DefaultHandler2;
 public class RSULocationParser extends DefaultHandler2 {
 	protected RSULocation rsu_loc;
 	protected StringBuilder m_sbuf = new StringBuilder();
+	protected double TENTH_MICRO_DEG_PER_DEG = 10000000.0;
 
 	public RSULocationParser() {
 		super();
@@ -63,10 +64,10 @@ public class RSULocationParser extends DefaultHandler2 {
 				 * The incoming latitude and longitude values need to be devided (in 1/10th
 				 * micodegree) by 10000000.0 before passing it on to the rest of the system
 				 */
-				rsu_loc.latitude = (Long.parseLong(m_sbuf.toString()) / 100000000.0);
+				rsu_loc.latitude = (Long.parseLong(m_sbuf.toString()) / TENTH_MICRO_DEG_PER_DEG);
 				break;
 			case "longitude":
-				rsu_loc.longitude = (Long.parseLong(m_sbuf.toString()) / 100000000.0);
+				rsu_loc.longitude = (Long.parseLong(m_sbuf.toString()) / TENTH_MICRO_DEG_PER_DEG);
 				break;
 			case "v2xhubport":
 				rsu_loc.v2xhub_port = m_sbuf.toString();
