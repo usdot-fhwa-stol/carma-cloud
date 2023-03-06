@@ -337,7 +337,13 @@
   <param-name>bsmReqCheckPeriod</param-name>
   <param-value>2</param-value>
  </init-param> 
- 
+  
+ <init-param>
+  <description>REQUIRED: Bounding box radius in meters</description>
+  <param-name>boundingBoxRadius</param-name>
+  <param-value>20</param-value>
+ </init-param> 
+  
  <load-on-startup>1</load-on-startup>
 </servlet>
 

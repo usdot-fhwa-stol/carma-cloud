@@ -10,8 +10,8 @@ public class RSULocation {
 	// Unique identifier
 	public String id;
 	// RSU Geo location
-	public long latitude;
-	public long longitude;
+	public double latitude;
+	public double longitude;
 	// Identify the v2xhub that this RSU is connected to
 	public String v2xhub_port;
 	//Timestamp to record RSU location update

@@ -19,56 +19,87 @@ public class RSUService {
 
 	/**
 	 * 
-	 * @param sReq New RSU request sent by v2xhub
-	 * @param existing_rsus The list of existing RSU locations
+	 * @param sReq         New RSU request sent by v2xhub
+	 * @param existingRsus The list of existing RSU locations and their bounding
+	 *                     boxes
+	 * @param boundingBoxRadius in meter
 	 * @return The updated list of RSU locations
 	 */
-	public static ArrayList<RSULocation> RegisteringRSU(StringBuilder sReq, ArrayList<RSULocation> existing_rsus) {
+	public static ArrayList<RSUBoundingbox> RegisteringRSU(StringBuilder sReq, ArrayList<RSUBoundingbox> existingRsus,
+			double boundingBoxRadius) {
 		RSULocationParser parser = new RSULocationParser();
-		RSULocation new_rsu = parser
+		RSULocation newRSULoc = parser
 				.parseRequest(new ByteArrayInputStream(sReq.toString().getBytes(StandardCharsets.UTF_8)));
-		if (new_rsu != null) {
-			if (existing_rsus == null) {
-				existing_rsus = new ArrayList<RSULocation>();
+		if (newRSULoc != null) {
+			if (existingRsus == null) {
+				existingRsus = new ArrayList<RSUBoundingbox>();
 			} else {
 				// check if the new RSU is already registered. If yes, replace existing RSU with
 				// new request RSU. Each RSU is connected to one v2xhub which identified v2xhub
 				// port
-				for (int i = 0; i < existing_rsus.size(); i++) {
-					if (existing_rsus.get(i).v2xhub_port.equals(new_rsu.v2xhub_port)) {
-						existing_rsus.remove(i);
+				for (int i = 0; i < existingRsus.size(); i++) {
+					if (existingRsus.get(i).getCenterLoc().v2xhub_port.equals(newRSULoc.v2xhub_port)) {
+						existingRsus.remove(i);
 					}
 				}
 			}
 
 			// Update RSU register timestamp
-			new_rsu.last_update_at = Instant.now();
-			existing_rsus.add(new_rsu);
+			newRSULoc.last_update_at = Instant.now();
+			RSUBoundingbox newRSUBoundingBox = new RSUBoundingbox(newRSULoc, boundingBoxRadius);
+			existingRsus.add(newRSUBoundingBox);
 		} else {
 			LOGGER.debug("Cannot parse new RSU Register request.");
 		}
-		return existing_rsus;
+		return existingRsus;
 	}
 
 	/**
 	 * 
-	 * @param rsu_list An array list of RSULocation object
+	 * @param rsuList An array list of RSUBoundingbox object
 	 * @return Serialized JSONArray that contains the list of RSUs
 	 */
 
-	public static JSONArray serializeRSUList(ArrayList<RSULocation> rsu_list) {
+	public static JSONArray serializeRSUList(ArrayList<RSUBoundingbox> rsuList) {
 		JSONArray rsuArr = new JSONArray();
-		if (rsu_list != null) {
-			for (RSULocation item : rsu_list) {
+		if (rsuList != null) {
+			for (RSUBoundingbox item : rsuList) {
 				JSONObject rsuJson = new JSONObject();
-				rsuJson.put("id", item.id);
-				rsuJson.put("latitude", item.latitude);
-				rsuJson.put("longitude", item.longitude);
-				rsuJson.put("v2xhub_port", item.v2xhub_port);
-				rsuJson.put("last_update_at", item.last_update_at);
+				rsuJson.put("id", item.getCenterLoc().id);
+				rsuJson.put("latitude", item.getCenterLoc().latitude);
+				rsuJson.put("longitude", item.getCenterLoc().longitude);
+				rsuJson.put("v2xhub_port", item.getCenterLoc().v2xhub_port);
+				rsuJson.put("last_update_at", item.getCenterLoc().last_update_at);
+				rsuJson.put("bounding_box_coordinates", item.getBoundingBoxLatLngCoordinates());
 				rsuArr.put(rsuJson);
 			}
 		}
 		return rsuArr;
 	}
+
+	/**
+	 * @param bsmReqList An array list of BSMRequest object
+	 * @return Serialized JSONArray that contains the list of BSM Request
+	 */
+	public static JSONArray serializeBSMList(ArrayList<BSMRequest> bsmReqList) {
+		JSONArray rsuArr = new JSONArray();
+		if (bsmReqList != null) {
+			for (BSMRequest item : bsmReqList) {
+				JSONObject rsuJson = new JSONObject();
+				rsuJson.put("id", item.getId());
+				JSONArray routeArr = new JSONArray();
+				for (Position p : item.getRoute()) {
+					JSONArray pointArr = new JSONArray();
+					pointArr.put(p.getLatitude());
+					pointArr.put(p.getlongitude());
+					routeArr.put(pointArr);
+				}
+				rsuJson.put("route", routeArr);
+				rsuJson.put("last_update_at", item.getLast_update_at());
+				rsuArr.put(rsuJson);
+			}
+		}
+		return rsuArr;
+	}
+
 }

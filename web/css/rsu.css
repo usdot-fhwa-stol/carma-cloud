@@ -5,9 +5,10 @@
 
 .marker {
 	background-image: url('../images/leaflet/marker-icon.png');
-	background-size: cover;
-	width: 30px;
-	height: 50px;
+	background-size: contain;
+	background-repeat: no-repeat;
+	width: 20px;
+	height: 40px;
 	cursor: pointer;
 }
 
