@@ -42,7 +42,7 @@ async function initMap() {
 	//Init Map
 	oMap = new mapboxgl.Map({
 		'container': 'mapid', 'style': 'mapbox/satellite-streets-v11.json', 'attributionControl': false,
-		'minZoom': 4, 'maxZoom': 24, 'center': [-77.149, 38.956], 'zoom': 17, 'accessToken': 'pk.eyJ1IjoiZGR1MjAyMCIsImEiOiJjbDJyeHJob2YwYnhwM2xtaG9zaDdnYTR4In0.Rh2bSS44c99BoDj2W7jjfw'
+		'minZoom': 4, 'maxZoom': 24, 'center': [-81.83067386, 28.1195796], 'zoom': 15, 'accessToken': 'pk.eyJ1IjoiZGR1MjAyMCIsImEiOiJjbDJyeHJob2YwYnhwM2xtaG9zaDdnYTR4In0.Rh2bSS44c99BoDj2W7jjfw'
 	});
 	window.mymap = oMap;
 	oMap.dragRotate.disable(); // disable map rotation using right click + drag
