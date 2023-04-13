@@ -29,7 +29,7 @@ Read the input logs file and search the relevant logs. Process the logs and retu
 def process_input_log_file(inputfile, search_keyword):
     file_stream = open(inputfile, 'r')
     fields_dict = {}
-    fields_dict["Time"] = []
+    fields_dict["Time (UTC)"] = []
     while True:
         line = file_stream.readline()
         # if line is empty, end of file is reached
