@@ -57,17 +57,19 @@ public class RSUIdentificationTask implements Callable<Void> {
 		//NOTE: For the carma-cloud registered RSUs, it needs additional consideration for those RSUs (RSUs, geofences, etc.) in a certain requested region.
 		if (registeredRSUs != null && registeredRSUs.size() > 0) {
 			ArrayList<RSUBoundingbox> identifiedRSUs = new ArrayList<>();
+			String identifiedRSUNames = "";
 			for (RSUBoundingbox rsuBoundingBox : registeredRSUs) {
 				BoundingBox bBox = rsuBoundingBox.getBoundingBox();
 				for (BoundingBox bsmBoxOther : boundingBoxes) {
 					if (bBox.intersects(bsmBoxOther)) {
 						identifiedRSUs.add(rsuBoundingBox);
+						identifiedRSUNames += rsuBoundingBox.getCenterLoc().id;
 						LOGGER.debug("Identified RSU location: " + rsuBoundingBox.getCenterLoc().toString());
 						break;
 					}
 				}
 			}
-			LOGGER.info("Identified numbers of RSU: " + identifiedRSUs.size());
+			LOGGER.info("FER-14: Identified numbers of RSU: " + identifiedRSUs.size() + "; RSU Names: " + identifiedRSUNames + "; BSM:" + incomingBSMReq.getId());
 
 			// sent BSM hex to the identified RSUs
 			ExecutorService singleExector = Executors.newSingleThreadExecutor();		
@@ -79,7 +81,7 @@ public class RSUIdentificationTask implements Callable<Void> {
 		}
 
 		long end_ts = Instant.now().toEpochMilli();
-		LOGGER.warn("TOTAL BSM PROCESS time (ms): " + (end_ts - start_ts) + "\n");
+		LOGGER.warn("FER-13: TOTAL BSM PROCESS time (ms): " + (end_ts - start_ts) + "; BSM:" + incomingBSMReq.getId());
 		return null;
 	}
 

@@ -47,7 +47,7 @@ public class HTTPClientTask implements Callable<Void> {
 					oOut.append(bsmReq.getId());
 				}
 				oHttpClient.disconnect();
-				LOGGER.info("Successfully sent BSM Hex: " + bsmReq.getId() + " to V2xHub port: "
+				LOGGER.info("FER-15: Successfully sent BSM Hex: " + bsmReq.getId() + " to V2xHub port: "
 						+ identifiedRSU.getCenterLoc().v2xhub_port + "!\n");
 			} catch (MalformedURLException e) {
 				LOGGER.error("ERROR sending BSM Hex due to malformated URL!");
