@@ -63,7 +63,7 @@ public class RSUIdentificationTask implements Callable<Void> {
 				for (BoundingBox bsmBoxOther : boundingBoxes) {
 					if (bBox.intersects(bsmBoxOther)) {
 						identifiedRSUs.add(rsuBoundingBox);
-						identifiedRSUNames += rsuBoundingBox.getCenterLoc().id;
+						identifiedRSUNames += rsuBoundingBox.getCenterLoc().id +",";
 						LOGGER.debug("Identified RSU location: " + rsuBoundingBox.getCenterLoc().toString());
 						break;
 					}
@@ -81,7 +81,7 @@ public class RSUIdentificationTask implements Callable<Void> {
 		}
 
 		long end_ts = Instant.now().toEpochMilli();
-		LOGGER.warn("FER-13: TOTAL BSM PROCESS time (ms): " + (end_ts - start_ts) + "; BSM:" + incomingBSMReq.getId());
+		LOGGER.warn("FER-13-2: TOTAL BSM PROCESS time (ms): " + (end_ts - start_ts) + "; BSM:" + incomingBSMReq.getId());
 		return null;
 	}
 

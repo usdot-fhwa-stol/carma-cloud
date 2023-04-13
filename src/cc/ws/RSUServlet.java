@@ -273,7 +273,7 @@ public class RSUServlet extends HttpServlet {
 		updatedBsmReqsList.add(newBsmReq);
 		getServletContext().setAttribute(BSMREQLIST, updatedBsmReqsList);
 		long end_ts = Instant.now().toEpochMilli();
-		LOGGER.warn("FER-13: TOTAL BSM REQUEST time (ms): " + (end_ts - start_ts) + "; BSM:" + newBsmReq.getId());
+		LOGGER.warn("FER-13-1: TOTAL BSM REQUEST time (ms): " + (end_ts - start_ts) + "; BSM:" + newBsmReq.getId());
 		return HttpServletResponse.SC_OK;
 	}
 
