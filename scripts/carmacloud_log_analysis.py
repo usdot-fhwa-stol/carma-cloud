@@ -44,7 +44,7 @@ def process_input_log_file(inputfile, search_keyword):
             metadata_list = [x for x in line.strip().split(
                 ' - ')[0].split(" ") if x != '']
             time = metadata_list[1]
-            fields_dict["Time"].append(time)
+            fields_dict["Time (UTC)"].append(time)
             metric_field_value = ''
             metric_field_title = ''
             txt_list = txt.split(";")
