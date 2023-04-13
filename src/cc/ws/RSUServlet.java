@@ -208,6 +208,7 @@ public class RSUServlet extends HttpServlet {
 	 * Request for identified RSUs
 	 */
 	private int requestRSU(HttpServletRequest oReq, JSONObject oResponse) throws Exception {
+		long start_ts = Instant.now().toEpochMilli();
 		ArrayList<RSUBoundingbox> registeredRSUs = (ArrayList<RSUBoundingbox>) getServletContext()
 				.getAttribute(RSULIST);
 		if (registeredRSUs == null || registeredRSUs.size() == 0) {
@@ -262,6 +263,7 @@ public class RSUServlet extends HttpServlet {
 			getServletContext().setAttribute(BSMREQLIST, updatedBsmReqsList);
 			return HttpServletResponse.SC_CONFLICT;
 		}
+		
 		// Processing new BSM request
 		ExecutorService singleExector = Executors.newSingleThreadExecutor();
 		singleExector.submit(new RSUIdentificationTask(newBsmReq, registeredRSUs));
@@ -270,6 +272,8 @@ public class RSUServlet extends HttpServlet {
 		// Add newly processed BSM request to tracking list
 		updatedBsmReqsList.add(newBsmReq);
 		getServletContext().setAttribute(BSMREQLIST, updatedBsmReqsList);
+		long end_ts = Instant.now().toEpochMilli();
+		LOGGER.warn("TOTAL BSM REQUEST time (ms): " + (end_ts - start_ts) + "\n");		
 		return HttpServletResponse.SC_OK;
 	}
 
