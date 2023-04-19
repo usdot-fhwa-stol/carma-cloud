@@ -1,27 +1,21 @@
 import sys
-import getopt
 import pandas as pd
+import argparse
 
 '''
 Get file names
 '''
-def get_filenames(argv):
+def get_filenames():
     inputfile = ''
     outputfile = ''
-    try:
-        if len(argv) < 4:
-            print('python3 carmacloud_log_analysis.py -i <inputfile> -o <outputfile>')
-        else:
-            opts, args = getopt.getopt(args=argv, shortopts="i:s:o:")
-            for opt, arg in opts:
-                if opt == '-i':
-                    inputfile = arg
-                elif opt == "-o":
-                    outputfile = arg
-        return (inputfile,  outputfile)
-    except:
-        print('python3 carmacloud_log_analysis.py -i <inputfile> -o <outputfile>')
-        sys.exit()
+    parser = argparse.ArgumentParser(prog="V2xHub Analysis for ERV BSM")
+    parser.add_argument('--input', type=str, required=True)
+    parser.add_argument('--output', type=str, required=True)
+    args = parser.parse_args()
+    print(f'Received log file: {args.input}; Result will be saved into file: {args.output}.xlsx')
+    inputfile = args.input
+    outputfile = args.output
+    return (inputfile, outputfile) 
 
 '''
 Read the input logs file and search the relevant logs. Process the logs and return a dictionary of the relevant information
@@ -37,7 +31,9 @@ def process_input_log_file(inputfile, search_keyword):
             break
         if len(line.strip()) == 0:
             continue
-
+        if len(line.strip().split(' - ')) < 2:
+            print(f'SKIPPED line: The log line has no log content: {line}')
+            continue
         txt = line.strip().split(' - ')[1]
         # Look for the specific metric by keyword
         if search_keyword.lower().strip() in txt.lower():
@@ -60,7 +56,14 @@ def process_input_log_file(inputfile, search_keyword):
                     metric_field_title = txt_item.strip().split(":")[
                         1].strip().replace(" ", "_")
                     metric_field_value = txt_item.strip().split(":")[
-                        2].strip()
+                        2].strip().replace('to','').replace('V2xHub','').replace('port','')
+                    if len(txt_item.strip().split(":")) == 4 and  ( "44444" in txt_item or  "44445" in txt_item or  "44446" in txt_item):
+                        # Retrieve port number
+                        if 'port' not in fields_dict.keys():
+                            fields_dict['port'] = []
+                        fields_dict["port"].append(txt_item.strip().split(":")[
+                        3].strip().replace('!',''))
+                        
                     count += 1
 
                 if metric_field_title not in fields_dict.keys():
@@ -85,8 +88,8 @@ def process_input_log_file(inputfile, search_keyword):
 main entrypoint to read carmacloud.log file and search based on the metric keyworkds. 
 Once the relevant logs are found, it write the data into the specified excel output file.
 '''
-def main(argv):
-    inputfile, outputfile = get_filenames(argv=argv)
+def main():
+    inputfile, outputfile = get_filenames()
     search_metric_keywords = ['FER-13-1','FER-13-2','FER-14','FER-15']
     global_fields_dict = {}
     for metric_keyword in search_metric_keywords:
@@ -103,4 +106,4 @@ def main(argv):
             print(f'Generated sheet for metric: {metric_keyword}' )
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
