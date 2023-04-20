@@ -35,6 +35,8 @@ public class BSMRequestParser extends DefaultHandler2 {
 		switch (sQname.toLowerCase()) {
 		case "bsmrequest":
 			break;
+		case "v2xhubport":
+			break;
 		case "id":
 			break;
 		case "route":
@@ -44,6 +46,7 @@ public class BSMRequestParser extends DefaultHandler2 {
 			break;
 		case "point":
 			loc = new Position();
+			break;
 		default:
 			break;
 		}
@@ -59,6 +62,9 @@ public class BSMRequestParser extends DefaultHandler2 {
 			break;
 		case "route":
 			bsmReq.setRoute(route);
+			break;
+		case "v2xhubport":
+			bsmReq.v2xhub_port = m_sbuf.toString();
 			break;
 		case "point":
 			route.add(loc);
