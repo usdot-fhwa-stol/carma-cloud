@@ -13,6 +13,16 @@ public class BSMRequest {
 	// BSM includes a list of GeoLocation in the route to indicate its future path
 	private ArrayList<Position> route;
 	private Instant last_update_at;
+	// Identify the v2xhub that this RSU is connected to
+	public String v2xhub_port;
+
+	public String getV2xhub_port() {
+		return v2xhub_port;
+	}
+
+	public void setV2xhub_port(String v2xhub_port) {
+		this.v2xhub_port = v2xhub_port;
+	}
 
 	/**
 	 * @return BSM hex
@@ -76,7 +86,7 @@ public class BSMRequest {
 
 	@Override
 	public String toString() {
-		return "BSMRequest [id=" + id + ", route=" + route + ", last_update_at=" + last_update_at + "]";
+		return "BSMRequest [v2xhub_port="+ v2xhub_port + ", id=" + id + ", route=" + route + ", last_update_at=" + last_update_at + "]";
 	}
 
 }
