@@ -46,7 +46,11 @@ def process_input_log_file(inputfile, search_keyword):
             txt_list = txt.split(";")
             count = 0
             for txt_item in txt_list:
-                if count > 0:
+                if "Received: BSMRequest" in txt_item:
+                    bsm_req_id = txt_item.strip().split(',')[0].split('id=')[1]
+                    metric_field_title = 'Received: BSMRequest'
+                    metric_field_value = bsm_req_id
+                elif count > 0:
                     metric_field_title = txt_item.strip().split(":")[
                         0].strip().replace(" ", "_")
                     metric_field_value = txt_item.strip().split(":")[
@@ -57,13 +61,13 @@ def process_input_log_file(inputfile, search_keyword):
                         1].strip().replace(" ", "_")
                     metric_field_value = txt_item.strip().split(":")[
                         2].strip().replace('to','').replace('V2xHub','').replace('port','')
+                    
+                    # Retrieve port number
                     if len(txt_item.strip().split(":")) == 4 and  ( "44444" in txt_item or  "44445" in txt_item or  "44446" in txt_item):
-                        # Retrieve port number
                         if 'port' not in fields_dict.keys():
                             fields_dict['port'] = []
                         fields_dict["port"].append(txt_item.strip().split(":")[
-                        3].strip().replace('!',''))
-                        
+                        3].strip().replace('!',''))                    
                     count += 1
 
                 if metric_field_title not in fields_dict.keys():
@@ -90,14 +94,20 @@ Once the relevant logs are found, it write the data into the specified excel out
 '''
 def main():
     inputfile, outputfile = get_filenames()
-    search_metric_keywords = ['FER-13-1','FER-13-2','FER-14','FER-15']
+
+    search_metric_keywords = {
+        'FER-13-1-1':'Received: BSMRequest',
+        'FER-13-1':'FER-13-1',
+        'FER-13-2': 'FER-13-2',
+        'FER-14': 'FER-14',
+        'FER-15':'FER-15'
+    }
     global_fields_dict = {}
-    for metric_keyword in search_metric_keywords:
+    for metric_keyword_key in search_metric_keywords.keys():
         if len(inputfile) > 0 and len(outputfile) > 0:
             fields_dict = process_input_log_file(inputfile=inputfile,
-                                   search_keyword=metric_keyword)
-            global_fields_dict[metric_keyword] = fields_dict
-            
+                                   search_keyword=search_metric_keywords[metric_keyword_key])
+            global_fields_dict[metric_keyword_key] = fields_dict
     # Write dictionary into excel file
     with pd.ExcelWriter(outputfile+".xlsx") as writer:
         for metric_keyword  in global_fields_dict.keys():
