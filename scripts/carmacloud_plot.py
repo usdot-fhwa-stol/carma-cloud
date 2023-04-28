@@ -78,7 +78,7 @@ def get_delay_between_two_dataframe (source_df, source_time_lbl, source_value_lb
                     source_df = source_df.drop(source_index)   
                     break
         if not is_match_found:
-            print(f'ERROR: No match found for {target_value_lbl}: {target_time_str} {target_datetime}: {target.strip()}. Need manual loop up this record.')
+            print(f'ERROR: No match found for {target_value_lbl}: {target_time_str} {target_datetime}: {target.strip()} Need manual look up this record.')
     if count != total_target:
         print(f'WARNING: BSM to compare num  {total_target} != BSM matched record {count}. Increasing the no_duplication_period in the remove and clean up func to remove the same BSM that is sent to multiple RSUs.')  
     else:
