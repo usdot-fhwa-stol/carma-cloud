@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!--
+To change this license header, choose License Headers in Project Properties.
+To change this template file, choose Tools | Templates
+and open the template in the editor.
+-->
+<html lang="en">
+<head>
+<title>CARMAcloud Emergency Response Vehicle</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="stylesheet" href="css/w3.css" />
+<link rel="stylesheet" href="css/fontawesome.min.css" />
+<link rel="stylesheet" href="css/solid.min.css" />
+<link rel="stylesheet" href="css/jquery/themes/overcast/jquery-ui.css" />
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.css"
+	rel="stylesheet">
+<link rel="stylesheet" href="css/carmacloud.css" />
+<link rel="stylesheet" href="css/rsu.css" />
+<script src="script/jquery/jquery.js"></script>
+<script src="script/jquery/jquery-ui.js"></script>
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.12.0/mapbox-gl.js"></script>
+<script src="script/moment.min.js"></script>
+<script type="module" src="script/rsu.js"></script>
+<script src="script/check.js"></script>
+</head>
+<body>
+	<div id="pageoverlay">
+		<p class="centered-element"></p>
+	</div>
+	<div class="w3-bar w3-dark-gray">
+		<a href="map.html" class="w3-bar-item w3-button"><i
+			class="fas fa-globe-americas"></i>&nbsp;&nbsp;Map</a> <a href="ihp.html"
+			class="w3-bar-item w3-button"><i class="fas fa-car-side"></i>&nbsp;&nbsp;IHP</a>
+		<a href="rsu.html" class="w3-bar-item w3-button"><i
+			class="fas fa-ambulance"></i>&nbsp;&nbsp;RSU</a> <a href="help.html"
+			class="w3-bar-item w3-button"><i class="fas fa-life-ring"></i>&nbsp;&nbsp;Help</a>
+		<a href="./" class="w3-bar-item w3-button w3-right" title="Logout"><span
+			id="uname"></span>&nbsp;&nbsp;<i class="fas fa-cogs"></i></a>
+	</div>
+
+	<div class="w3-row-padding" style="height: 90%">
+		<div class="w3-col s6" id="rsus_container">
+			<div class="w3-row-padding">
+				<h1>RSU Registration</h1>
+				<div class="w3-col s12 ">
+					<button class="w3-button w3-green w3-round-large " id="refresh_rsu"
+						title="Refresh RSU table and update markers on the map.">
+						<i class="fas fa-sync-alt" style="padding-left: 0px"></i>Refresh
+					</button>
+				</div>
+				<div class="w3-col s12">
+					<table class="w3-table-all w3-large" id="rsu_table"></table>
+				</div>
+			</div>
+		</div>
+		<div class="w3-col s6" style="height: 100%">
+			<div class="w3-col s12" id="map_container" style="height: 100%">
+				<div class="w3-row-padding" style="height: 100%">
+					<h1>RSU Locations</h1>
+					<div id="mapid" style="height: 100%"></div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Dialogs -->
+	<div id="dlgJumpTo" title="Jump To"></div>
+</body>
+</html>
