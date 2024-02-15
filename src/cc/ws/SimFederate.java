@@ -40,18 +40,28 @@ public class SimFederate extends HttpServlet implements Runnable
 		if (sRetry != null)
 			m_lRetryInterval = Integer.parseInt(sRetry) * 1000L;
 
-		String sUrl = oConf.getInitParameter("url");
-		if (sUrl != null)
-			m_sCarmaCloudUrl = sUrl;
-
 		String sAddress = oConf.getInitParameter("ambassador");
-		if (sAddress == null)
-			m_oTs = new TimeSource(false);
+		if (sAddress != null)
 		{
-			m_oTs = new TimeSource(true);
-			m_sAmbassadorAddress = sAddress;
-			new Thread(this).start(); // begin registration cycle
+			try
+			{
+				InetAddress.getByName(sAddress); // validate network address
+				m_sAmbassadorAddress = sAddress;
+				m_oTs = new TimeSource(true);
+
+				String sUrl = oConf.getInitParameter("url");
+				if (sUrl != null)
+					m_sCarmaCloudUrl = sUrl;
+
+				new Thread(this).start(); // begin registration cycle
+			}
+			catch (Exception oEx)
+			{
+			}
 		}
+
+		if (m_oTs == null) // simulation time source not created
+			m_oTs = new TimeSource(false);
 	}
 
 
