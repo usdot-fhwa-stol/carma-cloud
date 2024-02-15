@@ -98,7 +98,7 @@ public class SimFederate extends HttpServlet implements Runnable
 			{
 				oSock.connect(new InetSocketAddress(m_sAmbassadorAddress, 1617), 10000);
 				DataOutputStream oOut = new DataOutputStream(oSock.getOutputStream());
-				oOut.writeUTF(m_sCarmaCloudUrl);
+				oOut.writeUTF(String.format("{\"id\":\"carma-cloud\", \"url\":\"%s\"}", m_sCarmaCloudUrl));
 				bRegistered = true;
 				Thread.sleep(m_lRetryInterval);
 			}
