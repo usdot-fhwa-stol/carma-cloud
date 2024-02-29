@@ -23,9 +23,7 @@ RUN wget -q https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.83/bin/apache-t
         rm -r tomcat/webapps/*
 # download carma-cloud source
 RUN git clone --single-branch -b feature/time-source https://github.com/usdot-fhwa-stol/carma-cloud.git cc && \
-        rm cc/lib/libcs2cswrapper.so && \
-        mkdir -p tomcat/webapps/carmacloud/ROOT && \
-        mv cc/web/* tomcat/webapps/carmacloud/ROOT
+        rm cc/lib/libcs2cswrapper.so
 # compile geodesy projection library
 WORKDIR /tmp/proj/build
 RUN cmake .. && \
@@ -34,16 +32,28 @@ RUN cmake .. && \
 # compile jni projection library
 WORKDIR /tmp/cc/src/cc/geosrv
 RUN gcc -c -std=c11 -fPIC -Wall -I /opt/jdk/include/ -I /opt/jdk/include/linux/ -I /tmp/proj/src/ cs2cswrapper.c && \
-        gcc -shared -lproj cs2cswrapper.o -o libcs2cswrapper.so && \
-        mv *.so /usr/lib
+        gcc -shared cs2cswrapper.o -lproj -o /usr/local/lib/libcs2cswrapper.so
 # compile carma-cloud java source and cleanup
 WORKDIR /tmp
-RUN find ./cc/src -name "*.java" > sources.txt && \
+RUN mkdir -p tomcat/webapps/carmacloud/ROOT && \
+        mv cc/web/* tomcat/webapps/carmacloud/ROOT && \
         mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes && \
+        find ./cc/src -name "*.java" > sources.txt && \
         /opt/jdk/bin/javac -cp tomcat/lib/servlet-api.jar:cc/lib/commons-compress-1.18.jar:cc/lib/javax.json.jar:cc/lib/json-20210307.jar:cc/lib/keccakj.jar:cc/lib/log4j-api-2.16.0.jar:cc/lib/vector_tile.jar -d tomcat/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt && \
         rm sources.txt && \
+        gunzip cc/osmbin/*.gz && \
+        mv cc/lib tomcat/webapps/carmacloud/ROOT/WEB-INF && \
+        mv cc/osmbin/rop.csv tomcat/webapps/carmacloud && \
+        mv cc/osmbin/storm.csv tomcat/webapps/carmacloud && \
+        mv cc/osmbin/units.csv tomcat/webapps/carmacloud && \
+        mv cc/osmbin tomcat/webapps/carmacloud && \
+        mv tomcat/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties tomcat/webapps/carmacloud/ROOT/WEB-INF/classes && \
+        touch tomcat/webapps/carmacloud/event.csv && \
+        mkdir -p tomcat/work/carmacloud/xodr && \
+        mkdir -p tomcat/work/carmacloud/validate/xodr && \
         /opt/jdk/bin/java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv && \
         echo 'JAVA_HOME=/opt/jdk' > tomcat/bin/setenv.sh && \
+        echo 'CATALINA_OPTS="-agentlib:jdwp=transport=dt_socket,address=9039,server=y,suspend=n"' >> tomcat/bin/setenv.sh && \
         sed -i 's/<param-value>ambassador-address<\/param-value>/<param-value>172.2.0.2<\/param-value>/g' tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml && \
         sed -i 's/<param-value>simulation-url<\/param-value>/<param-value>http:\/\/172.2.0.47:8080\/carmacloud\/simulation<\/param-value>/g' tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml && \
         mv tomcat /opt && \
