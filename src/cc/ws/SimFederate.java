@@ -100,11 +100,21 @@ public class SimFederate extends HttpServlet implements Runnable
 				DataOutputStream oOut = new DataOutputStream(oSock.getOutputStream());
 				oOut.writeUTF(String.format("{\"id\":\"carma-cloud\", \"url\":\"%s\"}", m_sCarmaCloudUrl));
 				bRegistered = true;
-				Thread.sleep(m_lRetryInterval);
 			}
 			catch (Exception oEx)
 			{
 				LOGGER.error(oEx);
+			}
+
+			if (!bRegistered)
+			{
+				try
+				{
+					Thread.sleep(m_lRetryInterval);
+				}
+				catch (Exception oEx)
+				{
+				}
 			}
 		}
 	}
