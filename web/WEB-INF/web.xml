@@ -241,6 +241,7 @@
  <url-pattern>/api/vctrl/*</url-pattern>
 </servlet-mapping>
 
+<!--
 <servlet>
  <servlet-name>RsmServlet</servlet-name>
  <servlet-class>cc.ws.RsmServlet</servlet-class>
@@ -288,7 +289,8 @@
  <servlet-name>RsmServlet</servlet-name>
  <url-pattern>/api/rsm/*</url-pattern>
 </servlet-mapping>
-
+-->
+ 
 <servlet>
  <servlet-name>IHP</servlet-name>
  <servlet-class>cc.ihp.IHP</servlet-class>
