@@ -22,7 +22,7 @@ RUN wget -q https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.83/bin/apache-t
         sed -i 's/appBase="webapps"/appBase="webapps\/carmacloud"/g' tomcat/conf/server.xml && \
         rm -r tomcat/webapps/*
 # download carma-cloud source
-RUN git clone --single-branch -b feature/time-source https://github.com/usdot-fhwa-stol/carma-cloud.git cc && \
+RUN git clone https://github.com/usdot-fhwa-stol/carma-cloud.git cc && \
         rm cc/lib/libcs2cswrapper.so
 # compile geodesy projection library
 WORKDIR /tmp/proj/build
