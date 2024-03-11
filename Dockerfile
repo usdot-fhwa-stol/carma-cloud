@@ -28,7 +28,8 @@ RUN git clone --single-branch -b feature/time-source https://github.com/usdot-fh
 WORKDIR /tmp/proj/build
 RUN cmake .. && \
         cmake --build . && \
-        cmake --build . --target install
+        cmake --build . --target install && \
+        ldconfig
 # compile jni projection library
 WORKDIR /tmp/cc/src/cc/geosrv
 RUN gcc -c -std=c11 -fPIC -Wall -I /opt/jdk/include/ -I /opt/jdk/include/linux/ -I /tmp/proj/src/ cs2cswrapper.c && \
@@ -53,7 +54,6 @@ RUN mkdir -p tomcat/webapps/carmacloud/ROOT && \
         mkdir -p tomcat/work/carmacloud/validate/xodr && \
         /opt/jdk/bin/java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv && \
         echo 'JAVA_HOME=/opt/jdk' > tomcat/bin/setenv.sh && \
-        echo 'CATALINA_OPTS="-agentlib:jdwp=transport=dt_socket,address=9039,server=y,suspend=n"' >> tomcat/bin/setenv.sh && \
         sed -i 's/<param-value>ambassador-address<\/param-value>/<param-value>172.2.0.2<\/param-value>/g' tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml && \
         sed -i 's/<param-value>simulation-url<\/param-value>/<param-value>http:\/\/172.2.0.47:8080\/carmacloud\/simulation<\/param-value>/g' tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml && \
         mv tomcat /opt && \
