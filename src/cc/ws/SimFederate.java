@@ -84,7 +84,7 @@ public class SimFederate extends HttpServlet implements Runnable
 			lStep = oJson.getLong("timestep");
 			m_oTs.m_lSimTime = lStep;
 		}
-		LOGGER.debug(String.format("seq: %d timestep: %d", lSeq, lStep));
+		LOGGER.debug(String.format("seq: %d timestep: %d timesource: %d", lSeq, lStep, m_oTs.currentTimeMillis()));
 	}
 
 
