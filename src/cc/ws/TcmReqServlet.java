@@ -90,6 +90,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 	   throws ServletException, IOException
 	{
 		StringBuilder sReq = new StringBuilder(1024);
+		sReq.append(oReq.getRemoteAddr());
 		try (BufferedInputStream oIn = new BufferedInputStream(oReq.getInputStream()))
 		{
 			int nByte;
@@ -109,8 +110,12 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 		{
 			long lNow = System.currentTimeMillis();
 			String sReq = Thread.currentThread().getName();
+			int nPos = sReq.indexOf('<');
+			String sHost = sReq.substring(0, nPos);
+			sReq = sReq.substring(nPos);
+
 			TcmReqParser oReqParser;
-			if (sReq.indexOf("<tcrV01>") >= 0)
+			if (sReq.contains("<tcrV01>"))
 				oReqParser = new TcmReqParser();
 			else
 				oReqParser = new TcmReqParser2();
@@ -233,7 +238,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 
 					if (!oReqParser.m_bList)
 					{
-						HttpURLConnection oHttpClient = (HttpURLConnection)new URL(String.format("http://tcmreplyhost:%d/tcmreply", oReqParser.m_nPort)).openConnection();
+						HttpURLConnection oHttpClient = (HttpURLConnection)new URL(String.format("http://%s:%d/tcmreply", sHost, oReqParser.m_nPort)).openConnection();
 						oHttpClient.setFixedLengthStreamingMode(sBuf.length());
 						oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 						oHttpClient.setDoOutput(true);
@@ -262,7 +267,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 			
 			if (oReqParser.m_bList)
 			{
-				HttpURLConnection oHttpClient = (HttpURLConnection)new URL(String.format("http://tcmreplyhost:%d/tcmreply", oReqParser.m_nPort)).openConnection();
+				HttpURLConnection oHttpClient = (HttpURLConnection)new URL(String.format("http://%s:%d/tcmreply", sHost, oReqParser.m_nPort)).openConnection();
 				oHttpClient.setRequestProperty("Content-Encoding", "gzip");
 				oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 				oHttpClient.setDoOutput(true);
