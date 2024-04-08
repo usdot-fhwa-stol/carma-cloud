@@ -267,7 +267,8 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 			
 			if (oReqParser.m_bList)
 			{
-				HttpURLConnection oHttpClient = (HttpURLConnection)new URL(String.format("http://%s:%d/tcmreply", sHost, oReqParser.m_nPort)).openConnection();
+				String sUrl = String.format("http://%s:%d/tcmreply", sHost, oReqParser.m_nPort);
+				HttpURLConnection oHttpClient = (HttpURLConnection)new URL(sUrl).openConnection();
 				oHttpClient.setRequestProperty("Content-Encoding", "gzip");
 				oHttpClient.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
 				oHttpClient.setDoOutput(true);
@@ -292,7 +293,7 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 					}
 					catch (Exception oEx)
 					{
-						oEx.printStackTrace();
+						LOGGER.error(sUrl, oEx);
 					}
 				}
 				sBuf.insert(0, "<?xml version=\"1.0\" encoding=\"UTF-8\"?><TrafficControlMessageList>");
