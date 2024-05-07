@@ -5,6 +5,7 @@ on:
       - develop
       - master
       - "release/*"
+      - feature/time-source
     tags:
       - "carma-system-*"
 jobs:
