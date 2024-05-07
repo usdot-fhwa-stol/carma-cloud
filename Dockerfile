@@ -40,7 +40,7 @@ RUN gcc -c -std=c11 -fPIC -Wall -I /opt/jdk/include/ -I /opt/jdk/include/linux/ 
 WORKDIR /tmp
 RUN find ./cc/src -name "*.java" > sources.txt && \
 	mkdir -p tomcat/webapps/carmacloud/ROOT/WEB-INF/classes && \
-	/opt/jdk/bin/javac -cp tomcat/lib/servlet-api.jar:cc/lib/commons-compress-1.18.jar:cc/lib/javax.json.jar:cc/lib/json-20210307.jar:cc/lib/keccakj.jar:cc/lib/log4j-api-2.16.0.jar:cc/lib/vector_tile.jar -d tomcat/webapps/carmacloud$
+	/opt/jdk/bin/javac -cp tomcat/lib/servlet-api.jar:cc/lib/commons-compress-1.18.jar:cc/lib/javax.json.jar:cc/lib/json-20210307.jar:cc/lib/keccakj.jar:cc/lib/log4j-api-2.16.0.jar:cc/lib/vector_tile.jar -d tomcat/webapps/carmacloud$ && \
 	rm sources.txt && \
 	/opt/jdk/bin/java -cp tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:tomcat/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > tomcat/webapps/carmacloud/user.csv && \
 	echo "JAVA_HOME=/opt/jdk" > tomcat/bin/setenv.sh && \
