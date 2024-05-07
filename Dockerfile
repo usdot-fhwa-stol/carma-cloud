@@ -15,7 +15,7 @@ RUN wget -q https://download.java.net/java/GA/jdk21.0.1/415e3f918a1f4062a0074a27
 	rm openjdk-21.0.1_linux-x64_bin.tar.gz && \
 	mv jdk-21.0.1 /opt/jdk
 # download apache tomcat
-RUN wget -q https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.83/bin/apache-tomcat-9.0.83.tar.gz && \
+RUN wget -q https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.83/bin/apache-tomcat-9.0.83.tar.gz && \
 	tar -xzf apache-tomcat-9.0.83.tar.gz && \
 	rm apache-tomcat-9.0.83.tar.gz && \
 	mv apache-tomcat-9.0.83 tomcat && \
