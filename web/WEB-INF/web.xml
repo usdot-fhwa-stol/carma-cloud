@@ -315,12 +315,30 @@
   <param-name>ambassador</param-name>
   <param-value>ambassador-address</param-value>
  </init-param> 
+
+ <init-param>
+    <description>OPTIONAL:  Network port for simulation ambassador. Leave undefined for normal time operation.</description>
+    <param-name>ambassadorPort</param-name>
+    <param-value>1617</param-value>
+</init-param> 
  
  <init-param>
   <description>REQUIRED: Only needed if ambassador address is defined. URL where ambassador sends time sync messages.</description>
   <param-name>url</param-name>
   <param-value>simulation-url</param-value>
  </init-param> 
+
+ <init-param>
+    <description>REQUIRED: Indicator to signify whether carma-cloud is running in simulation mode.</description>
+    <param-name>simulationMode</param-name>
+    <param-value>true</param-value>
+</init-param> 
+
+<init-param>
+    <description>REQUIRED: Indicator to uniquely identifer car cloud entity.</description>
+    <param-name>carmaCloudId</param-name>
+    <param-value>carma-cloud</param-value>
+</init-param> 
   
  <load-on-startup>3</load-on-startup>
 </servlet>

@@ -40,6 +40,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.json.JSONObject;
 
 
 /**
@@ -108,7 +109,8 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 	{
 		try
 		{
-			long lNow = System.currentTimeMillis();
+			TimeSource timeSrc = (TimeSource) this.getServletContext().getAttribute(TimeSource.class.getName());
+			long lNow = timeSrc.currentTimeMillis();
 			String sReq = Thread.currentThread().getName();
 			int nPos = sReq.indexOf('<');
 			String sHost = sReq.substring(0, nPos);
