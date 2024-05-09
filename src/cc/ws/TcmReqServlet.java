@@ -109,7 +109,8 @@ public class TcmReqServlet extends HttpServlet implements Runnable
 	{
 		try
 		{
-			TimeSource timeSrc = (TimeSource) this.getServletContext().getAttribute(TimeSource.class.getName());
+			Object timeObj = this.getServletContext().getAttribute(TimeSource.class.getName());
+			TimeSource timeSrc = timeObj != null? (TimeSource) timeObj: new TimeSource(false);
 			long lNow = timeSrc.currentTimeMillis();
 			String sReq = Thread.currentThread().getName();
 			int nPos = sReq.indexOf('<');

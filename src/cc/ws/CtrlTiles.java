@@ -158,7 +158,8 @@ public class CtrlTiles extends HttpServlet
 	protected void doGet(HttpServletRequest oRequest, HttpServletResponse oResponse)
 	   throws ServletException, IOException
 	{
-		TimeSource timeSrc = (TimeSource) this.getServletContext().getAttribute(TimeSource.class.getName());
+		Object timeObj = this.getServletContext().getAttribute(TimeSource.class.getName());
+		TimeSource timeSrc = timeObj != null? (TimeSource) timeObj: new TimeSource(false);
 		long lNow = timeSrc.currentTimeMillis();
 		String[] sUriParts = oRequest.getRequestURI().split("/");
 		int nZ = Integer.parseInt(sUriParts[sUriParts.length - 3]);
@@ -450,7 +451,8 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			TimeSource timeSrc = (TimeSource) this.getServletContext().getAttribute(TimeSource.class.getName());
+			Object timeObj = this.getServletContext().getAttribute(TimeSource.class.getName());
+			TimeSource timeSrc = timeObj != null? (TimeSource) timeObj: new TimeSource(false);
 			long lNow = timeSrc.currentTimeMillis();
 			int nType = Integer.parseInt(oReq.getParameter("type"));
 			String[] sVtypes = oReq.getParameterValues("vtypes[]");
@@ -563,7 +565,8 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			TimeSource timeSrc = (TimeSource) this.getServletContext().getAttribute(TimeSource.class.getName());
+			Object timeObj = this.getServletContext().getAttribute(TimeSource.class.getName());
+			TimeSource timeSrc = timeObj != null? (TimeSource) timeObj: new TimeSource(false);
 			long lNow = timeSrc.currentTimeMillis();
 			int nType = Integer.parseInt(oReq.getParameter("type"));
 			String[] sVtypes = oReq.getParameterValues("vtypes[]");
