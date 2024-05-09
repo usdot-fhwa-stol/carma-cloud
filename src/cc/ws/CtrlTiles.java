@@ -158,7 +158,8 @@ public class CtrlTiles extends HttpServlet
 	protected void doGet(HttpServletRequest oRequest, HttpServletResponse oResponse)
 	   throws ServletException, IOException
 	{
-		long lNow = System.currentTimeMillis();
+		TimeSource timeSrc = (TimeSource) this.getServletContext().getAttribute(TimeSource.class.getName());
+		long lNow = timeSrc.currentTimeMillis();
 		String[] sUriParts = oRequest.getRequestURI().split("/");
 		int nZ = Integer.parseInt(sUriParts[sUriParts.length - 3]);
 		int nX = Integer.parseInt(sUriParts[sUriParts.length - 2]);
