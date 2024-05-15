@@ -29,20 +29,26 @@
  <servlet-name>SimFederate</servlet-name>
  <servlet-class>cc.ws.SimFederate</servlet-class>
  
-  <init-param>
-  <description>OPTIONAL: Network address for simulation ambassador. Leave undefined for normal time operation.</description>
+ <init-param>
+  <description>OPTIONAL: Logical flag to specify real world time or simulation time mode. Not present or false indicates real world time mode.</description>
+  <param-name>simulation</param-name>
+  <param-value>false</param-value>
+ </init-param> 
+  
+ <init-param>
+  <description>OPTIONAL: Required when simulation is true. Network address for simulation ambassador.</description>
   <param-name>ambassador</param-name>
   <param-value>ambassador-address</param-value>
  </init-param> 
  
  <init-param>
-  <description>REQUIRED: Required when ambassador address is defined. Simulation identifier for this CARMA Cloud instance.</description>
+  <description>OPTIONAL: Required when simulation is true. Simulation identifier for this CARMA Cloud instance.</description>
   <param-name>id</param-name>
   <param-value>simulation-id</param-value>
  </init-param> 
  
  <init-param>
-  <description>REQUIRED: Required when ambassador address is defined. URL where ambassador sends time sync messages.</description>
+  <description>OPTIONAL: Required when simulation is true. URL where ambassador sends time sync messages.</description>
   <param-name>url</param-name>
   <param-value>simulation-url</param-value>
  </init-param> 
