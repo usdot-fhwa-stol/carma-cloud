@@ -54,7 +54,7 @@ public class SimFederate extends HttpServlet implements Runnable
 				m_oTs = new TimeSource(true); // create simulation time source
 
 				String sId = oConf.getInitParameter("id");
-				if (sid != null)
+				if (sId != null)
 					m_sCarmaCloudId = sId;
 
 				String sUrl = oConf.getInitParameter("url");
