@@ -21,7 +21,7 @@ public class SimFederate extends HttpServlet implements Runnable
 {
 	protected static final Logger LOGGER = LogManager.getRootLogger();
 
-	private long m_lRetryInterval = 60000L; // registration retry 60 seconds
+	private long m_lRetryInterval = 60000L; // default registration retry 60 seconds
 	private String m_sAmbassadorAddress;
 	private String m_sCarmaCloudId = "carma-cloud";
 	private String m_sCarmaCloudUrl = "";
@@ -42,14 +42,15 @@ public class SimFederate extends HttpServlet implements Runnable
 		if (sRetry != null)
 			m_lRetryInterval = Integer.parseInt(sRetry) * 1000L;
 
-		String sAddress = oConf.getInitParameter("ambassador");
-		if (sAddress != null)
+		String sSim = oConf.getInitParameter("simulation");
+		if (sSim != null && sSim.compareToIgnoreCase("true") == 0)
 		{
+			String sAddress = oConf.getInitParameter("ambassador");
 			try
 			{
 				InetAddress.getByName(sAddress); // validate network address
 				m_sAmbassadorAddress = sAddress;
-				m_oTs = new TimeSource(true);
+				m_oTs = new TimeSource(true); // create simulation time source
 
 				String sId = oConf.getInitParameter("id");
 				if (sid != null)
@@ -63,11 +64,11 @@ public class SimFederate extends HttpServlet implements Runnable
 			}
 			catch (Exception oEx)
 			{
-				LOGGER.error("SimFederate init invalid ambassador network address"); // simulation mode possibly not necessary
+				LOGGER.error("SimFederate init invalid ambassador network address");
 			}
 		}
 
-		if (m_oTs == null) // simulation time source not created
+		if (m_oTs == null) // create real world time source
 			m_oTs = new TimeSource(false);
 	}
 
