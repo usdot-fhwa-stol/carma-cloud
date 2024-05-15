@@ -23,6 +23,7 @@ public class SimFederate extends HttpServlet implements Runnable
 
 	private long m_lRetryInterval = 60000L; // registration retry 60 seconds
 	private String m_sAmbassadorAddress;
+	private String m_sCarmaCloudId = "carma-cloud";
 	private String m_sCarmaCloudUrl = "";
 	private TimeSource m_oTs;
 
@@ -50,6 +51,10 @@ public class SimFederate extends HttpServlet implements Runnable
 				m_sAmbassadorAddress = sAddress;
 				m_oTs = new TimeSource(true);
 
+				String sId = oConf.getInitParameter("id");
+				if (sid != null)
+					m_sCarmaCloudId = sId;
+
 				String sUrl = oConf.getInitParameter("url");
 				if (sUrl != null)
 					m_sCarmaCloudUrl = sUrl;
@@ -58,6 +63,7 @@ public class SimFederate extends HttpServlet implements Runnable
 			}
 			catch (Exception oEx)
 			{
+				LOGGER.error("SimFederate init invalid ambassador network address"); // simulation mode possibly not necessary
 			}
 		}
 
@@ -98,7 +104,7 @@ public class SimFederate extends HttpServlet implements Runnable
 			{
 				oSock.connect(new InetSocketAddress(m_sAmbassadorAddress, 1617), 10000);
 				DataOutputStream oOut = new DataOutputStream(oSock.getOutputStream());
-				oOut.writeUTF(String.format("{\"id\":\"carma-cloud\", \"url\":\"%s\"}", m_sCarmaCloudUrl));
+				oOut.writeUTF(String.format("{\"id\":\"%s\", \"url\":\"%s\"}", m_sCarmaCloudId, m_sCarmaCloudUrl));
 				bRegistered = true;
 			}
 			catch (Exception oEx)
@@ -112,8 +118,13 @@ public class SimFederate extends HttpServlet implements Runnable
 				{
 					Thread.sleep(m_lRetryInterval);
 				}
-				catch (Exception oEx)
+				catch (InterruptedException oEx)
 				{
+					bRegistered = true; // container thread interrupts on shutdown
+				}
+				catch (IllegalArgumentException oEx)
+				{
+					LOGGER.error(oEx.toString()); // invalid, possibly negative, delay specified
 				}
 			}
 		}
