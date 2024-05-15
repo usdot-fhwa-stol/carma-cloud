@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.json.JSONWriter;
 
 
 public class SimFederate extends HttpServlet implements Runnable
@@ -103,9 +104,12 @@ public class SimFederate extends HttpServlet implements Runnable
 		{
 			try (Socket oSock = new Socket())
 			{
+				StringBuilder sBuf = new StringBuilder(); // use JSON library to build registration message
+				new JSONWriter(sBuf).object().key("id").value(m_sCarmaCloudId).key("url").value(m_sCarmaCloudUrl).endObject();
+				
 				oSock.connect(new InetSocketAddress(m_sAmbassadorAddress, 1617), 10000);
 				DataOutputStream oOut = new DataOutputStream(oSock.getOutputStream());
-				oOut.writeUTF(String.format("{\"id\":\"%s\", \"url\":\"%s\"}", m_sCarmaCloudId, m_sCarmaCloudUrl));
+				oOut.writeUTF(sBuf.toString());
 				bRegistered = true;
 			}
 			catch (Exception oEx)
