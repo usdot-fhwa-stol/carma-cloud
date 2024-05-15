@@ -26,6 +26,37 @@
 
 
 <servlet>
+ <servlet-name>SimFederate</servlet-name>
+ <servlet-class>cc.ws.SimFederate</servlet-class>
+ 
+  <init-param>
+  <description>OPTIONAL: Network address for simulation ambassador. Leave undefined for normal time operation.</description>
+  <param-name>ambassador</param-name>
+  <param-value>ambassador-address</param-value>
+ </init-param> 
+ 
+ <init-param>
+  <description>REQUIRED: Required when ambassador address is defined. Simulation identifier for this CARMA Cloud instance.</description>
+  <param-name>id</param-name>
+  <param-value>simulation-id</param-value>
+ </init-param> 
+ 
+ <init-param>
+  <description>REQUIRED: Required when ambassador address is defined. URL where ambassador sends time sync messages.</description>
+  <param-name>url</param-name>
+  <param-value>simulation-url</param-value>
+ </init-param> 
+  
+ <load-on-startup>-1</load-on-startup>
+</servlet>
+
+<servlet-mapping>
+ <servlet-name>SimFederate</servlet-name>
+ <url-pattern>/carmacloud/simulation/*</url-pattern>
+</servlet-mapping>
+
+
+<servlet>
  <servlet-name>SessMgr</servlet-name>
  <servlet-class>cc.ws.SessMgr</servlet-class>
 
@@ -303,31 +334,6 @@
 <servlet-mapping>
  <servlet-name>RSU</servlet-name>
  <url-pattern>/carmacloud/rsu/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>SimFederate</servlet-name>
- <servlet-class>cc.ws.SimFederate</servlet-class>
- 
-  <init-param>
-  <description>OPTIONAL: Network address for simulation ambassador. Leave undefined for normal time operation.</description>
-  <param-name>ambassador</param-name>
-  <param-value>ambassador-address</param-value>
- </init-param> 
- 
- <init-param>
-  <description>REQUIRED: Only needed if ambassador address is defined. URL where ambassador sends time sync messages.</description>
-  <param-name>url</param-name>
-  <param-value>simulation-url</param-value>
- </init-param> 
-  
- <load-on-startup>3</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>SimFederate</servlet-name>
- <url-pattern>/carmacloud/simulation/*</url-pattern>
 </servlet-mapping>
 
 </web-app>
