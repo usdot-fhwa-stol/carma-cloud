@@ -57,12 +57,17 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 /**
  *
  * @author aaron.cherney
  */
 public class CtrlTiles extends HttpServlet
 {
+	protected static final Logger LOGGER = LogManager.getLogger(CtrlTiles.class);
+
 	static int g_nZoom;
 	static String g_sTdFileFormat;
 	static String g_sCtrlDir;
@@ -158,9 +163,8 @@ public class CtrlTiles extends HttpServlet
 	protected void doGet(HttpServletRequest oRequest, HttpServletResponse oResponse)
 	   throws ServletException, IOException
 	{
-		Object timeObj = this.getServletContext().getAttribute(TimeSource.class.getName());
-		TimeSource timeSrc = timeObj != null? (TimeSource) timeObj: new TimeSource(false);
-		long lNow = timeSrc.currentTimeMillis();
+		long lNow = TimeSource.getInstance().currentTimeMillis();
+		LOGGER.info("Current time is {} " , lNow);
 		String[] sUriParts = oRequest.getRequestURI().split("/");
 		int nZ = Integer.parseInt(sUriParts[sUriParts.length - 3]);
 		int nX = Integer.parseInt(sUriParts[sUriParts.length - 2]);
@@ -451,9 +455,10 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			Object timeObj = this.getServletContext().getAttribute(TimeSource.class.getName());
-			TimeSource timeSrc = timeObj != null? (TimeSource) timeObj: new TimeSource(false);
-			long lNow = timeSrc.currentTimeMillis();
+			
+			long lNow = TimeSource.getInstance().currentTimeMillis();
+			LOGGER.info("Current time is {} " , lNow);
+
 			int nType = Integer.parseInt(oReq.getParameter("type"));
 			String[] sVtypes = oReq.getParameterValues("vtypes[]");
 			ArrayList<Integer> nVtypes = new ArrayList(sVtypes.length);
@@ -565,9 +570,9 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			Object timeObj = this.getServletContext().getAttribute(TimeSource.class.getName());
-			TimeSource timeSrc = timeObj != null? (TimeSource) timeObj: new TimeSource(false);
-			long lNow = timeSrc.currentTimeMillis();
+			long lNow = TimeSource.getInstance().currentTimeMillis();
+			LOGGER.info("Current time is {} " , lNow);
+
 			int nType = Integer.parseInt(oReq.getParameter("type"));
 			String[] sVtypes = oReq.getParameterValues("vtypes[]");
 			ArrayList<Integer> nVtypes = new ArrayList(sVtypes.length);

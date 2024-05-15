@@ -89,6 +89,8 @@ public class SimFederate extends HttpServlet implements Runnable
 	public void run()
 	{
 		boolean bRegistered = false;
+		LOGGER.info("Starting Sim federate");		
+
 		while (!bRegistered)
 		{
 			try (Socket oSock = new Socket())
