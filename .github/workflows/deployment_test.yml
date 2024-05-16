@@ -26,7 +26,7 @@ jobs:
               fetch-depth: 0
               submodules: recursive
           - name: Move source code
-            run: mv $GITHUB_WORKSPACE/${{ github.event.repository.name }} /home/carma-cloud
+            run: mv $GITHUB_WORKSPACE/ /home/carma-cloud
           - name: Install dependencies
             run: |
                 /home/carma-cloud/scripts/install_dependencies.sh
