@@ -1,0 +1,47 @@
+on:
+    push:
+      branches:
+        - develop
+        - master
+        - "release/*"
+    pull_request:
+      types: [opened, synchronize, reopened]
+name: Deployment Test
+jobs:
+    sonarcloud:
+        runs-on: ubuntu-latest
+        container:
+            image: ubuntu:22.04
+        steps:
+          - name: Checkout
+            uses: actions/checkout@v4
+            with:
+              # Disabling shallow clone is recommended for improving relevancy of reporting
+              fetch-depth: 0
+              submodules: recursive
+          - name: Install dependencies
+            run: |
+                ./scripts/install_dependencies.sh
+          - name: Build
+            run: |
+               ./script/build.sh
+          - name: Configure network and set privileges
+            run: |
+                sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
+                echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
+                sudo groupadd tomcat
+                sudo useradd -g tomcat -m tomcat
+                chmod g+r tomcat/conf/*
+                chmod -R o-rwx tomcat/webapps/*
+                sudo chown -R root:tomcat tomcat
+                sudo chown -R tomcat:tomcat tomcat/logs
+                sudo chown -R tomcat:tomcat tomcat/temp
+                sudo chown -R tomcat:tomcat tomcat/work
+                sudo mv tomcat /opt/
+          - name: Start Tomcat and verify deployment
+            run: |
+                sudo /opt/tomcat/bin/catalina.sh start
+                sleep 10
+                if [[ `sudo grep "startup in" /opt/tomcat/logs/catalina.out | wc -l` -ne "1" ]]; then exit 1; fi
+                if [[ `wget -O - http://carmacloud:8080 | grep "CARMAcloud Login" | wc -l` -ne "1" ]]; then exit 2; fi
+                if [[ `wget -O - --post-data="uname=ccadmin&pword=admin_testpw" http://carmacloud:8080/api/auth/login | grep "token" | wc -l` -ne "1" ]]; then exit 3; fi
