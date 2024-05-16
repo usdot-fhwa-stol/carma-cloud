@@ -27,11 +27,10 @@ jobs:
               submodules: recursive
           - name: Install dependencies
             run: |
-                ls -l
-                ./carma-cloud/scripts/install_dependencies.sh
+                ./scripts/install_dependencies.sh
           - name: Build
             run: |
-               ./carma-cloud/script/build.sh
+               ./scripts/build.sh
           - name: Configure network and set privileges
             run: |
                 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
