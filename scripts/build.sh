@@ -12,9 +12,9 @@ gcc -shared cs2cswrapper.o -lproj -o /usr/local/lib/libcs2cswrapper.so
 mkdir -p "${TOMCAT_HOME}/webapps/carmacloud/ROOT" 
 cd /home
 mv carma-cloud/web/* ${TOMCAT_HOME}/webapps/carmacloud/ROOT 
-mkdir -p ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes 
-find ./carma-cloud/src -name "*.java" > sources.txt 
+mkdir -p ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes
 cd /home/carma-cloud
+find ./src -name "*.java" > sources.txt 
 /opt/jdk/bin/javac -cp ${TOMCAT_HOME}/lib/servlet-api.jar:lib/commons-compress-1.18.jar:lib/javax.json.jar:cc/lib/json-20210307.jar:lib/keccakj.jar:lib/log4j-api-2.16.0.jar:lib/vector_tile.jar -d ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt 
 rm sources.txt 
 gunzip cc/osmbin/*.gz 

@@ -46,7 +46,7 @@ jobs:
                 sudo groupadd tomcat
                 sudo useradd -g tomcat -m tomcat
                 chmod g+r /opt/tomcat/conf/*
-                chmod -R o-rwx tomcat/webapps/*
+                chmod -R o-rwx /opt/tomcat/webapps/*
                 sudo chown -R root:tomcat /opt/tomcat
                 sudo chown -R tomcat:tomcat /opt/tomcat/logs
                 sudo chown -R tomcat:tomcat /opt/tomcat/temp
