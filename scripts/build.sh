@@ -30,5 +30,5 @@ mkdir -p ${TOMCAT_HOME}/work/carmacloud/xodr
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/validate/xodr 
 /opt/jdk/bin/java -cp ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes/:${TOMCAT_HOME}/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > ${TOMCAT_HOME}/webapps/carmacloud/user.csv 
 echo 'JAVA_HOME=/opt/jdk' > ${TOMCAT_HOME}/bin/setenv.sh 
-sed -i 's/<param-value>ambassador-address<\/param-value>/<param-value>127.0.0.1<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 
-sed -i 's/<param-value>simulation-url<\/param-value>/<param-value>http:\/\/127.0.0.1:8080\/carmacloud\/simulation<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 
+# sed -i 's/<param-value>ambassador-address<\/param-value>/<param-value>127.0.0.1<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 
+# sed -i 's/<param-value>simulation-url<\/param-value>/<param-value>http:\/\/127.0.0.1:8080\/carmacloud\/simulation<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 

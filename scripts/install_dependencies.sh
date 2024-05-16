@@ -22,7 +22,7 @@ wget -q https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.83/bin/apache-tomca
 tar -xzf apache-tomcat-9.0.83.tar.gz
 rm apache-tomcat-9.0.83.tar.gz
 mv apache-tomcat-9.0.83 tomcat
-sed -i 's/appBase="webapps"/appBase="webapps\/carmacloud"/g' tomcat/conf/server.xml
+#sed -i 's/appBase="webapps"/appBase="webapps\/carmacloud"/g' tomcat/conf/server.xml
 rm -r tomcat/webapps/*
 mv tomcat /opt 
 
