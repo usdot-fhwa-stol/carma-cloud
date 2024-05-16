@@ -8,7 +8,7 @@ on:
       types: [opened, synchronize, reopened]
 name: Deployment Test
 jobs:
-    sonarcloud:
+    deployment_test:
         runs-on: ubuntu-latest
         container:
             image: ubuntu:22.04
@@ -27,6 +27,7 @@ jobs:
               submodules: recursive
           - name: Install dependencies
             run: |
+                ls -l
                 ./carma-cloud/scripts/install_dependencies.sh
           - name: Build
             run: |
