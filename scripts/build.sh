@@ -4,7 +4,7 @@
 set -e
 cd tmp/
 export JAVA_HOME="/opt/jdk"
-export TOMCAT_HOME ="/opt/tomcat"
+export TOMCAT_HOME="/opt/tomcat"
 echo "JAVA HOME is ${JAVA_HOME}"
 ls ${JAVA_HOME}/include/
 cd /home/cc/src/cc/geosrv
@@ -32,5 +32,3 @@ mkdir -p ${TOMCAT_HOME}/work/carmacloud/validate/xodr
 echo 'JAVA_HOME=/opt/jdk' > ${TOMCAT_HOME}/bin/setenv.sh 
 sed -i 's/<param-value>ambassador-address<\/param-value>/<param-value>127.0.0.1<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 
 sed -i 's/<param-value>simulation-url<\/param-value>/<param-value>http:\/\/127.0.0.1:8080\/carmacloud\/simulation<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 
-rm -r proj 
-rm -r cc
