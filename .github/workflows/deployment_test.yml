@@ -27,9 +27,10 @@ jobs:
             with:
               # Disabling shallow clone is recommended for improving relevancy of reporting
               fetch-depth: 0
+              path: ${{ github.event.repository.name }}
               submodules: recursive
           - name: Move source code
-            run: mv $GITHUB_WORKSPACE/ /home/carma-cloud
+            run: mv $GITHUB_WORKSPACE/${{ github.event.repository.name }} /home/carma-cloud
           - name: Install dependencies
             run: |
                 cd /home/carma-cloud/scripts
