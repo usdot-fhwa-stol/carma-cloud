@@ -15,14 +15,14 @@ mv carma-cloud/web/* ${TOMCAT_HOME}/webapps/carmacloud/ROOT
 mkdir -p ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes
 cd /home/carma-cloud
 find ./src -name "*.java" > sources.txt 
-/opt/jdk/bin/javac -cp ${TOMCAT_HOME}/lib/servlet-api.jar:lib/commons-compress-1.18.jar:lib/javax.json.jar:cc/lib/json-20210307.jar:lib/keccakj.jar:lib/log4j-api-2.16.0.jar:lib/vector_tile.jar -d ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt 
+/opt/jdk/bin/javac -cp ${TOMCAT_HOME}/lib/servlet-api.jar:lib/commons-compress-1.18.jar:lib/javax.json.jar:lib/json-20210307.jar:lib/keccakj.jar:lib/log4j-api-2.16.0.jar:lib/vector_tile.jar -d ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes @sources.txt 
 rm sources.txt 
-gunzip cc/osmbin/*.gz 
-mv carma-cloud/lib ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF 
-mv carma-cloud/osmbin/rop.csv ${TOMCAT_HOME}/webapps/carmacloud 
-mv carma-cloud/osmbin/storm.csv ${TOMCAT_HOME}/webapps/carmacloud 
-mv carma-cloud/osmbin/units.csv ${TOMCAT_HOME}/webapps/carmacloud 
-mv carma-cloud/osmbin ${TOMCAT_HOME}/webapps/carmacloud 
+gunzip osmbin/*.gz 
+mv lib ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF 
+mv osmbin/rop.csv ${TOMCAT_HOME}/webapps/carmacloud 
+mv osmbin/storm.csv ${TOMCAT_HOME}/webapps/carmacloud 
+mv osmbin/units.csv ${TOMCAT_HOME}/webapps/carmacloud 
+mv osmbin ${TOMCAT_HOME}/webapps/carmacloud 
 mv ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes 
 touch ${TOMCAT_HOME}/webapps/carmacloud/event.csv 
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/xodr 
