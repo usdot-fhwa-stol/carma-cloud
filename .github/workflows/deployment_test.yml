@@ -25,25 +25,26 @@ jobs:
               # Disabling shallow clone is recommended for improving relevancy of reporting
               fetch-depth: 0
               submodules: recursive
+          - name: Move source code
+            run: mv $GITHUB_WORKSPACE/${{ github.event.repository.name }} /home/carma-cloud
           - name: Install dependencies
             run: |
-                ./scripts/install_dependencies.sh
+                /home/carma-cloud/scripts/install_dependencies.sh
           - name: Build
             run: |
-               ./scripts/build.sh
+               /home/carma-cloud/scripts/build.sh
           - name: Configure network and set privileges
             run: |
-                sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' tomcat/conf/server.xml 
+                sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' /opt/tomcat/conf/server.xml 
                 echo -e '127.0.0.1\tcarmacloud' | sudo tee -a /etc/hosts
                 sudo groupadd tomcat
                 sudo useradd -g tomcat -m tomcat
-                chmod g+r tomcat/conf/*
+                chmod g+r /opt/tomcat/conf/*
                 chmod -R o-rwx tomcat/webapps/*
-                sudo chown -R root:tomcat tomcat
-                sudo chown -R tomcat:tomcat tomcat/logs
-                sudo chown -R tomcat:tomcat tomcat/temp
-                sudo chown -R tomcat:tomcat tomcat/work
-                sudo mv tomcat /opt/
+                sudo chown -R root:tomcat /opt/tomcat
+                sudo chown -R tomcat:tomcat /opt/tomcat/logs
+                sudo chown -R tomcat:tomcat /opt/tomcat/temp
+                sudo chown -R tomcat:tomcat /opt/tomcat/work
           - name: Start Tomcat and verify deployment
             run: |
                 sudo /opt/tomcat/bin/catalina.sh start
