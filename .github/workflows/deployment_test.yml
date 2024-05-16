@@ -12,6 +12,9 @@ jobs:
         runs-on: ubuntu-latest
         container:
             image: ubuntu:22.04
+        defaults:
+            run:
+                shell: bash
         steps:
           - name: Install git
             # Installing git for checkout action
@@ -29,10 +32,12 @@ jobs:
             run: mv $GITHUB_WORKSPACE/ /home/carma-cloud
           - name: Install dependencies
             run: |
-                /home/carma-cloud/scripts/install_dependencies.sh
+                cd /home/carma-cloud/scripts
+                ./install_dependencies.sh
           - name: Build
             run: |
-               /home/carma-cloud/scripts/build.sh
+               cd /home/carma-cloud/scripts
+               ./build.sh
           - name: Configure network and set privileges
             run: |
                 sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' /opt/tomcat/conf/server.xml 
