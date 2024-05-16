@@ -1,12 +1,10 @@
 #!/bin/bash
 
 # exit on errors
-set -e
-cd tmp/
+set -ex
 export JAVA_HOME="/opt/jdk"
 export TOMCAT_HOME="/opt/tomcat"
-echo "JAVA HOME is ${JAVA_HOME}"
-ls ${JAVA_HOME}/include/
+
 cd /home/cc/src/cc/geosrv
 gcc -c -std=c11 -fPIC -Wall -I "${JAVA_HOME}/include/" -I "${JAVA_HOME}/include/linux/" -I /tmp/proj/src/ cs2cswrapper.c
 gcc -shared cs2cswrapper.o -lproj -o /usr/local/lib/libcs2cswrapper.so
@@ -29,6 +27,4 @@ touch ${TOMCAT_HOME}/webapps/carmacloud/event.csv
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/xodr 
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/validate/xodr 
 /opt/jdk/bin/java -cp ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes/:${TOMCAT_HOME}/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > ${TOMCAT_HOME}/webapps/carmacloud/user.csv 
-echo 'JAVA_HOME=/opt/jdk' > ${TOMCAT_HOME}/bin/setenv.sh 
-# sed -i 's/<param-value>ambassador-address<\/param-value>/<param-value>127.0.0.1<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 
-# sed -i 's/<param-value>simulation-url<\/param-value>/<param-value>http:\/\/127.0.0.1:8080\/carmacloud\/simulation<\/param-value>/g' ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/web.xml 
+echo "JAVA_HOME=${JAVA_HOME}" > ${TOMCAT_HOME}/bin/setenv.sh 

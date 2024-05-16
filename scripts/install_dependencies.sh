@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # exit on errors
-set -e
+set -ex
 apt-get update -y 
 apt-get install -y build-essential cmake git wget pkg-config sqlite3 libcurl4-openssl-dev libsqlite3-dev libtiff5-dev openjdk-21-jdk
 # download geodesy projection library source and build
