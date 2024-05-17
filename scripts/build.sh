@@ -29,3 +29,4 @@ mkdir -p ${TOMCAT_HOME}/work/carmacloud/xodr
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/validate/xodr 
 /opt/jdk/bin/java -cp ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes/:${TOMCAT_HOME}/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > ${TOMCAT_HOME}/webapps/carmacloud/user.csv 
 echo "JAVA_HOME=${JAVA_HOME}" > ${TOMCAT_HOME}/bin/setenv.sh 
+
