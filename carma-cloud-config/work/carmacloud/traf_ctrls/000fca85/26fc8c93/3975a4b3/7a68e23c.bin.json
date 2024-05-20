@@ -1,0 +1,54 @@
+{
+	"version":"0.1",
+	"id":"000fca8526fc8c933975a4b37a68e23c",
+	"updated":"1970-01-01 00:00:00",
+	"vtypes":
+	[
+		"motorcycle",
+		"passenger-car",
+		"light-truck-van",
+		"bus",
+		"two-axle-six-tire-single-unit-truck",
+		"three-axle-single-unit-truck",
+		"four-or-more-axle-single-unit-truck",
+		"four-or-fewer-axle-single-trailer-truck",
+		"five-axle-single-trailer-truck",
+		"six-or-more-axle-single-trailer-truck",
+		"five-or-fewer-axle-multi-trailer-truck",
+		"six-axle-multi-trailer-truck",
+		"seven-or-more-axle-multi-trailer-truck"
+	],
+	"schedule":
+	{
+		"start":"1970-01-01 00:00:00",
+		"end":"292278994-08-17 07:12:55",
+		"dow":"SMTWRFA"
+	},
+	"regulatory":true,
+	"controltype":"maxspeed",
+	"controlvalue":"0",
+	"proj":"epsg:3785",
+	"datum":"WGS84",
+	"label":"",
+	"time":"1970-01-01 00:00:00",
+	"lon":-68,
+	"lat":27298,
+	"alt":0,
+	"heading":2701,
+	"points":
+	[
+		{"x":0, "y":0},
+		{"x":-51, "y":-102},
+		{"x":-51, "y":-102},
+		{"x":-67, "y":-135},
+		{"x":-64, "y":-130},
+		{"x":-429, "y":-833, "w":1},
+		{"x":-448, "y":-830},
+		{"x":-462, "y":-812},
+		{"x":-482, "y":-807},
+		{"x":-495, "y":-791},
+		{"x":-516, "y":-786},
+		{"x":-528, "y":-769},
+		{"x":-548, "y":-763}
+	]
+}
