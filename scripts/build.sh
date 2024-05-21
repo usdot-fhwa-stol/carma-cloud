@@ -5,6 +5,7 @@ set -ex
 export JAVA_HOME="/opt/jdk"
 export TOMCAT_HOME="/opt/tomcat"
 
+
 cd /home/carma-cloud/src/cc/geosrv
 gcc -c -std=c11 -fPIC -Wall -I "${JAVA_HOME}/include/" -I "${JAVA_HOME}/include/linux/" -I /tmp/proj/src/ cs2cswrapper.c
 gcc -shared cs2cswrapper.o -lproj -o /usr/local/lib/libcs2cswrapper.so
@@ -28,5 +29,5 @@ touch ${TOMCAT_HOME}/webapps/carmacloud/event.csv
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/xodr 
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/validate/xodr 
 /opt/jdk/bin/java -cp ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes/:${TOMCAT_HOME}/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > ${TOMCAT_HOME}/webapps/carmacloud/user.csv 
+sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' ${TOMCAT_HOME}/conf/server.xml
 echo "JAVA_HOME=${JAVA_HOME}" > ${TOMCAT_HOME}/bin/setenv.sh 
-
