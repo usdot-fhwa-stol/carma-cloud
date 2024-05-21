@@ -41,7 +41,6 @@ jobs:
                ./build.sh
           - name: Configure network and set privileges
             run: |
-                sed -i '/<\/Engine>/ i \ \ \ \ \  <Host name="carmacloud" appBase="webapps/carmacloud" unpackWARs="false" autoDeploy="false">\n      </Host>' /opt/tomcat/conf/server.xml 
                 echo -e '127.0.0.1\tcarmacloud' | tee -a /etc/hosts
                 groupadd tomcat
                 useradd -g tomcat -m tomcat
