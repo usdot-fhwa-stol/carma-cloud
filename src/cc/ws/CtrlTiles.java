@@ -89,7 +89,7 @@ public class CtrlTiles extends HttpServlet
 		18, //{"maxaxles"}, 
 		18, //{"minvehocc"},
 		17, //{"pavement"},
-		17,  //{"debug"}
+		17, //{"debug"}
 		18, // maxplatoonsize
 		18 // minplatoonhdwy
 	};
@@ -158,7 +158,7 @@ public class CtrlTiles extends HttpServlet
 	protected void doGet(HttpServletRequest oRequest, HttpServletResponse oResponse)
 	   throws ServletException, IOException
 	{
-		long lNow = System.currentTimeMillis();
+		long lNow = TimeSource.getInstance().currentTimeMillis();
 		String[] sUriParts = oRequest.getRequestURI().split("/");
 		int nZ = Integer.parseInt(sUriParts[sUriParts.length - 3]);
 		int nX = Integer.parseInt(sUriParts[sUriParts.length - 2]);
@@ -191,7 +191,6 @@ public class CtrlTiles extends HttpServlet
 		double[] dClipBounds = TileUtil.getClippingBounds(nZ, nX, nY, dBounds);
 
 		int nExtent = 4096;
-//		int nExtent = Mercator.getExtent(nZ);
 		VectorTile.Tile.Layer.Builder oLayerBuilder = VectorTile.Tile.Layer.newBuilder();
 		oLayerBuilder.setVersion(2);
 		oLayerBuilder.setExtent(nExtent);
@@ -449,7 +448,7 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			long lNow = System.currentTimeMillis() - 10;
+			long lNow = TimeSource.getInstance().currentTimeMillis() - 10;
 			int nType = Integer.parseInt(oReq.getParameter("type"));
 			String[] sVtypes = oReq.getParameterValues("vtypes[]");
 			ArrayList<Integer> nVtypes = new ArrayList(sVtypes.length);
@@ -523,12 +522,6 @@ public class CtrlTiles extends HttpServlet
 			ArrayList<TrafCtrl> oCtrls = new ArrayList();
 			oCtrls.add(oCtrl);
 			ProcCtrl.renderCtrls(sType, oCtrls, oCtrl.m_oFullGeo.m_oTiles);
-//			StringBuilder sBuf = new StringBuilder();
-//			try (BufferedWriter oOut = Files.newBufferedWriter(Paths.get("/opt/tomcat/work/carmacloud/sample_tcm.xml")))
-//			{
-//				oCtrl.getXml(sBuf, "cb9353e606e5aafa", 1, 1, 1, "1.0", true, 0);
-//				oOut.append(sBuf);
-//			}
 		}
 		catch (Exception oEx)
 		{
@@ -561,7 +554,7 @@ public class CtrlTiles extends HttpServlet
 	{
 		try
 		{
-			long lNow = System.currentTimeMillis();
+			long lNow = TimeSource.getInstance().currentTimeMillis();
 			int nType = Integer.parseInt(oReq.getParameter("type"));
 			String[] sVtypes = oReq.getParameterValues("vtypes[]");
 			ArrayList<Integer> nVtypes = new ArrayList(sVtypes.length);
@@ -635,7 +628,6 @@ public class CtrlTiles extends HttpServlet
 				{
 					for (int[] nTile : oOriginalCtrl.m_oFullGeo.m_oTiles)
 					{
-	//					ProcCtrl.writeIndexFile(oCtrls, nTile[0], nTile[1]);
 						String sIndex = String.format(g_sTdFileFormat, nTile[0], g_nZoom, nTile[0], nTile[1]) + ".ndx";
 						ProcCtrl.updateIndex(sIndex, oOriginalCtrl, oNewCtrl.m_lStart);
 					}

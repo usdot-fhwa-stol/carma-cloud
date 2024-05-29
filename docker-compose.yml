@@ -1,0 +1,14 @@
+version: "2"
+services:
+ carma-cloud:
+    image: test
+    network_mode: host
+    extra_hosts:
+      carmacloud: "127.0.0.1"
+    container_name: carma-cloud
+    volumes:
+      - ./carmacloudvol/logs:/opt/tomcat/logs
+      - ./carmacloudvol/work/carmacloud/validate/xodr:/opt/tomcat/work/carmacloud/validate/xodr
+      - ./carmacloudvol/work/carmacloud/xodr:/opt/tomcat/work/carmacloud/xodr
+      - ./carma-cloud-config/server.xml:/opt/tomcat/conf/server.xml
+      - ./carma-cloud-config/log4j2.properties:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties

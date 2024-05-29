@@ -80,6 +80,9 @@ public class RoadMark implements Comparable<RoadMark>
 	
 	public static int getColor(String sColor)
 	{
+		if (sColor == null)
+			return 0;
+
 		int nIndex = COLORS.length;
 		while (nIndex-- > 0)
 		{
