@@ -129,13 +129,13 @@ Upon startup, CARMA Cloud automatically creates traffic controls for later sendi
 After CARMA Cloud has been started for the first time in a testing scenario, XODR files will have been processed, and the tester can login to CARMA Cloud to add traffic controls for his testing needs. Executing an ls -lrt in the traffic controls folder, typically <tomcat_home>/work/carmacloud/traf_ctrls, will put the newly created traffic controls at the bottom of the list. The hexadecimal encoded text for the 16-byte traffic control ids to be kept can then be derived from three levels of folder paths and the traffic control filename.
 
 The FilterControls application takes the source work folder name, the destination work folder name, and a space-separated list of at least one 16-byte hexadecimal encoded text traffic control id.
-
-<java_home>/bin/java -cp <path_to_carmacloud_classes>:<path_to_carmacloud_lib>/keccakj.jar cc.util.FilterControls <source_path> <destination_path> <id1> <id2> <id3> ... <idN>
-
+...
+<java_home>/bin/java -cp <path_to_carmacloud_classes>:<path_to_carmacloud_lib>/keccakj.jar cc.util.FilterControls <source_path> <destination_path> <id1> <id2> <idN>
+...
 For example:
-
+...
 <java_home>/bin/java -cp <path_to_carmacloud_classes>:<path_to_carmacloud_lib>/keccakj.jar cc.util.FilterControls <tomcat_home>/work/carmacloud <tomcat_home>/work/filtered 00109ab6d542f12ca8942b436c9c9d8d
-
+...
 FilterControls creates the destination folder structure containing geolanes, linearcs, td, and traf_ctrls subfolders. The filtered traffic control files can then be saved with the appropriate testing scenarios. Both the td and traf_ctrls folders should always contain at least one file, and it is also normal under some circumstances that the geolanes and linearcs folders may contain no files.
 
 ## Contribution
