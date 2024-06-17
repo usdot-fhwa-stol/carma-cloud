@@ -124,7 +124,7 @@ Example:
 
 ## Testing Considerations
 
-Upon startup, CARMA Cloud automatically creates traffic controls for later sending to CARMA platform by reading XML OpenDrive files placed in its XODR work folder, e.g. <tomcat_home>/work/xodr. This can result in thousands of traffic controls that are mostly uninteresting for testing purposes. The cc.util.FilterControls command-line application accepts a list of traffic control identifiers, and creates a much smaller and more manageable subset of traffic controls that can be saved along with their respective teting scenarios.
+Upon startup, CARMA Cloud automatically creates traffic controls for later sending to CARMA platform by reading XML OpenDrive files placed in its XODR work folder, e.g. <tomcat_home>/work/xodr. This can result in thousands of traffic controls that are mostly uninteresting for testing purposes. The cc.util.FilterControls command-line application accepts a list of traffic control identifiers, and creates a much smaller and more manageable subset of traffic controls that can be saved along with their respective testing scenarios.
 
 After CARMA Cloud has been started for the first time in a testing scenario, XODR files will have been processed, and the tester can login to CARMA Cloud to add traffic controls for his testing needs. Executing an ls -lrt in the traffic controls folder, typically <tomcat_home>/work/carmacloud/traf_ctrls, will put the newly created traffic controls at the bottom of the list. The hexadecimal encoded text for the 16-byte traffic control ids to be kept can then be derived from three levels of folder paths and the traffic control filename.
 
