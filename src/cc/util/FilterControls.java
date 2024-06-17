@@ -89,7 +89,6 @@ public class FilterControls
 							else
 								oTemp.add(new TdFeature(oIn, oTemp.m_oKeys.length * 2, yIdBuf));
 						}
-						
 						oTemp.write(oOut);
 					}
 				}
@@ -126,11 +125,7 @@ public class FilterControls
 		for (byte[] yId : oIds)
 		{
 			createFilePath(sBuf, yId);
-//			Path oInGeo = Paths.get(sInputDir + "geolanes/" + sBuf.toString());
-//			Path oOutGeo = Paths.get(oOutputGeoLanes.toString() + "/" + sBuf.toString());
-//			Files.createDirectories(oOutGeo.getParent());
-//			Files.copy(oInGeo, oOutGeo);
-			
+
 			Path oInTraf = Paths.get(sInputDir + "traf_ctrls/" + sBuf.toString() + ".bin");
 			Path oOutTraf = Paths.get(oOutputCtrl.toString() + "/" + sBuf.toString() + ".bin");
 			Files.createDirectories(oOutTraf.getParent());
@@ -140,9 +135,6 @@ public class FilterControls
 			oOutTraf = Paths.get(oOutputCtrl.toString() + "/" + sBuf.toString() + ".bin.json");
 			Files.copy(oInTraf, oOutTraf);
 		}
-		
-		
-		
 	}
 	
 	
@@ -157,7 +149,6 @@ public class FilterControls
 			nOffset += 4;
 			sBuf.append("/");
 		}
-
 		Text.toHexString(oId, nOffset, nOffset + 4, sBuf);
 	}
 		
