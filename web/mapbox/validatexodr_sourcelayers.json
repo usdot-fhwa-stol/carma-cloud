@@ -1,7 +1,7 @@
 {
 	"ctrl":
 	{
-		"source": {"type": "vector", "tiles": ["https://carma-cloud.com/api/vctrl/{z}/{x}/{y}"], "minzoom": 18},
+		"source": {"type": "vector", "tiles": ["http://carma-cloud:8080/api/vctrl/{z}/{x}/{y}"], "minzoom": 18},
 		"layers":
 		[
 			{"type": "fill", "source-layer": "pavement", "paint":{"fill-color":"#999", "fill-opacity": 0}}, 

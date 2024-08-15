@@ -32,6 +32,14 @@ public class TcmReqParser2 extends TcmReqParser
 	{
 		switch (sQname)
 		{
+			case "TrafficControlRequest":
+			{
+				String sVal;
+				m_nPort = (sVal = iAtt.getValue("port")) != null ? Integer.parseInt(sVal) : m_nPort;
+				m_bList = (sVal = iAtt.getValue("list")) != null ? Boolean.parseBoolean(sVal) : m_bList;
+				break;
+			}
+
 			case "bounds":
 			{
 				m_oBounds = new TcBounds();
@@ -40,11 +48,8 @@ public class TcmReqParser2 extends TcmReqParser
 				m_oReq.m_oBounds = new ArrayList();
 				break;
 			}
-
 				
 			default:
-
-				
 		}
 	}
 	
@@ -113,8 +118,8 @@ public class TcmReqParser2 extends TcmReqParser
 			default:
 				break;
 		}
-			
 	}
+
 	
 	public TcmReq parseRequest(InputStream oIn)
 	   throws Exception

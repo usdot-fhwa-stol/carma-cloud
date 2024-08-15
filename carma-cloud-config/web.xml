@@ -28,32 +28,32 @@
 <servlet>
  <servlet-name>SimFederate</servlet-name>
  <servlet-class>cc.ws.SimFederate</servlet-class>
- 
+
  <init-param>
   <description>OPTIONAL: Logical flag to specify real world time or simulation time mode. Not present or false indicates real world time mode.</description>
   <param-name>simulation</param-name>
-  <param-value>false</param-value>
- </init-param> 
-  
+  <param-value>true</param-value>
+ </init-param>
+
  <init-param>
   <description>OPTIONAL: Required when simulation is true. Network address for simulation ambassador.</description>
   <param-name>ambassador</param-name>
-  <param-value>ambassador-address</param-value>
- </init-param> 
- 
+  <param-value>172.2.0.2</param-value>
+ </init-param>
+
  <init-param>
   <description>OPTIONAL: Required when simulation is true. Simulation identifier for this CARMA Cloud instance.</description>
   <param-name>id</param-name>
-  <param-value>simulation-id</param-value>
- </init-param> 
- 
+  <param-value>carma-cloud-sim1</param-value>
+ </init-param>
+
  <init-param>
   <description>OPTIONAL: Required when simulation is true. URL where ambassador sends time sync messages.</description>
   <param-name>url</param-name>
-  <param-value>simulation-url</param-value>
- </init-param> 
-  
- <load-on-startup>0</load-on-startup>
+  <param-value>http://172.2.0.47:8080/carmacloud/simulation</param-value>
+ </init-param>
+
+ <load-on-startup>1</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -72,7 +72,7 @@
   <param-value>18000000</param-value>
  </init-param>
 
- <load-on-startup>0</load-on-startup>
+ <load-on-startup>2</load-on-startup>
 </servlet>
 
 
@@ -86,7 +86,7 @@
   <param-value>/opt/tomcat/webapps/carmacloud/user.csv</param-value>
  </init-param>
 
- <load-on-startup>1</load-on-startup>
+ <load-on-startup>3</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -140,12 +140,6 @@
   <param-name>combinetol</param-name>
   <param-value>0.1</param-value>
  </init-param>
- 
- <init-param>
-  <description>REQUIRED: file path for units</description>
-  <param-name>units</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
- </init-param>
 
  <init-param>
   <description>REQUIRED: file path for units</description>
@@ -153,7 +147,13 @@
   <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
  </init-param>
 
- <load-on-startup>1</load-on-startup>
+ <init-param>
+  <description>REQUIRED: file path for units</description>
+  <param-name>units</param-name>
+  <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
+ </init-param>
+
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -172,7 +172,7 @@
   <param-value>1500</param-value>
  </init-param>
 
- <load-on-startup>2</load-on-startup>
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -185,7 +185,7 @@
  <servlet-name>TcmAck</servlet-name>
  <servlet-class>cc.ws.TcmAckServlet</servlet-class>
 
- <load-on-startup>1</load-on-startup>
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -203,7 +203,7 @@
   <param-value>/opt/tomcat/work/carmacloud/geolanes</param-value>
  </init-param>
 
- <load-on-startup>1</load-on-startup>
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -216,7 +216,7 @@
  <servlet-name>WxPoly</servlet-name>
  <servlet-class>cc.ws.WxPoly</servlet-class>
 
- <load-on-startup>1</load-on-startup>
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -270,7 +270,7 @@
   <param-value>0.1</param-value>
  </init-param>
 
- <load-on-startup>1</load-on-startup>
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -278,7 +278,7 @@
  <url-pattern>/api/vctrl/*</url-pattern>
 </servlet-mapping>
 
- 
+
 <servlet>
  <servlet-name>IHP</servlet-name>
  <servlet-class>cc.ihp.IHP</servlet-class>
@@ -303,7 +303,7 @@
   <param-value>/opt/tomcat/work/carmacloud/ihp/</param-value>
  </init-param>
 
- <load-on-startup>2</load-on-startup>
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
@@ -315,26 +315,26 @@
 <servlet>
  <servlet-name>RSU</servlet-name>
  <servlet-class>cc.ws.RSUServlet</servlet-class>
- 
+
   <init-param>
   <description>REQUIRED: Duration to store the received BSM request. Unit of second</description>
   <param-name>bsmReqDuration</param-name>
   <param-value>5</param-value>
- </init-param> 
- 
+ </init-param>
+
  <init-param>
   <description>REQUIRED: Periodically checking if the BSM is stored longer than the specified duration. Unit of second</description>
   <param-name>bsmReqCheckPeriod</param-name>
   <param-value>2</param-value>
- </init-param> 
-  
+ </init-param>
+
  <init-param>
   <description>REQUIRED: Bounding box radius in meters</description>
   <param-name>boundingBoxRadius</param-name>
   <param-value>20</param-value>
- </init-param> 
-  
- <load-on-startup>1</load-on-startup>
+ </init-param>
+
+ <load-on-startup>4</load-on-startup>
 </servlet>
 
 <servlet-mapping>
