@@ -8,7 +8,7 @@ export TOMCAT_HOME="/opt/tomcat"
 
 cd /home/carma-cloud/src/cc/geosrv
 gcc -c -std=c11 -fPIC -Wall -I "${JAVA_HOME}/include/" -I "${JAVA_HOME}/include/linux/" -I /tmp/proj/src/ cs2cswrapper.c
-gcc -shared cs2cswrapper.o -lproj -o /usr/local/lib/libcs2cswrapper.so
+gcc -shared cs2cswrapper.o -lproj -o /usr/lib/libcs2cswrapper.so
 
 mkdir -p "${TOMCAT_HOME}/webapps/carmacloud/ROOT" 
 cd /home
