@@ -10,5 +10,3 @@ permissions:
 jobs:
   notify:
     uses: usdot-fhwa-stol/actions/.github/workflows/issue-notification.yml@helpdesk_24_automate_issue_notifications
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
