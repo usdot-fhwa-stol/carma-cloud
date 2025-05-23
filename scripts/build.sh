@@ -4,6 +4,8 @@
 set -ex
 export JAVA_HOME="/opt/jdk"
 export TOMCAT_HOME="/opt/tomcat"
+export USER="ccadmin"
+export PASSWORD="admin_testpw"
 
 
 cd /home/carma-cloud/src/cc/geosrv
@@ -28,6 +30,6 @@ mv ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties ${TOMCAT_HOM
 touch ${TOMCAT_HOME}/webapps/carmacloud/event.csv 
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/xodr 
 mkdir -p ${TOMCAT_HOME}/work/carmacloud/validate/xodr 
-/opt/jdk/bin/java -cp ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes/:${TOMCAT_HOME}/lib/servlet-api.jar cc.ws.UserMgr ccadmin admin_testpw > ${TOMCAT_HOME}/webapps/carmacloud/user.csv 
+/opt/jdk/bin/java -cp ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes/:${TOMCAT_HOME}/lib/servlet-api.jar cc.ws.UserMgr ${USER} ${PASSWORD} > ${TOMCAT_HOME}/webapps/carmacloud/user.csv 
 sed -i 's/appBase="webapps"/appBase="webapps\/carmacloud"/g' ${TOMCAT_HOME}/conf/server.xml
 echo "JAVA_HOME=${JAVA_HOME}" > ${TOMCAT_HOME}/bin/setenv.sh 
