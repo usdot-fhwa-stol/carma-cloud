@@ -8,8 +8,8 @@ services:
     volumes:
       - ./carmacloudvol/logs:/opt/tomcat/logs
       - ./carmacloudvol/work/carmacloud/xodr:/opt/tomcat/work/carmacloud/xodr 
-      - ./carmacloudvol/web.xml:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml
       - ./carma-cloud-config/log4j2.properties:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties
+      - ./carmacloudvol/web.xml:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml
       - ./carma-cloud-config/server.xml:/opt/tomcat/conf/server.xml
       - ./web/mapbox/sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/sourcelayers.json
       - ./web/mapbox/validatexodr_sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/validatexodr_sourcelayers.json

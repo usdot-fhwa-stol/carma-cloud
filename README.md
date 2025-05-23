@@ -9,6 +9,23 @@ CARMAcloud provides some of the infrastructure components for CARMA. It enables 
 
 ## Deployment
 CARMAcloud can be deployed on a Linux server. Ensure you have a properly configured git client and Java Development Kit before executing the following commands (some paths may have to be updated depending on the version and installation of the JDK):
+
+### Deploy using docker
+#### Get source code
+`git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud`
+
+CARMA Cloud deployment uses [Apache tomcat](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://github.com/apache/tomcat&ved=2ahUKEwiGn56ymbqNAxWaRjABHfdrDnEQFnoECB8QAQ&usg=AOvVaw2Z31SWX59FQXe9w1LWPGRv) for its web server. The configuration files for the server are built into the image and allow for accessing the web-ui through the configured url `carma-cloud:8080`.
+
+When deploying on the cloud, the following files need to be updated:
+1. server.xml: Tomcat's primary configuration File that defines the server structure, connectors etc. 
+2. web.xml: Application Deployment Descriptor.
+3. Additionally when hosting the file on a remote domain the urls included in the frontend map loader need to be updated to point to the server url.
+For example [http://carma-cloud:8080](https://github.com/usdot-fhwa-stol/carma-cloud/blob/934de0985abe27275dfc61792132e62b2484b368/web/mapbox/sourcelayers.json#L4) would need to be updated to https://www.carma-cloud.com
+
+The updated files can be exposed to the docker container through volumes defined in docker compose. 
+
+
+### Deploy from source
 ```
 #!/bin/bash
 # java and javac must be executable from the command line
