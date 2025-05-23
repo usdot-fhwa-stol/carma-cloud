@@ -7,12 +7,10 @@ services:
     container_name: carma-cloud
     volumes:
       - ./carmacloudvol/logs:/opt/tomcat/logs
-      - ./carmacloudvol/work:/opt/tomcat/work
+      - ./carmacloudvol/work/carmacloud/xodr:/opt/tomcat/work/carmacloud/xodr 
       - ./carmacloudvol/web.xml:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml
-      - ./carmacloudvol/log4j2.properties:/opt/tomcat/webapps/carmacloud/WEB-INF/classes/log4j2.properties
+      - ./carma-cloud-config/log4j2.properties:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/log4j2.properties
       - ./carma-cloud-config/server.xml:/opt/tomcat/conf/server.xml
-      - ./carmacloudvol/carma-cloud.com.p12:/opt/tomcat/webapps/carmacloud/carma-cloud.com.p12
-      - ./catalina.sh:/opt/tomcat/bin/catalina.sh
       - ./web/mapbox/sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/sourcelayers.json
       - ./web/mapbox/validatexodr_sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/validatexodr_sourcelayers.json
       - ./web/mapbox/satellite-streets-v11.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/satellite-streets-v11.json
