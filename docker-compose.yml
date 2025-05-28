@@ -1,7 +1,7 @@
 version: "2"
 services:
  carma-cloud:
-    image: usdotfhwastol/carma-cloud:carma-system-4.6.1
+    image: usdotfhwastoldev/carma-cloud:develop
     network_mode: host
     extra_hosts:
       carmacloud: "127.0.0.1"
@@ -10,8 +10,8 @@ services:
       - ./carmacloudvol/logs:/opt/tomcat/logs
       - ./carmacloudvol/work/carmacloud/xodr:/opt/tomcat/work/carmacloud/xodr
       - ./carma-cloud-config/server.xml:/opt/tomcat/conf/server.xml
+      - ./carma-cloud-config/web.xml:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml
       - ./carmacloudvol/log4j2.properties:/opt/tomcat/webapps/carmacloud/WEB-INF/classes/log4j2.properties
-      - ./carmacloudvol/web.xml:/opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/web.xml
       - ./web/mapbox/sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/sourcelayers.json
       - ./web/mapbox/validatexodr_sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/validatexodr_sourcelayers.json
       - ./web/mapbox/satellite-streets-v11.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/satellite-streets-v11.json
