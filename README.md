@@ -16,7 +16,7 @@ CARMAcloud can be deployed on a Linux server. Ensure you have a properly configu
 
 CARMA Cloud deployment uses [Apache tomcat](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://github.com/apache/tomcat&ved=2ahUKEwiGn56ymbqNAxWaRjABHfdrDnEQFnoECB8QAQ&usg=AOvVaw2Z31SWX59FQXe9w1LWPGRv) for its web server. The configuration files for the server are built into the image and allow for accessing the web-ui through the configured url `carma-cloud:8080`.
 
-When deploying on the cloud, the following files need to be updated:
+When deploying on the cloud, the following files need to be updated in order to make the service accessible on a remote client:
 1. server.xml: Tomcat's primary configuration file that defines the server structure, connectors etc.
 2. web.xml: Application Deployment Descriptor for CARMAcloud that configures various servlets for traffic management, user authentication, simulation control, and RSU (Roadside Unit) communication. The file defines servlet mappings, initialization parameters, and load order for the CARMA cloud platform components.
 3. Additionally when hosting the file on a remote domain the urls included in the frontend map loader need to be updated to point to the server url.
