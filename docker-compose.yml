@@ -1,7 +1,7 @@
 version: "2"
 services:
  carma-cloud:
-    image: {DOCKER_ORG}/carma-cloud:{DOCKER_TAG}
+    image: ${STOL_ORG:-usdotfhwastoldev}/carma-cloud:${STOL_TAG:-develop}
     network_mode: host
     extra_hosts:
       carmacloud: "127.0.0.1"
