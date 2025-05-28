@@ -15,5 +15,3 @@ services:
       - ./web/mapbox/sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/sourcelayers.json
       - ./web/mapbox/validatexodr_sourcelayers.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/validatexodr_sourcelayers.json
       - ./web/mapbox/satellite-streets-v11.json:/opt/tomcat/webapps/carmacloud/ROOT/mapbox/satellite-streets-v11.json
-      # File needs to be moved
-      - ./carmacloudvol/carma-cloud.com.p12:/opt/tomcat/webapps/carmacloud/carma-cloud.com.p12
