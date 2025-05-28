@@ -1,4 +1,8 @@
 FROM ubuntu:22.04
+
+ARG CC_USER="cc_admin" 
+ARG CC_PSWD="admin_testpw"
+
 # update package manager and install prerequisites
 COPY scripts/install_dependencies.sh /home/carma-cloud/scripts/install_dependencies.sh
 RUN /home/carma-cloud/scripts/install_dependencies.sh
