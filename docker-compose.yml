@@ -1,4 +1,4 @@
-version: "2"
+version: "2.1"
 services:
  carma-cloud:
     image: ${STOL_ORG:-usdotfhwastoldev}/carma-cloud:${STOL_TAG:-develop}
