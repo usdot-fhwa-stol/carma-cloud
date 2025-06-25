@@ -1,345 +1,346 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
- xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
+<web-app version="2.5" xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd">
 
 
-<display-name>CARMAcloud</display-name>
-<welcome-file-list>
- <welcome-file>login.html</welcome-file>
-</welcome-file-list>
-
-<welcome-file-list>
- <welcome-file>login.html</welcome-file>
-</welcome-file-list>
-
-<servlet>
- <servlet-name>RegHub</servlet-name>
- <servlet-class>cc.ws.RegHub</servlet-class>
-
- <load-on-startup>-1</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>RegHub</servlet-name>
- <url-pattern>/carmacloud/v2xhub/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>SimFederate</servlet-name>
- <servlet-class>cc.ws.SimFederate</servlet-class>
-
- <init-param>
-  <description>OPTIONAL: Logical flag to specify real world time or simulation time mode. Not present or false indicates real world time mode.</description>
-  <param-name>simulation</param-name>
-  <param-value>true</param-value>
- </init-param>
-
- <init-param>
-  <description>OPTIONAL: Required when simulation is true. Network address for simulation ambassador.</description>
-  <param-name>ambassador</param-name>
-  <param-value>172.2.0.2</param-value>
- </init-param>
-
- <init-param>
-  <description>OPTIONAL: Required when simulation is true. Simulation identifier for this CARMA Cloud instance.</description>
-  <param-name>id</param-name>
-  <param-value>carma-cloud-sim1</param-value>
- </init-param>
-
- <init-param>
-  <description>OPTIONAL: Required when simulation is true. URL where ambassador sends time sync messages.</description>
-  <param-name>url</param-name>
-  <param-value>http://172.2.0.47:8080/carmacloud/simulation</param-value>
- </init-param>
-
- <load-on-startup>1</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>SimFederate</servlet-name>
- <url-pattern>/carmacloud/simulation/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>SessMgr</servlet-name>
- <servlet-class>cc.ws.SessMgr</servlet-class>
-
- <init-param>
-  <description>OPTIONAL: session timeout in milliseconds</description>
-  <param-name>timeout</param-name>
-  <param-value>18000000</param-value>
- </init-param>
-
- <load-on-startup>2</load-on-startup>
-</servlet>
-
-
-<servlet>
- <servlet-name>UserMgr</servlet-name>
- <servlet-class>cc.ws.UserMgr</servlet-class>
-
- <init-param>
-  <description>REQUIRED: path to user credential file</description>
-  <param-name>pwdfile</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/user.csv</param-value>
- </init-param>
-
- <load-on-startup>3</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>UserMgr</servlet-name>
- <url-pattern>/api/auth/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>CtrlTiles</servlet-name>
- <servlet-class>cc.ws.CtrlTiles</servlet-class>
-
- <init-param>
-  <description>REQUIRED: path to .xodr file containing road defintions</description>
-  <param-name>xodrdir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/xodr/</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: </description>
-  <param-name>linearcdir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/linearcs/</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: format string for tiled data filenames</description>
-  <param-name>tileddataformat</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/td/%d/ctrls_%d_%d_%d.bin</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: format string for tiled data filenames</description>
-  <param-name>ctrldir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/traf_ctrls</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: zoom level used to create tiled data</description>
-  <param-name>zoom</param-name>
-  <param-value>17</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: zoom level used to create tiled data</description>
-  <param-name>explodestep</param-name>
-  <param-value>0.06</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: zoom level used to create tiled data</description>
-  <param-name>combinetol</param-name>
-  <param-value>0.1</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: file path for units</description>
-  <param-name>units</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: file path for units</description>
-  <param-name>units</param-name>
-  <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
- </init-param>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>CtrlTiles</servlet-name>
- <url-pattern>/api/ctrl/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>TcmReq</servlet-name>
- <servlet-class>cc.ws.TcmReqServlet</servlet-class>
-
- <init-param>
-  <description>OPTIONAL: number of cm desired inbetween each point in xml</description>
-  <param-name>xmldist</param-name>
-  <param-value>1500</param-value>
- </init-param>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>TcmReq</servlet-name>
- <url-pattern>/carmacloud/tcmreq/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>TcmAck</servlet-name>
- <servlet-class>cc.ws.TcmAckServlet</servlet-class>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>TcmAck</servlet-name>
- <url-pattern>/carmacloud/tcmack/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>GeoLanes</servlet-name>
- <servlet-class>cc.ws.GeoLanes</servlet-class>
-
- <init-param>
-  <param-name>dir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/geolanes</param-value>
- </init-param>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>GeoLanes</servlet-name>
- <url-pattern>/api/geolanes/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>WxPoly</servlet-name>
- <servlet-class>cc.ws.WxPoly</servlet-class>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>WxPoly</servlet-name>
- <url-pattern>/api/wxpoly/*</url-pattern>
-</servlet-mapping>
-
-<servlet>
- <servlet-name>ValidateXodrTiles</servlet-name>
- <servlet-class>cc.ws.ValidateXodrTiles</servlet-class>
-
- <init-param>
-  <description>REQUIRED: path to .xodr file containing road defintions</description>
-  <param-name>xodrdir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/validate/xodr/</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: </description>
-  <param-name>linearcdir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/validate/linearcs/</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: format string for tiled data filenames</description>
-  <param-name>tileddataformat</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/validate/td/%d/ctrls_%d_%d_%d.bin</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: format string for tiled data filenames</description>
-  <param-name>ctrldir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/validate/traf_ctrls</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: zoom level used to create tiled data</description>
-  <param-name>zoom</param-name>
-  <param-value>17</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: zoom level used to create tiled data</description>
-  <param-name>explodestep</param-name>
-  <param-value>0.06</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: zoom level used to create tiled data</description>
-  <param-name>combinetol</param-name>
-  <param-value>0.1</param-value>
- </init-param>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>ValidateXodrTiles</servlet-name>
- <url-pattern>/api/vctrl/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>IHP</servlet-name>
- <servlet-class>cc.ihp.IHP</servlet-class>
-
- <init-param>
-  <param-name>pfile</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/ihp/parameters.csv</param-value>
- </init-param>
-
- <init-param>
-  <param-name>cfile</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/ihp/corridor.csv</param-value>
- </init-param>
-
- <init-param>
-  <param-name>dfile</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/ihp/detectors.json</param-value>
- </init-param>
-
- <init-param>
-  <param-name>basedir</param-name>
-  <param-value>/opt/tomcat/work/carmacloud/ihp/</param-value>
- </init-param>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>IHP</servlet-name>
- <url-pattern>/api/ihp/*</url-pattern>
-</servlet-mapping>
-
-
-<servlet>
- <servlet-name>RSU</servlet-name>
- <servlet-class>cc.ws.RSUServlet</servlet-class>
-
-  <init-param>
-  <description>REQUIRED: Duration to store the received BSM request. Unit of second</description>
-  <param-name>bsmReqDuration</param-name>
-  <param-value>5</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: Periodically checking if the BSM is stored longer than the specified duration. Unit of second</description>
-  <param-name>bsmReqCheckPeriod</param-name>
-  <param-value>2</param-value>
- </init-param>
-
- <init-param>
-  <description>REQUIRED: Bounding box radius in meters</description>
-  <param-name>boundingBoxRadius</param-name>
-  <param-value>20</param-value>
- </init-param>
-
- <load-on-startup>4</load-on-startup>
-</servlet>
-
-<servlet-mapping>
- <servlet-name>RSU</servlet-name>
- <url-pattern>/carmacloud/rsu/*</url-pattern>
-</servlet-mapping>
+    <display-name>CARMAcloud</display-name>
+    <welcome-file-list>
+        <welcome-file>login.html</welcome-file>
+    </welcome-file-list>
+
+    <welcome-file-list>
+        <welcome-file>login.html</welcome-file>
+    </welcome-file-list>
+
+    <servlet>
+        <servlet-name>RegHub</servlet-name>
+        <servlet-class>cc.ws.RegHub</servlet-class>
+
+        <load-on-startup>-1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>RegHub</servlet-name>
+        <url-pattern>/carmacloud/v2xhub/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>SimFederate</servlet-name>
+        <servlet-class>cc.ws.SimFederate</servlet-class>
+
+        <init-param>
+            <description>OPTIONAL: Logical flag to specify real world time or simulation time mode. Not present or false indicates real world time mode.</description>
+            <param-name>simulation</param-name>
+            <param-value>false</param-value>
+        </init-param>
+
+        <init-param>
+            <description>OPTIONAL: Required when simulation is true. Network address for simulation ambassador.</description>
+            <param-name>ambassador</param-name>
+            <param-value>172.2.0.2</param-value>
+        </init-param>
+
+        <init-param>
+            <description>OPTIONAL: Required when simulation is true. Simulation identifier for this CARMA Cloud instance.</description>
+            <param-name>id</param-name>
+            <param-value>carma-cloud-sim1</param-value>
+        </init-param>
+
+        <init-param>
+            <description>OPTIONAL: Required when simulation is true. URL where ambassador sends time sync messages.</description>
+            <param-name>url</param-name>
+            <param-value>http://172.2.0.47:8080/carmacloud/simulation</param-value>
+        </init-param>
+
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>SimFederate</servlet-name>
+        <url-pattern>/carmacloud/simulation/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>SessMgr</servlet-name>
+        <servlet-class>cc.ws.SessMgr</servlet-class>
+
+        <init-param>
+            <description>OPTIONAL: session timeout in milliseconds</description>
+            <param-name>timeout</param-name>
+            <param-value>18000000</param-value>
+        </init-param>
+
+        <load-on-startup>2</load-on-startup>
+    </servlet>
+
+
+    <servlet>
+        <servlet-name>UserMgr</servlet-name>
+        <servlet-class>cc.ws.UserMgr</servlet-class>
+
+        <init-param>
+            <description>REQUIRED: path to user credential file</description>
+            <param-name>pwdfile</param-name>
+            <param-value>/opt/tomcat/webapps/carmacloud/user.csv</param-value>
+        </init-param>
+
+        <load-on-startup>3</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>UserMgr</servlet-name>
+        <url-pattern>/api/auth/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>CtrlTiles</servlet-name>
+        <servlet-class>cc.ws.CtrlTiles</servlet-class>
+
+        <init-param>
+            <description>REQUIRED: path to .xodr file containing road defintions</description>
+            <param-name>xodrdir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/xodr/</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: </description>
+            <param-name>linearcdir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/linearcs/</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: format string for tiled data filenames</description>
+            <param-name>tileddataformat</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/td/%d/ctrls_%d_%d_%d.bin</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: format string for tiled data filenames</description>
+            <param-name>ctrldir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/traf_ctrls</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: zoom level used to create tiled data</description>
+            <param-name>zoom</param-name>
+            <param-value>17</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: zoom level used to create tiled data</description>
+            <param-name>explodestep</param-name>
+            <param-value>0.06</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: zoom level used to create tiled data</description>
+            <param-name>combinetol</param-name>
+            <param-value>0.1</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: file path for units</description>
+            <param-name>units</param-name>
+            <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: file path for units</description>
+            <param-name>units</param-name>
+            <param-value>/opt/tomcat/webapps/carmacloud/units.csv</param-value>
+        </init-param>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>CtrlTiles</servlet-name>
+        <url-pattern>/api/ctrl/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>TcmReq</servlet-name>
+        <servlet-class>cc.ws.TcmReqServlet</servlet-class>
+
+        <init-param>
+            <description>OPTIONAL: number of cm desired inbetween each point in xml</description>
+            <param-name>xmldist</param-name>
+            <param-value>1500</param-value>
+        </init-param>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>TcmReq</servlet-name>
+        <url-pattern>/carmacloud/tcmreq/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>TcmAck</servlet-name>
+        <servlet-class>cc.ws.TcmAckServlet</servlet-class>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>TcmAck</servlet-name>
+        <url-pattern>/carmacloud/tcmack/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>GeoLanes</servlet-name>
+        <servlet-class>cc.ws.GeoLanes</servlet-class>
+
+        <init-param>
+            <param-name>dir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/geolanes</param-value>
+        </init-param>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>GeoLanes</servlet-name>
+        <url-pattern>/api/geolanes/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>WxPoly</servlet-name>
+        <servlet-class>cc.ws.WxPoly</servlet-class>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>WxPoly</servlet-name>
+        <url-pattern>/api/wxpoly/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+        <servlet-name>ValidateXodrTiles</servlet-name>
+        <servlet-class>cc.ws.ValidateXodrTiles</servlet-class>
+
+        <init-param>
+            <description>REQUIRED: path to .xodr file containing road defintions</description>
+            <param-name>xodrdir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/validate/xodr/</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: </description>
+            <param-name>linearcdir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/validate/linearcs/</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: format string for tiled data filenames</description>
+            <param-name>tileddataformat</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/validate/td/%d/ctrls_%d_%d_%d.bin</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: format string for tiled data filenames</description>
+            <param-name>ctrldir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/validate/traf_ctrls</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: zoom level used to create tiled data</description>
+            <param-name>zoom</param-name>
+            <param-value>17</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: zoom level used to create tiled data</description>
+            <param-name>explodestep</param-name>
+            <param-value>0.06</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: zoom level used to create tiled data</description>
+            <param-name>combinetol</param-name>
+            <param-value>0.1</param-value>
+        </init-param>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>ValidateXodrTiles</servlet-name>
+        <url-pattern>/api/vctrl/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>IHP</servlet-name>
+        <servlet-class>cc.ihp.IHP</servlet-class>
+
+        <init-param>
+            <param-name>pfile</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/ihp/parameters.csv</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>cfile</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/ihp/corridor.csv</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>dfile</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/ihp/detectors.json</param-value>
+        </init-param>
+
+        <init-param>
+            <param-name>basedir</param-name>
+            <param-value>/opt/tomcat/work/carmacloud/ihp/</param-value>
+        </init-param>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>IHP</servlet-name>
+        <url-pattern>/api/ihp/*</url-pattern>
+    </servlet-mapping>
+
+
+    <servlet>
+        <servlet-name>RSU</servlet-name>
+        <servlet-class>cc.ws.RSUServlet</servlet-class>
+
+        <init-param>
+            <description>REQUIRED: Duration to store the received BSM request. Unit of second</description>
+            <param-name>bsmReqDuration</param-name>
+            <param-value>5</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: Periodically checking if the BSM is stored longer than the specified duration. Unit of second</description>
+            <param-name>bsmReqCheckPeriod</param-name>
+            <param-value>2</param-value>
+        </init-param>
+
+        <init-param>
+            <description>REQUIRED: Bounding box radius in meters</description>
+            <param-name>boundingBoxRadius</param-name>
+            <param-value>20</param-value>
+        </init-param>
+
+        <load-on-startup>4</load-on-startup>
+    </servlet>
+
+    <servlet-mapping>
+        <servlet-name>RSU</servlet-name>
+        <url-pattern>/carmacloud/rsu/*</url-pattern>
+    </servlet-mapping>
 
 </web-app>
