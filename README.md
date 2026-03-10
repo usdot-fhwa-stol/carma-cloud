@@ -1,7 +1,7 @@
-| CicleCI Build Status |
-|------|
-[![CircleCI](https://circleci.com/gh/usdot-fhwa-stol/carma-cloud.svg?style=svg)](https://circleci.com/gh/usdot-fhwa-stol/carma-cloud)
-
+## Develop CI/CD Processes
+| DockerHub Image Build | 
+|-----------------------|
+ [![Build Workflows](https://github.com/usdot-fhwa-stol/carma-cloud/actions/workflows/dockerhub.yml/badge.svg?branch=develop)](https://github.com/usdot-fhwa-stol/carma-cloud/actions/workflows/dockerhub.yml) |
 # CARMAcloud
 
 ## Documentation
