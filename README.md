@@ -177,4 +177,4 @@ By contributing to the Federal Highway Administration (FHWA) Connected Automated
 ## Contact
 Please click on the CARMA logo below to visit the Federal Highway Adminstration(FHWA) CARMA website. For more information, contact CAVSupportServices@dot.gov.
 
-[![CARMA Image](docs/image/CARMA_icon2.png)](https://highways.dot.gov/research/research-programs/operations/CARMA)
+[![CARMA Image](docs/images/CARMA_icon2.png)](https://highways.dot.gov/research/research-programs/operations/CARMA)
