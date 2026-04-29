@@ -1,11 +1,28 @@
-
 # Adding Optional Trusted Organizational Perimeter Certificates
 
 *(Skip if not required)*
 
-If your organization uses private Certificate Authorities (CA), TLS inspection, or a corporate VPN that intercepts HTTPS traffic, the docker build must trust your organization’s root and/or intermediate CA certificates.
+If your organization uses private Certificate Authorities (CA), TLS inspection, or a corporate VPN that intercepts HTTPS traffic, Docker builds may fail when downloading dependencies.
 
 Without these certificates installed, tools such as `wget`, `curl`, `nvm`, `git`, or package managers may fail with TLS certificate verification errors.
+
+## Example Build Error
+```
+111.8 + wget -q https://download.osgeo.org/proj/proj-9.3.0.tar.gz
+------
+Dockerfile:25
+--------------------
+  23 |     # update package manager and install prerequisites
+  24 |     COPY scripts/install_dependencies.sh /home/carma-cloud/scripts/install_dependencies.sh
+  25 | >>> RUN /home/carma-cloud/scripts/install_dependencies.sh
+  26 |
+  27 |     # Copy application source
+--------------------
+ERROR: failed to build: failed to solve: process "/bin/sh -c /home/carma-cloud/scripts/install_dependencies.sh" did not complete successfully: exit code: 5
+```
+
+This occurs because the container does not trust your organization’s internal CA by default.
+
 
 ---
 
@@ -22,9 +39,9 @@ Request from your IT/security team:
 
 ---
 
-### 2. Save Certificates to the Repository
+### 2. Save Certificates to the Local Project Directory
 
-Place the certificate files (public certs only) in:
+Place the certificate files in:
 
 ```
 ./perimeter-certs/
@@ -33,8 +50,10 @@ Place the certificate files (public certs only) in:
 Requirements:
 
 * Files must be in **PEM format**
-* Use the `.crt` file extension (required for automatic installation)
+* Use the `.crt` file extension
+* Only public CA certificates should be used
 * Multiple certificates may be added if needed
+* Do-Not commit certificates to respository. By default, repository is configured to ignore certificate files.
 
 Example:
 
@@ -46,36 +65,36 @@ Example:
 
 ---
 
-### 3. Rebuild the Docker Container
-
-In bash:
+### 3. Rebuild the Docker Image
 
 ```bash
 docker build -t usdotfhwastol/carma-cloud:develop .
 ```
 
-During docker build, the Dockerfile will:
+## How It Works
 
-* Detect any `.crt` files in `./perimeter-certs/`
-* Install them into `/usr/local/share/ca-certificates/`
-* Update the container’s system trust store
-
-No manual installation steps are required.
+During the Docker build:
+* The perimeter-certs/ folder is copied into the container
+* If .crt files are present, they are installed into:
+  `/usr/local/share/ca-certificates/`
+* The system trust store is updated via update-ca-certificates
+* If no .crt files are present, this step is skipped automatically.
 
 ---
 
 ## Troubleshooting
 
-If you still see certificate errors:
-
+If certificate errors persist:
 * Ensure certificate files use the `.crt` extension
-* Confirm the files contain valid PEM-encoded certificates
-* Verify you included both root and intermediate CA certificates (if required)
-* Rebuild the container again after changes
+* Verify certificates are valid PEM format
+* Confirm both root and intermediate certificates are included (if required)
+* Rebuild Docker image using `--no-cache`
+* Check that files are actually present in `perimeter-certs/`
 
 ---
 
 ### Security Note
 
-Only public CA certificates should be committed to the repository.
-Never commit private keys.
+* Only public CA certificates should be used
+* Never commit private keys (.key, .pem)
+* Organizational certificates may contain sensitive infrastructure details—handle appropriately
