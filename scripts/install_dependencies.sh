@@ -28,7 +28,7 @@ mv tomcat /opt
 
 # download and install JDK 21
 cd /tmp
-wget --no-check-certificate -q https://download.java.net/java/GA/jdk21.0.1/415e3f918a1f4062a0074a2794853d0d/12/GPL/openjdk-21.0.1_linux-x64_bin.tar.gz 
+wget -q https://download.java.net/java/GA/jdk21.0.1/415e3f918a1f4062a0074a2794853d0d/12/GPL/openjdk-21.0.1_linux-x64_bin.tar.gz
 tar -xzf openjdk-21.0.1_linux-x64_bin.tar.gz 
 mv jdk-21.0.1 /opt/jdk
 rm openjdk-21.0.1_linux-x64_bin.tar.gz
