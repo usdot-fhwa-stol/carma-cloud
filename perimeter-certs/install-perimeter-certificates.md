@@ -23,9 +23,6 @@ ERROR: failed to build: failed to solve: process "/bin/sh -c /home/carma-cloud/s
 
 This occurs because the container does not trust your organization’s internal CA by default.
 
-
----
-
 ## Install Instructions
 
 ### 1. Obtain Required Certificates
@@ -37,8 +34,6 @@ Request from your IT/security team:
 
 > You do **not** need the VPN server certificate or any private keys — only public CA certificates.
 
----
-
 ### 2. Save Certificates to the Local Project Directory
 
 Place the certificate files in:
@@ -47,7 +42,7 @@ Place the certificate files in:
 ./perimeter-certs/
 ```
 
-Requirements:
+#### Requirements:
 
 * Files must be in **PEM format**
 * Use the `.crt` file extension
@@ -55,15 +50,13 @@ Requirements:
 * Multiple certificates may be added if needed
 * Do-Not commit certificates to respository. By default, repository is configured to ignore certificate files.
 
-Example:
+#### Example:
 
 ```
 ./perimeter-certs/
 ├── Corp-Root-CA.crt
 ├── Corp-Perimeter-CA.crt
 ```
-
----
 
 ### 3. Rebuild the Docker Image
 
@@ -80,8 +73,6 @@ During the Docker build:
 * The system trust store is updated via update-ca-certificates
 * If no .crt files are present, this step is skipped automatically.
 
----
-
 ## Troubleshooting
 
 If certificate errors persist:
@@ -90,8 +81,6 @@ If certificate errors persist:
 * Confirm both root and intermediate certificates are included (if required)
 * Rebuild Docker image using `--no-cache`
 * Check that files are actually present in `perimeter-certs/`
-
----
 
 ### Security Note
 
