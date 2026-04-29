@@ -14,6 +14,13 @@ CARMAcloud can be deployed on a Linux server. Ensure you have a properly configu
 
 `git clone https://github.com/usdot-fhwa-stol/carma-cloud.git carma-cloud`
 
+#### Build Docker Image
+
+`docker build -t usdotfhwastol/carma-cloud:develop .`
+
+> If you encounter build errors related to downloading dependencies and your organization uses private Certificate Authorities (CA), TLS inspection, or a corporate VPN that intercepts HTTPS traffic, then consider [installing organizations perimeter certificates](perimeter-certs/README.md).
+
+#### Configure Deployment
 CARMA Cloud deployment uses [Apache tomcat](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://github.com/apache/tomcat&ved=2ahUKEwiGn56ymbqNAxWaRjABHfdrDnEQFnoECB8QAQ&usg=AOvVaw2Z31SWX59FQXe9w1LWPGRv) for its web server. The configuration files for the server are built into the image and allow for accessing the web-ui through the configured url `carma-cloud:8080`.
 
 When deploying on the cloud, the following files need to be updated in order to make the service accessible on a remote client:
@@ -170,4 +177,4 @@ By contributing to the Federal Highway Administration (FHWA) Connected Automated
 ## Contact
 Please click on the CARMA logo below to visit the Federal Highway Adminstration(FHWA) CARMA website. For more information, contact CAVSupportServices@dot.gov.
 
-[![CARMA Image](docs/image/CARMA_icon2.png)](https://highways.dot.gov/research/research-programs/operations/CARMA)
+[![CARMA Image](docs/images/CARMA_icon2.png)](https://highways.dot.gov/research/research-programs/operations/CARMA)
