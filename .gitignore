@@ -30,10 +30,12 @@
 ######################
 carmacloudvol/
 
-# Environment Secrets
-#####################
+# Environment Secrets, SSL/TLS
+##############################
 *.pem
 *.key
+ssl/
+carma-cloud-config/ssl/
 
 # Optional: perimeter certificates
 ##################################
