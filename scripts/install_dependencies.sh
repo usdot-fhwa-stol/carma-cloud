@@ -3,7 +3,7 @@
 # exit on errors
 set -ex
 apt-get update -y 
-apt-get install -y build-essential cmake git wget pkg-config sqlite3 libcurl4-openssl-dev libsqlite3-dev libtiff5-dev openjdk-21-jdk
+apt-get install -y build-essential cmake git wget pkg-config sqlite3 libcurl4-openssl-dev libsqlite3-dev libtiff5-dev
 # download geodesy projection library source and build
 cd /tmp
 wget -q https://download.osgeo.org/proj/proj-9.3.0.tar.gz
@@ -26,9 +26,12 @@ mv apache-tomcat-9.0.83 tomcat
 rm -r tomcat/webapps/*
 mv tomcat /opt 
 
-# download and install JDK 21
+# download and install JDK 25 (Eclipse Temurin LTS), the only JDK used to build and run CARMA Cloud
+JDK_VERSION="25.0.5.1+2"
+JDK_SHA256="760f91b22c3efc9bd1b64ff950598231be82928cc807e30691a0e7a2995a62c0"
 cd /tmp
-wget -q https://download.java.net/java/GA/jdk21.0.1/415e3f918a1f4062a0074a2794853d0d/12/GPL/openjdk-21.0.1_linux-x64_bin.tar.gz
-tar -xzf openjdk-21.0.1_linux-x64_bin.tar.gz 
-mv jdk-21.0.1 /opt/jdk
-rm openjdk-21.0.1_linux-x64_bin.tar.gz
+wget -q -O jdk.tar.gz "https://github.com/adoptium/temurin25-binaries/releases/download/jdk-${JDK_VERSION/+/%2B}/OpenJDK25U-jdk_x64_linux_hotspot_${JDK_VERSION/+/_}.tar.gz"
+echo "${JDK_SHA256}  jdk.tar.gz" | sha256sum -c -
+tar -xzf jdk.tar.gz
+mv "jdk-${JDK_VERSION}" /opt/jdk
+rm jdk.tar.gz
