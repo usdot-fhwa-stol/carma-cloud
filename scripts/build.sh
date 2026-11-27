@@ -20,7 +20,7 @@ else
 fi
 
 echo "Add new users with:"
-echo "java -cp /opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:/opt/tomcat/lib/servlet-api.jar cc.ws.UserMgr <username> <password> >> /opt/tomcat/webapps/carmacloud/user.csv"
+echo "${JAVA_HOME}/bin/java -cp /opt/tomcat/webapps/carmacloud/ROOT/WEB-INF/classes/:/opt/tomcat/lib/servlet-api.jar cc.ws.UserMgr <username> <password> >> /opt/tomcat/webapps/carmacloud/user.csv"
 
 cd /home/carma-cloud/src/cc/geosrv
 gcc -c -std=c11 -fPIC -Wall -I "${JAVA_HOME}/include/" -I "${JAVA_HOME}/include/linux/" -I /tmp/proj/src/ cs2cswrapper.c
@@ -47,3 +47,5 @@ mkdir -p ${TOMCAT_HOME}/work/carmacloud/validate/xodr
 /opt/jdk/bin/java -cp ${TOMCAT_HOME}/webapps/carmacloud/ROOT/WEB-INF/classes/:${TOMCAT_HOME}/lib/servlet-api.jar cc.ws.UserMgr ${USER} ${PASSWORD} > ${TOMCAT_HOME}/webapps/carmacloud/user.csv
 sed -i 's/appBase="webapps"/appBase="webapps\/carmacloud"/g' ${TOMCAT_HOME}/conf/server.xml
 echo "JAVA_HOME=${JAVA_HOME}" > ${TOMCAT_HOME}/bin/setenv.sh
+# Java 24+ warns when code loads native libraries (cs2cswrapper) without this option
+echo 'CATALINA_OPTS="${CATALINA_OPTS} --enable-native-access=ALL-UNNAMED"' >> ${TOMCAT_HOME}/bin/setenv.sh
